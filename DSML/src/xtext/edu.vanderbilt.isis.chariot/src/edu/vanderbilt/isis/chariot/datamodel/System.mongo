@@ -11,6 +11,7 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	DM_SystemDescription {
 		ObjectId _id
 		String name
+		Double reliabilityThreshold
 		DM_SystemConstraint* constraints
 		DM_Objective* objectives
 		
@@ -19,6 +20,7 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 		 */
 		void init() {
 			this.name = new String()
+			this.reliabilityThreshold = 0.0
 			this.getConstraints()	// This initializes constraints.
 			this.getObjectives()	// This initializes objectives.
 		}

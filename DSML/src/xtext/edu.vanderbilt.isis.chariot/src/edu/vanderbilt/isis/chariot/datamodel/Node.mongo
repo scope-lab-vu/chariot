@@ -9,6 +9,7 @@ package edu.vanderbilt.isis.chariot.datamodel.Node {
 	DM_Node {
 		ObjectId _id
 		String name
+		Double reliability
 		String nodeTemplate
 		String status
 		DM_Interface* interfaces
@@ -19,6 +20,7 @@ package edu.vanderbilt.isis.chariot.datamodel.Node {
 		 */
 		void init() {
 			this.name = new String()
+			this.reliability = 0.0
 			this.nodeTemplate = new String()
 			this.status = new String()
 			this.getInterfaces()	// This initializes interfaces.

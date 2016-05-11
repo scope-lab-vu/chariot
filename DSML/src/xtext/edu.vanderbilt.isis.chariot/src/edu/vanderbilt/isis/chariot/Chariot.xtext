@@ -366,12 +366,14 @@ NodeCategoryLabel:
 	
 /*
  * Rule to create a system description, which comprises nodes and
- * required objectives. It can also contain constraints. Explicit
- * initial configuration not supported currently, but will be supported
- * in later versions of CHARIOT.
+ * required objectives. It can also contain a reliability threshold
+ * and one or more constraints. Explicit initial configuration not 
+ * supported currently, but will be supported in later versions of 
+ * CHARIOT.
  */
 SystemDescription:
 	'system' name = ID '{'
+		('reliabilityThreshold' reliabilityThreshold = (FLOATING_PT_LITERAL) ';'?)?
 		(nodes += Node)+
 	 	(requiredobjectives += SystemObjective)+
 		(constraints += SystemConstraint)* //(initialConfiguration = InitialConfiguration)? 
@@ -382,6 +384,7 @@ SystemDescription:
  */
 Node:
 	'node' name = ID '{'
+		('reliability' reliability = (FLOATING_PT_LITERAL) ';'?)?
 		(nodeInfo += NodeInfo)*
 	'}'
 ;
@@ -403,10 +406,10 @@ NodeTemplateLabel:
 ;
 
 /*
- * Rule to specify network interface for a node.
+ * Rule to specify network interface of a node.
  */
 NetworkInterface:
-	'iface' name = ID 'address' address = STRING ('network' network = ID)? ';'?;
+	'iface' name = ID 'address' address = STRING 'network' network = ID ';'?;
 
 /*
  * Rule to specify required (system) objectives. An objective

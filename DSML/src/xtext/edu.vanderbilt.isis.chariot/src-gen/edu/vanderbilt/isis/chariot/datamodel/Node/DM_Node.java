@@ -55,6 +55,14 @@ public class DM_Node implements IMongoBean {
     _dbObject.put("name", name);
   }
   
+  public Double getReliability() {
+    return (Double) _dbObject.get("reliability");
+  }
+  
+  public void setReliability(final Double reliability) {
+    _dbObject.put("reliability", reliability);
+  }
+  
   public String getNodeTemplate() {
     return (String) _dbObject.get("nodeTemplate");
   }
@@ -90,6 +98,7 @@ public class DM_Node implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
+    this.setReliability(Double.valueOf(0.0));
     String _string_1 = new String();
     this.setNodeTemplate(_string_1);
     String _string_2 = new String();

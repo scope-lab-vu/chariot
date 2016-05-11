@@ -10,6 +10,7 @@ class Serialize:
 
 class SystemDescription:
     name = None
+    reliabilityThreshold = None
     constraints = None                  # List of constraints read from the database.
     objectives = None
     objectiveInstances = None           # List of objective instances.
@@ -27,6 +28,7 @@ class SystemDescription:
 
     def __init__(self):
         self.name = ""
+        self.reliabilityThreshold = 0.0
         self.constraints = list()
         self.objectives = list()
         self.objectiveInstances = list()
@@ -436,12 +438,14 @@ class Process:
 
 class Node:
     name = None
+    reliability = None
     nodeTemplate = None
     status = None
     processes = None        # List of processes instances.
 
     def __init__(self):
         self.name = ""
+        self.reliability = 0.0
         self.nodeTemplate = ""
         self.status = ""
         self.processes = list()
@@ -1265,6 +1269,7 @@ class SolverBackend:
             print "Adding Node with name:", node.name
             nodeToAdd = Node()
             nodeToAdd.name = node.name
+            nodeToAdd.reliability = node.reliability
             nodeToAdd.nodeTemplate = node.nodeTemplate
             nodeToAdd.status = node.status
 
@@ -1307,6 +1312,7 @@ class SolverBackend:
             print "Adding SystemDescription with name:", systemDescription.name
             systemDescriptionToAdd = SystemDescription()
             systemDescriptionToAdd.name = systemDescription.name
+            systemDescriptionToAdd.reliabilityThreshold = systemDescription.reliabilityThreshold
 
             # Add constraints.
             for c in systemDescription.constraints:

@@ -498,6 +498,9 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Store name.
 			system.setName (s.getName())
 			
+			// Store reliability threshold.
+			system.setReliabilityThreshold (s.getReliabilityThreshold())
+			
 			// Store constraints.
 			for (c : s.getConstraints()) {
 				system.addConstraint [
@@ -663,6 +666,9 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Store name.
 			node.setName (n.getName())
+			
+			// Store reliability.
+			node.setReliability (n.getReliability())
 			
 			// Filter and store node template label:
 			// NOTE: Only first should/will be stored.
