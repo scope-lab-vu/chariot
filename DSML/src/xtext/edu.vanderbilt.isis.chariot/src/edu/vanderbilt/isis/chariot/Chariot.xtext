@@ -1,0 +1,493 @@
+grammar edu.vanderbilt.isis.chariot.Chariot with org.eclipse.xtext.common.Terminals
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+import "http://www.vanderbilt.edu/isis/chariot/Datatypes" as ChariotMessage
+generate chariot "http://www.vanderbilt.edu/isis/chariot/Chariot"
+
+/*
+ * Entry/start rule that supports one or more imports as well
+ * as package declaration.
+ */
+DomainModel:
+	(imports += Import)*
+	package = PackageDeclaration;
+	
+/*
+ * Rules that allows importing of elements from different files.
+ */
+Import:
+  'import' importedNamespace=QualifiedNameWithWildcard;
+
+QualifiedNameWithWildcard:
+  QualifiedName '.*'?;
+
+QualifiedName:
+	ID ('.' ID)*;
+
+/*
+ * Rule to support JAVA style package declaration. This rule also
+ * allows creation of AbstractElements inside a package.
+ */
+PackageDeclaration:
+	'package' name = QualifiedName '{'
+		(elements += AbstractElement)*
+	'}'; 
+
+/*
+ * Rule that allows creation of different first class entities.
+ */
+AbstractElement:
+		Functionality
+	| 	Composition
+	| 	Component
+	| 	NodesCategory
+	|	NodeTemplate
+	| 	SystemDescription;
+
+/*
+ * Rule that allows creation of a functionality, which can have
+ * input and output params.
+ */
+Functionality:
+	'functionality' name = ID '{'
+		inputFunctionalityParam = FunctionalityInputParams?
+		outputFunctionalityParam = FunctionalityOutputParams?
+	'}';
+
+/*
+ * Rule to create input parameters for a functionality.
+ * 
+ * NOTE: atleast imposition disabled for now.
+ */
+FunctionalityInputParams:
+	('input' inputParams += FunctionalityParam
+		(',' inputParams += FunctionalityParam)*';'?); //('atleast' minrequirement = INT)? ';'?);
+
+/*
+ * Rule to create output parameters for a functionality.
+ */
+FunctionalityOutputParams:
+	('output' outputParams += FunctionalityParam
+	(',' outputParams += FunctionalityParam)* ';'?);
+
+/*
+ * Rule to create a functionality parameter.
+ */
+FunctionalityParam:
+	name = ID;
+
+/*
+ * Rule to create a composition which is a collection of
+ * connections between functionalities.
+ */
+Composition:
+	'composition' name = ID '{'
+		functionedges += FunctionalityConnection+
+	'}';
+
+/*
+ * Rule to create connection between functionality parameters.
+ */
+FunctionalityConnection:
+	fromPort = [FunctionalityParam|QualifiedName] 'to' 
+		toPort = [FunctionalityParam|QualifiedName]';'?;
+
+/*
+ * Rule to create a component.
+ * 
+ * NOTE: Creation of CHARIOT components not supported for now.
+ */
+Component:
+		ExternalComponent
+	|	VoterServiceComponent
+	|	ConsensusServiceComponent;
+	//|	ChariotComponent;
+
+/*
+ * Rule to create an external component, which is composed of
+ * different parts.
+ */
+ExternalComponent:
+	'external' 'app' name = ID '{'
+		(parts += ExternalComponentPart)+
+	'}';
+	
+/*
+ * Rule to create a voter service.
+ */
+VoterServiceComponent:
+	'voter' 'service' name = ID '{'
+		(parts += ServiceComponentPart)+
+	'}';
+	
+/*
+ * Rule to create a consensus service.
+ */
+ConsensusServiceComponent:
+	'consensus' 'service' name = ID '{'
+		(parts += ServiceComponentPart)+
+	'}';
+	
+/*
+ * Rule that allows creation of different parts for a service
+ * component. The difference between this and external component
+ * parts (defined below) is that the latter allows definition of
+ * functionality provision. We do not assign functionalities with
+ * service component as we want to enforce tight coupling between
+ * a service component and corresponding external component.
+ */
+ServiceComponentPart:
+		StartScript
+	| 	StopScript
+	| 	ExternalComponentPeriod
+	| 	ExternalComponentDeadline
+	|	AbstractRequirement;
+
+/*
+ * Rule that allows creation of different parts for an external
+ * component.
+ */
+ExternalComponentPart:
+		ExternalFunctionalityProvision
+	| 	StartScript
+	| 	StopScript
+	| 	ExternalComponentPeriod
+	| 	ExternalComponentDeadline
+	|	AbstractRequirement;
+
+/*
+ * Rule to declare a functionality provided by an external component.
+ * As part of this rule, you can also assign message type to different
+ * functionality parameters.
+ */
+ExternalFunctionalityProvision:
+	'provides' functionality = [Functionality|QualifiedName] (('{'
+		messageAssignment += ExternalFunctionalityParam+
+	'}') | ';')?;
+
+/*
+ * Rule to assign a message type to a functionality parameter.
+ */
+ExternalFunctionalityParam:
+	message = [ChariotMessage::Message|QualifiedName] 'as' 
+		functionalityParam=[FunctionalityParam|QualifiedName] ';'?;
+
+/*
+ * Rule to declare start script. This script will be used to launch
+ * the associated external component.
+ */	
+StartScript:
+	'startScript' script = STRING;
+
+/*
+ * Rule to declare stop script. This script will be used to stop the
+ * associated external component.
+ */
+StopScript:
+	'stopScript' script = STRING;
+
+/*
+ * Rule to declare period for an external components
+ */
+ExternalComponentPeriod:
+	'period' period = FLOATING_PT_LITERAL unit = TimeUnit';'?
+;
+
+/*
+ * Rule to declare deadline for an external component.
+ */
+ExternalComponentDeadline:
+	'deadline' deadline = FLOATING_PT_LITERAL unit = TimeUnit';'?
+;
+
+/*
+ * Rule that defines different supported time units.
+ */
+TimeUnit:
+		second ?= 'seconds'
+	|	milliseconds ?= 'milliseconds'
+	|	microseconds ?= 'microseconds';
+
+/*
+ * Rule to create different resource requirements for an external
+ * component.
+ */
+AbstractRequirement:
+		ArtifactRequirement
+	|	DeviceRequirement 
+	|	MemoryRequirement 
+	| 	StorageRequirement 
+	| 	OSRequirement 
+	| 	MiddlewareRequirement;
+
+/*
+ * Rule to specify artifact requirement.
+ */
+ArtifactRequirement:
+	'requires' artifact = [Artifact|QualifiedName] 'artifact' ';'?;
+
+/*
+ * Rule to specify device requirement.
+ */
+DeviceRequirement:
+	'requires' device = [DeviceSupported|QualifiedName] 'device' ';'?
+;
+
+/*
+ * Rule to specify memory requirement.
+ */
+MemoryRequirement:
+	'requires' memory = INT unit = MemoryUnits 'memory' ';'?;
+
+/*
+ * Rule that defines different supported memory units. 
+ */
+MemoryUnits:
+		kb?='KB' 
+	| 	mb?='MB' 
+	| 	gb?="GB";
+
+/*
+ * Rule to specify storage requirement.
+ */
+StorageRequirement:
+	'requires' storage = INT unit = MemoryUnits 'storage' ';'?;
+
+/*
+ * Rule to specify operating system requirement.
+ */
+OSRequirement:
+	'requires' (linux ?= 'Linux' | android ?= 'Android') ';'?;
+
+/*
+ * Rule to specify middleware requirement.
+ */
+MiddlewareRequirement:
+	'requires' (alljoyn?='AllJoyn' | rtidds?='RTI-DDS' | lcm?= 'LCM') ';'?;
+
+/*
+ * Rule to create a node category, which only has a name.
+ */
+NodesCategory:
+	'nodeCategory' name = ID ';'?;
+	
+/*
+ * Rule to create a node template.
+ */
+NodeTemplate:
+	'nodeTemplate' name = ID '{' 
+		(nodeTemplateInfo += NodeTemplateInfo)* 
+	'}';
+	
+/*
+ * Rule to create different entities that comprises a 
+ * node template.
+ */
+NodeTemplateInfo:
+		DeviceSupported
+	|	Artifact
+	|	MemoryProvision
+	|	StorageProvision
+	|	OSSupported
+	|	Middleware
+	|	NodeCategoryLabel;
+
+/*
+ * Rule to create a device supported by a node template.
+ * For a device, this rule also allows specification of
+ * device specific artifact.
+ */
+DeviceSupported:
+	'device' name = ID (('{'
+		artifacts += DeviceArtifact
+	'}') | ';'?);
+
+/*
+ * Rule to create device specific artifact.
+ */
+DeviceArtifact:
+	'artifact' (jar ?= 'jar' | sharedObject ?= 'sharedObject') name = ID  '{'
+		'location' location = STRING
+	'}';
+	
+/*
+ * Rule to create (software) artifact associated with a
+ * node template.
+ * 
+ * NOTE: Artifact differs from DeviceArtifact as the latter 
+ * cannot be referenced as a requirement by a component. A 
+ * component can require Artifact and Device.
+ */
+Artifact:
+	'artifact' (jar?='jar' | sharedObject?='sharedObject') name = ID  '{'
+		'location' location = STRING
+	'}';
+	
+/*
+ * Rule to specify memory provision.
+ */
+MemoryProvision:
+	'memory' memory = INT unit = MemoryUnits ';'?;
+	
+/*
+ * Rule to specify storage provision.
+ */
+StorageProvision:
+	'storage' storage = INT unit = MemoryUnits';'?;
+	
+/*
+ * Rule to specify operating system associated with a
+ * node template. Currently supported OSs: Linux, Android.
+ */
+OSSupported:
+	'os' (linux ?= 'Linux' | android ?= 'Android') ';'?;
+
+/*
+ * Rule to specify middleware assocaited with a node template.
+ * Currently supported middleware: AllJoyn, RTI-DDS, LCM. 
+ */
+Middleware :
+  'middleware' middleware+=MiddlewareChoice (',' middleware+=MiddlewareChoice )* ';'?;
+  
+/*
+ * Rule that lists different supported middleware.
+ */
+MiddlewareChoice:
+		alljoyn?='AllJoyn' 
+	|   rtidds?='RTI-DDS' 
+  	|  	lcm?= 'LCM';
+
+/*
+ * Rule to associate a node template with existing nodes category.
+ */
+NodeCategoryLabel:
+	'category' label += [NodesCategory|QualifiedName] 
+		(',' label += [NodesCategory|QualifiedName])* ';'?;
+	
+/*
+ * Rule to create a system description, which comprises nodes and
+ * required objectives. It can also contain constraints. Explicit
+ * initial configuration not supported currently, but will be supported
+ * in later versions of CHARIOT.
+ */
+SystemDescription:
+	'system' name = ID '{'
+		(nodes += Node)+
+	 	(requiredobjectives += SystemObjective)+
+		(constraints += SystemConstraint)* //(initialConfiguration = InitialConfiguration)? 
+	'}';
+
+/*
+ * Rule to create a node.
+ */
+Node:
+	'node' name = ID '{'
+		(nodeInfo += NodeInfo)*
+	'}'
+;
+
+/*
+ * Rule to declare node information, i.e., node template and
+ * network interface.
+ */
+NodeInfo:
+		NodeTemplateLabel
+	|	NetworkInterface
+;
+
+/*
+ * Rule to associate a node with existing node template.
+ */
+NodeTemplateLabel:
+	'template' template = [NodeTemplate | QualifiedName] ';'?
+;
+
+/*
+ * Rule to specify network interface for a node.
+ */
+NetworkInterface:
+	'iface' name = ID 'address' address = STRING ('network' network = ID)? ';'?;
+
+/*
+ * Rule to specify required (system) objectives. An objective
+ * can be specified to be local. If an objective is local, then
+ * associated objective constraints can be specified.
+ */
+SystemObjective:
+	composition = [Composition|QualifiedName] 'as' 
+		('objective'|isLocal ?= 'localObjective') name = ID 
+			('{' (constraints += ObjectiveConstraints)+ '}'| ';')?;
+
+/*
+ * Rule to specify objective constraints.
+ */
+ObjectiveConstraints:
+		CategoryConstraint
+	|	perNodeFunctionality
+;
+
+/*
+ * Rule to specify category constraint for a local objective.
+ * This defines which category of nodes the associated local 
+ * objective will be relevant for.
+ */
+CategoryConstraint:
+	'appliesTo' categories += [NodesCategory|QualifiedName] 
+		(',' categories += [NodesCategory|QualifiedName])* 'nodes' ';'?;
+
+/*
+ * Rule to specify per-node constraint for a local objective.
+ * This will be used to specify which functionalities associated
+ * with a local objective will require replication across all
+ * nodes of category associated with the local objective.
+ */
+perNodeFunctionality:
+	'keep' functionality += [Functionality|QualifiedName] 
+		(',' functionality += [Functionality|QualifiedName])* 'perNode' ';'?;
+
+/*
+ * Rule to create system constraints. Currently these are
+ * replication constraints. Could be expanded to cover other
+ * constraints (e.g. node collocation).
+ */
+SystemConstraint:
+		ConsensusReplicationConstraint
+	|	ActiveReplicationConstraint
+	|	VoterReplicationConstraint;
+
+/*
+ * Rule to create range associated with resilience constraints.
+ */
+ResilienceRange:
+	('[' lower = (INT) ',' upper = (INT) ']') | (exact = INT);
+
+/*
+ * Rule to create consensus replication constraint.
+ */
+ConsensusReplicationConstraint:
+	'replicate' functionality = [Functionality|QualifiedName] 'asConsensusCluster' 
+		'with' range = ResilienceRange 'instances' 
+		'and' serviceComponent = [ConsensusServiceComponent|QualifiedName]';'?;
+
+/*
+ * Rule to create active replication (no consensus) constraint.
+ */
+ActiveReplicationConstraint:
+	'replicate' functionality = [Functionality|QualifiedName] 'asCluster'
+		'with' range=ResilienceRange 'instances' ';'?;
+
+/*
+ * Rule to create voter replication constraint.
+ */
+VoterReplicationConstraint:
+	'replicate' functionality = [Functionality|QualifiedName] 'asVoterCluster' 
+		'with' range=ResilienceRange 'instances' 
+		'and' serviceComponent = [VoterServiceComponent|QualifiedName] ';'?;
+	
+/*
+ * Terminal rules.
+ */
+SIGNED_INTEGER returns ecore::EInt:
+	('+' | '-') (INT);
+FLOATING_PT_LITERAL returns ecore::EDouble:
+	(INT|SIGNED_INTEGER) ('.' (INT))?;

@@ -1,0 +1,276 @@
+import org.bson.types.ObjectId
+import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit
+import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
+import edu.vanderbilt.isis.chariot.datamodel.SupportedOS
+import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
+import com.mongodb.DB
+import com.mongodb.DBObject
+import com.mongodb.DBCollection
+import java.util.logging.Logger
+import edu.vanderbilt.isis.chariot.datamodel.Status
+
+package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
+	DM_NodeCategory {
+		ObjectId _id
+		String name
+		DM_NodeTemplate* nodeTemplates
+		
+		/*
+		 * 
+		 */
+		void init () {
+			this.name = new String()
+			this.getNodeTemplates()	// This initializes nodeTemplates.
+		}
+		
+		/*
+		 * 
+		 */
+		void addNodeTemplate ((DM_NodeTemplate)=>void initializer) {
+			//val LOGGER = Logger.getLogger("DM_NodeCategory")
+			val DM_NodeTemplate nodeTemplateToAdd = new DM_NodeTemplate => initializer
+			this.nodeTemplates.add (nodeTemplateToAdd)	//@TODO: Add code to check for duplicate.
+			/*val List<String> tmp = this.nodeTemplates.map[name]
+			if (!tmp.contains (nodeTemplateToAdd.name))
+				this.nodeTemplates.add (nodeToAdd)
+			else
+				LOGGER.info (nodeTemplateToAdd.getName() + 
+					" node template already exists in node category " + this.name)*/
+		}
+		
+		/*
+		 * Insert new NodeCategory to 'NodeCategories' collection 
+		 * of the given database. Check if NodeCategory already 
+		 * exists using category name.
+		 * 
+		 * @param database - Name of the database.
+		 */
+		void insert (DB database) {
+			val LOGGER = Logger.getLogger("DM_NodeCategory")
+			
+			val dbCollection = database.getCollection('NodeCategories')
+
+			// Check if already exists. Store only if no existing
+			// node category has the same name.
+			val result = dbCollection.findOne((new DM_NodeCategory => [
+				name = this.name
+			]).getDbObject())
+				
+			if (result == null) {
+				dbCollection.save(this.getDbObject())
+				LOGGER.info (this.name + 
+					" node category added to database")
+			}
+			else {
+				LOGGER.info (this.name + 
+					" node category already exists. Trying to update.")
+					
+				this.update(result, dbCollection)
+			}
+		}
+		
+		/*
+		 * Update existing NodeCategory in 'NodeCategories' collection
+		 * of the given database.
+		 * 
+		 * @param database - Name of the database.
+		 */
+		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
+		 	val LOGGER = Logger.getLogger("DM_NodeCategory")
+		 	
+		 	// Delete existing object and save current version.
+		 	targetCollection.remove(objectToUpdate)
+		 	targetCollection.save(this.getDbObject())
+		 	
+		 	LOGGER.info (this.name + 
+				" node category has been updated.")
+		 }
+		 
+		 /*
+		 * Remove node from an existing node category.
+		 * 
+		 * @param nodeName - Name of node to be removed.
+		 */
+		 void removeNodeTemplate (String nodeTemplateName) {
+		 	val LOGGER = Logger.getLogger("DM_NodeCategory")
+		 	
+		 	var int index = -1;
+		 	var int count = 0;
+		 	for (DM_NodeTemplate nodeTemplate: this.getNodeTemplates()) {
+		 		if (nodeTemplate.name.equals (nodeTemplateName))
+		 			index = count
+		 		count++
+		 	}
+		 	
+		 	if (index != -1)
+		 	{
+		 		this.nodeTemplates.remove (index)
+		 		LOGGER.info (nodeTemplateName + 
+		 			" node template removed from node category " + this.name)
+		 	}
+		 	else
+		 		LOGGER.info (nodeTemplateName + 
+		 			" node template does not exist in node category " + this.name)
+		 }
+	}
+	
+	DM_NodeTemplate {
+		String name
+		
+		DM_AvailableMemory {
+			int memory
+			String unit
+			
+			/*
+			 * 
+			 */
+			void setUnit (MemoryUnit unit) {
+				this.unit = unit.toString()
+			}
+		} availableMemory
+
+		DM_AvailableStorage {
+			int storage
+			String unit
+			
+			/*
+			 * 
+			 */
+			void setUnit (StorageUnit unit) {
+				this.unit = unit.toString()
+			}
+		} availableStorage
+
+		String OS
+		String middleware
+		DM_Artifact* artifacts
+		DM_Device* devices
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.name = new String()
+			this.availableMemory = new DM_AvailableMemory() => [
+				setMemory (0)
+				setUnit ("")
+			]
+			this.availableStorage = new DM_AvailableStorage() => [
+				setStorage (0)
+				setUnit ("")
+			]
+			this.OS = new String()
+			this.middleware = new String()
+			this.getArtifacts	// This initializes the artifacts list.
+			this.getDevices		// This initializes the devices list.
+		}
+		
+		/*
+		 * 
+		 */
+		void setAvailableMemory ((DM_AvailableMemory)=>void initializer) {
+			this.availableMemory = new DM_AvailableMemory => initializer
+		} 
+		
+		/*
+		 * 
+		 */
+		void setAvailableStorage ((DM_AvailableStorage)=>void initializer) {
+			this.availableStorage = new DM_AvailableStorage => initializer
+		}
+		
+		/*
+		 * 
+		 */
+		void setOS (SupportedOS os) {
+			this.OS = os.toString()
+		}
+		
+		/*
+		 * 
+		 */
+		void setMiddleware (SupportedMiddleware middleware) {
+			this.middleware = middleware.toString()
+		}
+		
+		/*
+		 * 
+		 */
+		void addArtifact ((DM_Artifact)=>void initializer) {
+			//val LOGGER = Logger.getLogger("DM_NodeCategory")
+			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
+			this.artifacts.add (artifactToAdd)	//@TODO: Add code to check for duplicate.
+			/*val List<String> tmp = this.artifacts.map[name]
+			if (!tmp.contains (artifactToAdd.name))
+				this.artifacts.add (artifactToAdd)
+			else
+				LOGGER.info (artifactToAdd.getName() + 
+					" artifact already exists in node template " + this.name)*/
+		}
+		
+		/*
+		 * 
+		 */
+		void addDevice ((DM_Device)=>void initializer) {
+			//val LOGGER = Logger.getLogger("DM_NodeCategory")
+			val DM_Device deviceToAdd = new DM_Device => initializer
+			this.devices.add (deviceToAdd)	//@TODO: Add code to check for duplicate.
+			/*val List<String> tmp = this.devices.map[name]
+			if (!tmp.contains (deviceToAdd.name))
+				this.devices.add (deviceToAdd)
+			else
+				LOGGER.info (deviceToAdd.getName() + 
+					" device already exists in node template " + this.name)*/
+		}
+	}
+	
+	DM_Artifact {
+		String name
+		String location
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.name = new String()
+			this.location = new String()
+		}
+	}
+	
+	DM_Device {
+		String name
+		DM_Artifact* artifacts
+		String status
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.name = new String()
+			this.getArtifacts()	// This initializes artifacts
+			this.status = new String()
+		}
+
+		/*
+		 * 
+		 */
+		void addArtifact ((DM_Artifact)=>void initializer) {
+			//val LOGGER = Logger.getLogger("DM_NodeCategory")
+			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
+			this.artifacts.add (artifactToAdd)	//@TODO: Add code to check for duplicate.
+			/*val List<String> tmp = this.artifacts.map[name]
+			if (!tmp.contains (artifactToAdd.name))
+				this.artifacts.add (artifactToAdd)
+			else
+				LOGGER.info (artifactToAdd.getName() + 
+					" artifact already exists in device " + this.name)*/
+		}
+		
+		/*
+		 * 
+		 */
+		void setStatus(Status status) {
+			this.status = status.toString()
+		}
+	}
+}

@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MongoDSL Runtime Plug-in
+Bundle-SymbolicName: edu.vanderbilt.isis.chariot.lib
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Eclipse Modeling Project
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Bundle: org.eclipse.xtend.lib,
+ com.google.guava,
+ org.eclipse.xtext.xbase.lib,
+ org.eclipse.orbit.mongodb;bundle-version="1.0.0",
+ org.eclipse.xtend.standalone
+Export-Package: edu.vanderbilt.isis.chariot.lib
+

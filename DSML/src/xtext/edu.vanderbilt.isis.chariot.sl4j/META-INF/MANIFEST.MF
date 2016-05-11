@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Sl4j
+Bundle-SymbolicName: edu.vanderbilt.isis.chariot.sl4j
+Bundle-Version: 1.0.0
+Bundle-ClassPath: slf4j-api-1.7.12.jar,
+ slf4j-simple-1.7.12.jar
+Export-Package: org.slf4j,
+ org.slf4j.helpers,
+ org.slf4j.impl,
+ org.slf4j.spi
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8

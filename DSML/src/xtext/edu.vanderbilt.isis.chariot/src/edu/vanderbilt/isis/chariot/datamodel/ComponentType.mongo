@@ -1,0 +1,244 @@
+import org.bson.types.ObjectId
+import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit
+import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
+import edu.vanderbilt.isis.chariot.datamodel.SupportedOS
+import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
+import java.util.List
+import com.mongodb.DB
+import java.util.ArrayList
+import com.mongodb.DBObject
+import com.mongodb.DBCollection
+import java.util.logging.Logger
+
+package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
+	DM_ComponentType {
+		ObjectId _id
+		String name
+		List<String> providedFunctionalities
+		DM_Mode* modes
+				
+		DM_MemoryRequirement {
+			int memory
+			String unit
+		
+			/*
+			 * 
+			 */
+			void setUnit (MemoryUnit unit) {
+				this.unit = unit.toString()
+			}
+		} memoryRequirement
+		
+		DM_StorageRequirement {
+			int storage
+			String unit
+			
+			/*
+			 * 
+			 */
+			void setUnit (StorageUnit unit) {
+				this.unit = unit.toString()
+			}
+		} storageRequirement
+
+		String osRequirement
+		String middlewareRequirement
+		List<String> artifactRequirements
+		List<String> deviceRequirements
+		
+		// Start and stop scripts are only relevant for external 
+		// components.
+		String startScript
+		String stopScript
+		
+		// Period and deadline. 
+		double period
+		double deadline
+		
+		/*
+		 * 
+		 */
+		void init () {
+			this.name = new String()
+			this.providedFunctionalities = new ArrayList<String>()
+			this.getModes()	// This initializes modes (MongoBeansList)
+			this.memoryRequirement = new DM_MemoryRequirement => [
+				setMemory (0)
+				setUnit ("")
+			]
+			this.storageRequirement = new DM_StorageRequirement => [
+				setStorage (0)
+				setUnit ("")
+			]			
+			this.osRequirement = new String()
+			this.middlewareRequirement = new String()
+			this.artifactRequirements = new ArrayList<String>()
+			this.deviceRequirements = new ArrayList<String>()
+			this.startScript = new String()
+			this.stopScript = new String()
+			this.period = 0
+			this.deadline = 0
+		}
+		
+		/*
+		 * 
+		 */
+		void addProvidedFunctionality (String functionality) {
+			val LOGGER = Logger.getLogger("DM_ComponentType")
+			if (this.providedFunctionalities == null)
+				this.providedFunctionalities = new ArrayList<String>()
+				
+			if (!this.providedFunctionalities.contains(functionality))
+				this.providedFunctionalities.add (functionality)
+			else
+				LOGGER.info (functionality + 
+					" functionality already exists in component " + this.name)
+		}
+		
+		/*
+		 * 
+		 */
+		void addMode ((DM_Mode)=>void initializer) {
+			//val LOGGER = Logger.getLogger("DM_ComponentType")
+			val DM_Mode modeToAdd = new DM_Mode => initializer
+			this.modes.add(modeToAdd) //@TODO: Add code to check for duplicate.
+			
+			//var List<String> tmp = this.modes.map[name]
+			//if (!tmp.contains (modeToAdd.name))
+			//	this.modes.add(modeToAdd)
+			/*else
+				LOGGER.info (modeToAdd.getName() + 
+					" mode already exists in component type " + this.name)*/
+		}
+		
+		/*
+		 * 
+		 */
+		void setMemoryRequirement ((DM_MemoryRequirement)=>void initializer) {
+			this.memoryRequirement = new DM_MemoryRequirement => initializer
+		}
+		
+		/*
+		 * 
+		 */
+		void setStorageRequirement ((DM_StorageRequirement)=>void initializer) {
+			this.storageRequirement = new DM_StorageRequirement => initializer
+		}
+		
+		/*
+		 * 
+		 */
+		void setOSRequirement (SupportedOS os) {
+			this.setOsRequirement (os.toString())
+		}
+		
+		/*
+		 * 
+		 */
+		void setMiddlewareRequirement (SupportedMiddleware  middleware) {
+			this.setMiddlewareRequirement (middleware.toString())
+		}
+		
+		/*
+		 * 
+		 */
+		void addArtifactRequirement (String artifact) {
+			val LOGGER = Logger.getLogger("DM_ComponentType")
+			if (this.artifactRequirements == null)
+				this.artifactRequirements = new ArrayList<String>()
+				
+			if (!this.artifactRequirements.contains(artifact))
+				this.artifactRequirements.add (artifact)
+			else
+				LOGGER.info (artifact + 
+					" artifact already exists in component " + this.name)
+		}
+		
+		/*
+		 * 
+		 */
+		void addDeviceRequirement (String device) {
+			val LOGGER = Logger.getLogger("DM_ComponentType")
+			if (this.deviceRequirements == null)
+				this.deviceRequirements = new ArrayList<String>()
+				
+			if (!this.deviceRequirements.contains(device))
+				this.deviceRequirements.add (device)
+			else
+				LOGGER.info (device + 
+					" device already exists in component " + this.name)
+		}
+		
+		/*
+		 * 
+		 */
+		void insert (DB database) {
+			val LOGGER = Logger.getLogger("DM_ComponentType")
+			
+			val dbCollection = database.getCollection('ComponentTypes')
+
+			// Check if already exists. Store only if no existing
+			// component type has the same name.
+			val result = dbCollection.findOne((new DM_ComponentType => [
+				name = this.name
+			]).getDbObject())
+				
+			if (result == null) {
+				dbCollection.save(this.getDbObject())
+				LOGGER.info (this.name + 
+					" component type added to database")
+			}
+			else {
+				LOGGER.info (this.name + 
+					" component type already exists. Trying to update")
+					
+				this.update(result, dbCollection)
+			}
+		}
+		
+		/*
+		 *
+		 */
+		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
+		 	val LOGGER = Logger.getLogger("DM_ComponentType")
+		 	
+		 	// Delete existing object and save current version.
+		 	targetCollection.remove(objectToUpdate)
+		 	targetCollection.save(this.getDbObject())
+		 	
+		 	LOGGER.info (this.name + 
+				" component type has been updated.")
+		 }
+	}
+	
+	DM_Mode {
+		String name
+		boolean isDefault
+		List<String> providedFunctionalities
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.name = new String()
+			this.isDefault = false
+			this.providedFunctionalities = new ArrayList<String>()
+		}
+		
+		/*
+		 * 
+		 */
+		void addProvidedFunctionality (String functionality) {
+			val LOGGER = Logger.getLogger("DM_Mode")
+			
+			if (this.providedFunctionalities == null)
+				this.providedFunctionalities = new ArrayList<String>()
+				
+			if (!this.providedFunctionalities.contains(functionality))
+				this.providedFunctionalities.add (functionality)
+			else
+				LOGGER.info (functionality + 
+					" functionality already exists in mode " + this.name)
+		}
+	}
+}

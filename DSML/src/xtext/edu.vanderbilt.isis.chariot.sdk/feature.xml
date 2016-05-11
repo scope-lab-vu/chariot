@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="edu.vanderbilt.isis.chariot.sdk"
+      label="Chariot SDK Feature "
+      version="1.0.0.qualifier">
+
+   <plugin
+         id="edu.vanderbilt.isis.chariot"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="edu.vanderbilt.isis.chariot.ui"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="edu.vanderbilt.isis.chariot.datatypes"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="edu.vanderbilt.isis.chariot.datatypes.ui"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="edu.vanderbilt.isis.chariot.lib"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.orbit.mongodb"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="edu.vanderbilt.isis.chariot.sl4j"
+         download-size="0"
+         install-size="0"
+         version="1.0.0"/>
+
+</feature>

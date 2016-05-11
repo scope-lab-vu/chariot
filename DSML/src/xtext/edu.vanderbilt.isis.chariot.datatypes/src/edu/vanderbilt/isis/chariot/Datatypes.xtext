@@ -1,0 +1,84 @@
+grammar edu.vanderbilt.isis.chariot.Datatypes with org.eclipse.xtext.xbase.Xbase
+generate datatypes "http://www.vanderbilt.edu/isis/chariot/Datatypes"
+
+/*
+ * Entry/start rule for CHARIOT data types. Allows
+ * import and package declaration. 
+ */
+DomainModel:
+	importSection = XImportSection?
+	package = PackageDeclaration;
+	
+/*
+ * Rule to support JAVA style package declaration. This rule also
+ * allows creation of AbstractElements inside a package.
+ */
+PackageDeclaration:
+	'package' name = QualifiedName '{'
+		elements += AbstractElement*
+	'}';
+
+/*
+ * Rule to create data type elements.
+ */
+AbstractElement:
+		PackageDeclaration 
+	| 	Message ;
+
+/*
+ * Rule to create a message (i.e., a data type). As part of a
+ * message, this rule allows creation of features and invariants.
+ */
+Message:
+	'struct' name = ID '{'
+		features += AbstractFeature*
+		(invariants += Invariant)*
+	'}';
+
+/*
+ * Rule for message feature.
+ */
+AbstractFeature:
+		MessageOperation 
+	|	MessageElement;
+
+/*
+ * Rule for message operation.
+ */
+MessageOperation:
+	=>(returnType = JvmTypeReference name = ValidID '(') 
+		(parameters += FullJvmFormalParameter 
+			(',' parameters += FullJvmFormalParameter)*
+		)? 
+	')' 
+	body = XBlockExpression;
+
+/*
+ * Rule to create a message element, which specifies
+ * if the message element is a 'key', its type, its
+ * name, if the message element is an array and if so
+ * size of the array, and finally, associated unit.
+ */
+MessageElement:
+	(iskey ?= 'key')? (type = JvmTypeReference) name = ValidID 
+		(isArray?='['maxbound=INT']')?
+		(unitProperty=UnitProperty)? ';'?;
+
+/*
+ * Rule to create physical unit.
+ */
+UnitProperty:
+	'in' physicalunit = ID;	
+
+/*
+ * Rule to create message invariant.
+ */
+Invariant:
+	'invariant' name = ID invariantExpression = XBlockExpression;
+
+	
+
+
+	
+
+

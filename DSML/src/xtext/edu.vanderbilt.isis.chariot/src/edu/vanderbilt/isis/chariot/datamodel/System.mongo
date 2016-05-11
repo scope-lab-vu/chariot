@@ -1,0 +1,214 @@
+import org.bson.types.ObjectId
+import edu.vanderbilt.isis.chariot.datamodel.SystemConstraintKind
+import java.util.List
+import com.mongodb.DB
+import java.util.ArrayList
+import com.mongodb.DBObject
+import com.mongodb.DBCollection
+import java.util.logging.Logger
+
+package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
+	DM_SystemDescription {
+		ObjectId _id
+		String name
+		DM_SystemConstraint* constraints
+		DM_Objective* objectives
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.name = new String()
+			this.getConstraints()	// This initializes constraints.
+			this.getObjectives()	// This initializes objectives.
+		}
+		
+		/*
+		 * 
+		 */
+		void addConstraint ((DM_SystemConstraint)=>void initializer) {
+			val DM_SystemConstraint constraintToAdd = new DM_SystemConstraint => initializer
+			this.constraints.add (constraintToAdd) // @TODO: Check for duplicates.
+		}
+		
+		/*
+		 * 
+		 */
+		void addObjective ((DM_Objective)=>void initializer) {
+			//val LOGGER = Logger.getLogger("DM_SystemDescription")
+			val DM_Objective objectiveToAdd = new DM_Objective => initializer
+			this.objectives.add(objectiveToAdd)
+			/*val List<String> tmp = this.objectives.map[name]
+			if (!tmp.contains (objectiveToAdd.name))
+				this.objectives += objectiveToAdd
+			else
+				LOGGER.info (objectiveToAdd.getName() + 
+					" objective already exists in system " + this.name)*/
+		}
+		
+		/*
+		 * 
+		 */
+		void insert (DB database) {
+			val LOGGER = Logger.getLogger("DM_SystemDescription")
+			
+			val dbCollection = database.getCollection('SystemDescriptions')
+
+			// Check if already exists. Store only if no existing
+			// system has the same name.
+			val result = dbCollection.findOne((new DM_SystemDescription => [
+				name = this.name
+			]).getDbObject())
+				
+			if (result == null) {
+				dbCollection.save(this.getDbObject())
+				LOGGER.info (this.name + 
+					" system description added to database")
+			}
+			else {
+				LOGGER.info (this.name + 
+					" system description type already exists")
+					
+				this.update(result, dbCollection)
+			}
+		}
+		
+		/*
+		 * 
+		 */
+		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
+		 	val LOGGER = Logger.getLogger("DM_SystemDescription")
+		 	
+		 	// Delete existing object and save current version.
+		 	targetCollection.remove(objectToUpdate)
+		 	targetCollection.save(this.getDbObject())
+		 	
+		 	LOGGER.info (this.name + 
+				" system has been updated.")
+		 }
+	} 
+	
+	DM_SystemConstraint {
+		String kind
+		List<String> functionalities
+		int maxInstances
+		int minInstances
+		int numInstances
+		String serviceComponentType
+		
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.kind = new String()
+			this.functionalities = new ArrayList<String>()
+			this.maxInstances = 0
+			this.minInstances = 0
+			this.numInstances = 0
+			this.serviceComponentType = new String() 
+		}
+		
+		/*
+		 * 
+		 */
+		void setKind (SystemConstraintKind kind) {
+			this.kind = kind.toString()
+		}
+		
+		/*
+		 * 
+		 */
+		void addFunctionality (String functionality) {
+			val LOGGER = Logger.getLogger("DM_SystemDescription")
+			
+			if (this.functionalities == null)
+				this.functionalities = new ArrayList<String>
+			
+			if (!this.functionalities.contains(functionality))
+				this.functionalities.add(functionality)
+			else
+				LOGGER.info (functionality + 
+					" functionality already exists in system constraint of kind " + this.kind)
+		}
+	}
+	
+	DM_Objective {
+		String name
+		boolean isLocal
+		List<String> nodeCategories
+		DM_Functionality* functionalities
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.name = new String()
+			this.isLocal = false
+			this.nodeCategories = new ArrayList<String>()
+			this.getFunctionalities()	// This initializes functionalities.
+		}
+		
+		/*
+		 * 
+		 */
+		void addNodeCategory(String nodeCategory) {
+			val LOGGER = Logger.getLogger("DM_Objective")
+			
+			if (this.nodeCategories == null)
+				this.nodeCategories = new ArrayList<String>
+			
+			if (!this.nodeCategories.contains(nodeCategory))
+				this.nodeCategories.add(nodeCategory)
+			else
+				LOGGER.info (nodeCategory + 
+					" node category already exists in objective " + this.name)
+		}
+		
+		/*
+		 * 
+		 */
+		void addFunctionality ((DM_Functionality)=>void initializer) {
+			//val LOGGER = Logger.getLogger("DM_SystemDescription")
+			val DM_Functionality functionalityToAdd = new DM_Functionality => initializer
+			this.functionalities.add(functionalityToAdd)	//@TODO: Check for duplicates.
+			/*val List<String> tmp = this.functionalities.map[name]
+			if (!tmp.contains (functionalityToAdd.name))
+				this.functionalities.add(functionalityToAdd)
+			else
+				LOGGER.info (functionalityToAdd.getName() + 
+					" functionality already exists in objective " + this.name)*/
+		}
+	}
+	
+	DM_Functionality {
+		String name
+		List<String> dependsOn
+		boolean perNode		// This can only be true if parent Objective isLocal is true.
+		
+		/*
+		 * 
+		 */
+		void init() {
+			this.name = new String()
+			this.dependsOn = new ArrayList<String>()
+			this.perNode = false
+		}
+		
+		/*
+		 * 
+		 */
+		void addDependsOn (String dependsOn) {
+			val LOGGER = Logger.getLogger("DM_SystemDescription")
+			
+			if (this.dependsOn == null)
+				this.dependsOn = new ArrayList<String>
+			
+			if (!this.dependsOn.contains(dependsOn))
+				this.dependsOn.add(dependsOn)
+			else
+				LOGGER.info (dependsOn + 
+					" functionality already exists as dependency for functionality " + this.name)
+		}
+	}
+}

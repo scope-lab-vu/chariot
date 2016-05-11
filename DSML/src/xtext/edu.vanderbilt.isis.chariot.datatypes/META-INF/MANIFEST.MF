@@ -1,0 +1,34 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: edu.vanderbilt.isis.chariot.datatypes
+Bundle-Vendor: Institute for Software Integrated Systems, Vanderbilt University
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: edu.vanderbilt.isis.chariot.datatypes; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.xtext;visibility:=reexport,
+ org.eclipse.equinox.common;bundle-version="3.5.0",
+ org.eclipse.xtext.util,
+ edu.vanderbilt.isis.chariot.sl4j;bundle-version="1.0.0",
+ org.eclipse.emf.ecore,
+ org.eclipse.emf.common,
+ org.eclipse.xtext.xbase.lib,
+ org.antlr.runtime,
+ org.eclipse.xtext.common.types,
+ org.objectweb.asm;bundle-version="[5.0.1,6.0.0)";resolution:=optional,
+ org.eclipse.xtext.xbase,
+ org.eclipse.orbit.mongodb;bundle-version="1.0.0",
+ edu.vanderbilt.isis.chariot.lib;bundle-version="1.0.0",
+ org.eclipse.xtend.standalone
+Import-Package: org.apache.log4j
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: edu.vanderbilt.isis.chariot,
+ edu.vanderbilt.isis.chariot.datatypes,
+ edu.vanderbilt.isis.chariot.datatypes.impl,
+ edu.vanderbilt.isis.chariot.datatypes.util,
+ edu.vanderbilt.isis.chariot.formatting,
+ edu.vanderbilt.isis.chariot.jvmmodel,
+ edu.vanderbilt.isis.chariot.parser.antlr,
+ edu.vanderbilt.isis.chariot.parser.antlr.internal,
+ edu.vanderbilt.isis.chariot.serializer,
+ edu.vanderbilt.isis.chariot.services,
+ edu.vanderbilt.isis.chariot.validation

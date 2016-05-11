@@ -1,0 +1,43 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: edu.vanderbilt.isis.chariot
+Bundle-Vendor: Institute for Software Integrated Systems, Vanderbilt University
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: edu.vanderbilt.isis.chariot; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.xtext;visibility:=reexport,
+ org.eclipse.xtext.xbase;resolution:=optional;visibility:=reexport,
+ edu.vanderbilt.isis.chariot.sl4j;bundle-version="1.0.0",
+ org.eclipse.xtext.generator;resolution:=optional,
+ org.apache.commons.logging;bundle-version="1.0.4";resolution:=optional,
+ org.eclipse.emf.codegen.ecore;resolution:=optional,
+ org.eclipse.emf.mwe.utils;resolution:=optional,
+ org.eclipse.emf.mwe2.launch;resolution:=optional,
+ org.eclipse.xtext.util,
+ org.eclipse.emf.ecore,
+ org.eclipse.emf.common,
+ org.eclipse.xtext.xbase.lib,
+ org.antlr.runtime,
+ org.eclipse.xtext.common.types,
+ org.objectweb.asm;bundle-version="[5.0.1,6.0.0)";resolution:=optional,
+ org.eclipse.equinox.common;bundle-version="3.6.200",
+ edu.vanderbilt.isis.chariot.datatypes;bundle-version="1.0.0",
+ org.eclipse.xtend.standalone,
+ org.eclipse.orbit.mongodb;bundle-version="1.0.0",
+ org.junit,
+ org.xtext.mongobeans.lib;bundle-version="1.0.0"
+Import-Package: org.apache.log4j
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: edu.vanderbilt.isis.chariot,
+ edu.vanderbilt.isis.chariot.services,
+ edu.vanderbilt.isis.chariot.chariot,
+ edu.vanderbilt.isis.chariot.chariot.impl,
+ edu.vanderbilt.isis.chariot.chariot.util,
+ edu.vanderbilt.isis.chariot.serializer,
+ edu.vanderbilt.isis.chariot.parser.antlr,
+ edu.vanderbilt.isis.chariot.parser.antlr.internal,
+ edu.vanderbilt.isis.chariot.validation,
+ edu.vanderbilt.isis.chariot.scoping,
+ edu.vanderbilt.isis.chariot.generator,
+ edu.vanderbilt.isis.chariot.formatting
+
