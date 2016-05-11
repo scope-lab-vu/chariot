@@ -11,3 +11,5 @@ Chariot uses the following other open source projects
 - Xtext
 - Z3
 
+For further inforamtion please see http://chariot.isis.vanderbilt.edu/
+
