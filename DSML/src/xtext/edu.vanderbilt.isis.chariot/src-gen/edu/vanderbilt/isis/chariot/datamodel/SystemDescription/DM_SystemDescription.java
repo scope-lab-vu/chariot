@@ -54,11 +54,11 @@ public class DM_SystemDescription implements IMongoBean {
     _dbObject.put("name", name);
   }
   
-  public Double getReliabilityThreshold() {
+  public double getReliabilityThreshold() {
     return (Double) _dbObject.get("reliabilityThreshold");
   }
   
-  public void setReliabilityThreshold(final Double reliabilityThreshold) {
+  public void setReliabilityThreshold(final double reliabilityThreshold) {
     _dbObject.put("reliabilityThreshold", reliabilityThreshold);
   }
   
@@ -81,7 +81,7 @@ public class DM_SystemDescription implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
-    this.setReliabilityThreshold(Double.valueOf(0.0));
+    this.setReliabilityThreshold(0.0);
     this.getConstraints();
     this.getObjectives();
   }

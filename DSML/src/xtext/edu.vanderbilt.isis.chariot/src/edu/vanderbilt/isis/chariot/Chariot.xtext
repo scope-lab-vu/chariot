@@ -139,8 +139,8 @@ ConsensusServiceComponent:
 ServiceComponentPart:
 		StartScript
 	| 	StopScript
-	| 	ExternalComponentPeriod
-	| 	ExternalComponentDeadline
+	| 	ComponentPeriod
+	| 	ComponentDeadline
 	|	AbstractRequirement;
 
 /*
@@ -151,8 +151,8 @@ ExternalComponentPart:
 		ExternalFunctionalityProvision
 	| 	StartScript
 	| 	StopScript
-	| 	ExternalComponentPeriod
-	| 	ExternalComponentDeadline
+	| 	ComponentPeriod
+	| 	ComponentDeadline
 	|	AbstractRequirement;
 
 /*
@@ -189,14 +189,14 @@ StopScript:
 /*
  * Rule to declare period for an external components
  */
-ExternalComponentPeriod:
+ComponentPeriod:
 	'period' period = FLOATING_PT_LITERAL unit = TimeUnit';'?
 ;
 
 /*
  * Rule to declare deadline for an external component.
  */
-ExternalComponentDeadline:
+ComponentDeadline:
 	'deadline' deadline = FLOATING_PT_LITERAL unit = TimeUnit';'?
 ;
 
@@ -204,7 +204,9 @@ ExternalComponentDeadline:
  * Rule that defines different supported time units.
  */
 TimeUnit:
-		second ?= 'seconds'
+		months ?= 'months'
+	|	days ?= 'days'
+	|	seconds ?= 'seconds'
 	|	milliseconds ?= 'milliseconds'
 	|	microseconds ?= 'microseconds';
 
@@ -263,7 +265,7 @@ OSRequirement:
  * Rule to specify middleware requirement.
  */
 MiddlewareRequirement:
-	'requires' (alljoyn?='AllJoyn' | rtidds?='RTI-DDS' | lcm?= 'LCM') ';'?;
+	'requires' (alljoyn?='AllJoyn' | rtidds?='RTIDDS' | lcm?= 'LCM') ';'?;
 
 /*
  * Rule to create a node category, which only has a name.
@@ -295,10 +297,12 @@ NodeTemplateInfo:
 /*
  * Rule to create a device supported by a node template.
  * For a device, this rule also allows specification of
- * device specific artifact.
+ * device reliability, lifetime, and device specific artifacts.
  */
 DeviceSupported:
 	'device' name = ID (('{'
+		('reliability' reliability = (FLOATING_PT_LITERAL) ';'?)?
+		('lifetime' lifetime = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)?
 		artifacts += DeviceArtifact
 	'}') | ';'?);
 
@@ -385,6 +389,7 @@ SystemDescription:
 Node:
 	'node' name = ID '{'
 		('reliability' reliability = (FLOATING_PT_LITERAL) ';'?)?
+		('lifetime' lifetime = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)?
 		(nodeInfo += NodeInfo)*
 	'}'
 ;

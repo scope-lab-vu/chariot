@@ -1,7 +1,7 @@
 package edu.vanderbilt.isis.chariot.datamodel;
 
 public enum SupportedMiddleware {
-	RTI_DDS,
+	RTIDDS,
 	LCM,
 	ALLJOYN
 }

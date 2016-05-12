@@ -4,12 +4,24 @@ import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import edu.vanderbilt.isis.chariot.datamodel.Status
 import java.util.logging.Logger
+import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 
 package edu.vanderbilt.isis.chariot.datamodel.Node {
 	DM_Node {
 		ObjectId _id
 		String name
-		Double reliability
+		double reliability
+		DM_Lifetime {
+			double lifetime
+			String unit
+			
+			/*
+			 * 
+			 */
+			void setUnit (TimeUnit unit) {
+				this.unit = unit.toString()
+			}
+		} lifetime
 		String nodeTemplate
 		String status
 		DM_Interface* interfaces
@@ -21,10 +33,21 @@ package edu.vanderbilt.isis.chariot.datamodel.Node {
 		void init() {
 			this.name = new String()
 			this.reliability = 0.0
+			this.lifetime = new DM_Lifetime() => [
+				setLifetime (0.0)
+				setUnit ("")
+			]
 			this.nodeTemplate = new String()
 			this.status = new String()
 			this.getInterfaces()	// This initializes interfaces.
 			this.getProcesses()		// This initializes processes.
+		}
+		
+		/*
+		 * 
+		 */
+		void setLifetime ((DM_Lifetime)=>void initializer) {
+			this.lifetime = new DM_Lifetime => initializer
 		}
 		
 		/*

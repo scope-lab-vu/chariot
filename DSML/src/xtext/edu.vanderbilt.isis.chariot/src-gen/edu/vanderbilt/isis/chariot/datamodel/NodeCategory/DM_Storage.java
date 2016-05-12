@@ -6,20 +6,20 @@ import edu.vanderbilt.isis.chariot.datamodel.StorageUnit;
 import org.xtext.mongobeans.lib.IMongoBean;
 
 @SuppressWarnings("all")
-public class DM_AvailableStorage implements IMongoBean {
+public class DM_Storage implements IMongoBean {
   /**
-   * Creates a new DM_AvailableStorage wrapping the given {@link com.mongodb.DBObject}.
+   * Creates a new DM_Storage wrapping the given {@link com.mongodb.DBObject}.
    */
-  public DM_AvailableStorage(final DBObject dbObject) {
+  public DM_Storage(final DBObject dbObject) {
     this._dbObject = dbObject;
   }
   
   /**
-   * Creates a new DM_AvailableStorage wrapping a new {@link com.mongodb.BasicDBObject}.
+   * Creates a new DM_Storage wrapping a new {@link com.mongodb.BasicDBObject}.
    */
-  public DM_AvailableStorage() {
+  public DM_Storage() {
     _dbObject = new BasicDBObject();
-    _dbObject.put(JAVA_CLASS_KEY, "edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_AvailableStorage");
+    _dbObject.put(JAVA_CLASS_KEY, "edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage");
   }
   
   private DBObject _dbObject;

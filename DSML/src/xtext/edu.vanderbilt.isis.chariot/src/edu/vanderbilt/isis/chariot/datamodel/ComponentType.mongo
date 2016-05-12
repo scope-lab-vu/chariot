@@ -1,6 +1,4 @@
 import org.bson.types.ObjectId
-import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit
-import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
 import edu.vanderbilt.isis.chariot.datamodel.SupportedOS
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
 import java.util.List
@@ -9,6 +7,9 @@ import java.util.ArrayList
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
+import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
+import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory
+import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage
 
 package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 	DM_ComponentType {
@@ -16,30 +17,8 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		String name
 		List<String> providedFunctionalities
 		DM_Mode* modes
-				
-		DM_MemoryRequirement {
-			int memory
-			String unit
-		
-			/*
-			 * 
-			 */
-			void setUnit (MemoryUnit unit) {
-				this.unit = unit.toString()
-			}
-		} memoryRequirement
-		
-		DM_StorageRequirement {
-			int storage
-			String unit
-			
-			/*
-			 * 
-			 */
-			void setUnit (StorageUnit unit) {
-				this.unit = unit.toString()
-			}
-		} storageRequirement
+		DM_Memory memoryRequirement
+		DM_Storage storageRequirement
 
 		String osRequirement
 		String middlewareRequirement
@@ -51,9 +30,30 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		String startScript
 		String stopScript
 		
-		// Period and deadline. 
-		double period
-		double deadline
+		// Period and deadline.
+		DM_Period {
+			double period
+			String unit
+			
+			/*
+			 * 
+			 */
+			void setUnit (TimeUnit unit) {
+				this.unit = unit.toString()
+			}
+		} period
+		
+		DM_Deadline {
+			double deadline
+			String unit
+			
+			/*
+			 * 
+			 */
+			void setUnit (TimeUnit unit) {
+				this.unit = unit.toString()
+			}
+		} deadline
 		
 		/*
 		 * 
@@ -62,11 +62,11 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.name = new String()
 			this.providedFunctionalities = new ArrayList<String>()
 			this.getModes()	// This initializes modes (MongoBeansList)
-			this.memoryRequirement = new DM_MemoryRequirement => [
+			this.memoryRequirement = new DM_Memory => [
 				setMemory (0)
 				setUnit ("")
 			]
-			this.storageRequirement = new DM_StorageRequirement => [
+			this.storageRequirement = new DM_Storage => [
 				setStorage (0)
 				setUnit ("")
 			]			
@@ -76,8 +76,14 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.deviceRequirements = new ArrayList<String>()
 			this.startScript = new String()
 			this.stopScript = new String()
-			this.period = 0
-			this.deadline = 0
+			this.period = new DM_Period () => [
+				setPeriod (0.0)
+				setUnit ("")
+			]
+			this.deadline = new DM_Deadline () => [
+				setDeadline (0.0)
+				setUnit ("")
+			]
 		}
 		
 		/*
@@ -114,15 +120,15 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		/*
 		 * 
 		 */
-		void setMemoryRequirement ((DM_MemoryRequirement)=>void initializer) {
-			this.memoryRequirement = new DM_MemoryRequirement => initializer
+		void setMemoryRequirement ((DM_Memory)=>void initializer) {
+			this.memoryRequirement = new DM_Memory => initializer
 		}
 		
 		/*
 		 * 
 		 */
-		void setStorageRequirement ((DM_StorageRequirement)=>void initializer) {
-			this.storageRequirement = new DM_StorageRequirement => initializer
+		void setStorageRequirement ((DM_Storage)=>void initializer) {
+			this.storageRequirement = new DM_Storage => initializer
 		}
 		
 		/*
@@ -167,6 +173,20 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			else
 				LOGGER.info (device + 
 					" device already exists in component " + this.name)
+		}
+		
+		/*
+		 * 
+		 */
+		void setPeriod ((DM_Period)=>void initializer) {
+			this.period = new DM_Period => initializer
+		}
+		
+		/*
+		 * 
+		 */
+		void setDeadline ((DM_Deadline)=>void initializer) {
+			this.deadline = new DM_Deadline => initializer
 		}
 		
 		/*

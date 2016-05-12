@@ -6,6 +6,7 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Interface;
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Lifetime;
 import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Process;
 import edu.vanderbilt.isis.chariot.datamodel.Status;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
 import org.xtext.mongobeans.lib.MongoBeanList;
+import org.xtext.mongobeans.lib.WrappingUtil;
 
 @SuppressWarnings("all")
 public class DM_Node implements IMongoBean {
@@ -55,12 +57,20 @@ public class DM_Node implements IMongoBean {
     _dbObject.put("name", name);
   }
   
-  public Double getReliability() {
+  public double getReliability() {
     return (Double) _dbObject.get("reliability");
   }
   
-  public void setReliability(final Double reliability) {
+  public void setReliability(final double reliability) {
     _dbObject.put("reliability", reliability);
+  }
+  
+  public DM_Lifetime getLifetime() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("lifetime"));
+  }
+  
+  public void setLifetime(final DM_Lifetime lifetime) {
+    _dbObject.put("lifetime", WrappingUtil.unwrap(lifetime));
   }
   
   public String getNodeTemplate() {
@@ -98,13 +108,26 @@ public class DM_Node implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
-    this.setReliability(Double.valueOf(0.0));
+    this.setReliability(0.0);
+    DM_Lifetime _dM_Lifetime = new DM_Lifetime();
+    final Procedure1<DM_Lifetime> _function = (DM_Lifetime it) -> {
+      it.setLifetime(0.0);
+      it.setUnit("");
+    };
+    DM_Lifetime _doubleArrow = ObjectExtensions.<DM_Lifetime>operator_doubleArrow(_dM_Lifetime, _function);
+    this.setLifetime(_doubleArrow);
     String _string_1 = new String();
     this.setNodeTemplate(_string_1);
     String _string_2 = new String();
     this.setStatus(_string_2);
     this.getInterfaces();
     this.getProcesses();
+  }
+  
+  public void setLifetime(final Procedure1<? super DM_Lifetime> initializer) {
+    DM_Lifetime _dM_Lifetime = new DM_Lifetime();
+    DM_Lifetime _doubleArrow = ObjectExtensions.<DM_Lifetime>operator_doubleArrow(_dM_Lifetime, initializer);
+    this.setLifetime(_doubleArrow);
   }
   
   public void setStatus(final Status status) {

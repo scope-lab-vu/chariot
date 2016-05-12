@@ -8,6 +8,7 @@ import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.Status
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Lifetime
 
 package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 	DM_NodeCategory {
@@ -117,7 +118,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 	DM_NodeTemplate {
 		String name
 		
-		DM_AvailableMemory {
+		DM_Memory {
 			int memory
 			String unit
 			
@@ -129,7 +130,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			}
 		} availableMemory
 
-		DM_AvailableStorage {
+		DM_Storage {
 			int storage
 			String unit
 			
@@ -151,11 +152,11 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 */
 		void init() {
 			this.name = new String()
-			this.availableMemory = new DM_AvailableMemory() => [
+			this.availableMemory = new DM_Memory() => [
 				setMemory (0)
 				setUnit ("")
 			]
-			this.availableStorage = new DM_AvailableStorage() => [
+			this.availableStorage = new DM_Storage() => [
 				setStorage (0)
 				setUnit ("")
 			]
@@ -168,15 +169,15 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		/*
 		 * 
 		 */
-		void setAvailableMemory ((DM_AvailableMemory)=>void initializer) {
-			this.availableMemory = new DM_AvailableMemory => initializer
+		void setAvailableMemory ((DM_Memory)=>void initializer) {
+			this.availableMemory = new DM_Memory => initializer
 		} 
 		
 		/*
 		 * 
 		 */
-		void setAvailableStorage ((DM_AvailableStorage)=>void initializer) {
-			this.availableStorage = new DM_AvailableStorage => initializer
+		void setAvailableStorage ((DM_Storage)=>void initializer) {
+			this.availableStorage = new DM_Storage => initializer
 		}
 		
 		/*
@@ -239,6 +240,8 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 	
 	DM_Device {
 		String name
+		double reliability
+		DM_Lifetime lifetime
 		DM_Artifact* artifacts
 		String status
 		
@@ -247,8 +250,20 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 */
 		void init() {
 			this.name = new String()
+			this.reliability = 0.0
+			this.lifetime = new DM_Lifetime() => [
+				setLifetime (0.0)
+				setUnit ("")
+			]
 			this.getArtifacts()	// This initializes artifacts
 			this.status = new String()
+		}
+		
+		/*
+		 * 
+		 */
+		void setLifetime ((DM_Lifetime)=>void initializer) {
+			this.lifetime = new DM_Lifetime => initializer
 		}
 
 		/*

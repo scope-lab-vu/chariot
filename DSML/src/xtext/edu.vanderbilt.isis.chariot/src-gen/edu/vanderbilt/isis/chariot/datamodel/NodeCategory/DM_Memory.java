@@ -6,20 +6,20 @@ import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit;
 import org.xtext.mongobeans.lib.IMongoBean;
 
 @SuppressWarnings("all")
-public class DM_AvailableMemory implements IMongoBean {
+public class DM_Memory implements IMongoBean {
   /**
-   * Creates a new DM_AvailableMemory wrapping the given {@link com.mongodb.DBObject}.
+   * Creates a new DM_Memory wrapping the given {@link com.mongodb.DBObject}.
    */
-  public DM_AvailableMemory(final DBObject dbObject) {
+  public DM_Memory(final DBObject dbObject) {
     this._dbObject = dbObject;
   }
   
   /**
-   * Creates a new DM_AvailableMemory wrapping a new {@link com.mongodb.BasicDBObject}.
+   * Creates a new DM_Memory wrapping a new {@link com.mongodb.BasicDBObject}.
    */
-  public DM_AvailableMemory() {
+  public DM_Memory() {
     _dbObject = new BasicDBObject();
-    _dbObject.put(JAVA_CLASS_KEY, "edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_AvailableMemory");
+    _dbObject.put(JAVA_CLASS_KEY, "edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory");
   }
   
   private DBObject _dbObject;

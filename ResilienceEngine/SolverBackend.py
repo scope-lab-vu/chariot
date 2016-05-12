@@ -439,6 +439,7 @@ class Process:
 class Node:
     name = None
     reliability = None
+    lifetime = None         # Tuple (amount, unit)
     nodeTemplate = None
     status = None
     processes = None        # List of processes instances.
@@ -446,6 +447,7 @@ class Node:
     def __init__(self):
         self.name = ""
         self.reliability = 0.0
+        self.lifetime = (0.0, "")
         self.nodeTemplate = ""
         self.status = ""
         self.processes = list()
@@ -496,11 +498,15 @@ class NodeTemplate:
 
 class Device:
     name = None
+    reliability = None
+    lifetime = None     # Tuple (amount, unit)
     artifacts = None    # List of device related artifacts as tuple (name, location).
     status = None
 
     def __init__(self):
         self.name = ""
+        self.reliability = 0.0
+        self.lifetime = (0.0, "")
         self.artifacts = list()
         self.status = ""
 
@@ -518,8 +524,8 @@ class ComponentType:
     deviceRequirements = None       # List of strings.
     startScript = None
     stopScript = None
-    period = None
-    deadline = None
+    period = None                   # Tuple (amount, unit)
+    deadline = None                 # Tuple (amount, unit)
 
     def __init__(self):
         self.name = ""
@@ -534,8 +540,8 @@ class ComponentType:
         self.deviceRequirements = list()
         self.startScript = ""
         self.stopScript = ""
-        self.period = 0
-        self.deadline = 0
+        self.period = (0.0, "")
+        self.deadline = (0.0, "")
 
 class ComponentInstance:
     name = None
@@ -959,7 +965,7 @@ class SolverBackend:
                     if "utilization" not in self.utilization2componentInstIndex:
                         self.utilization2componentInstIndex["utilization"] = list()
 
-                    utilization = componentType.deadline/componentType.period
+                    utilization = componentType.deadline[0]/componentType.period[0]
                     self.utilization2componentInstIndex["utilization"].\
                         append((self.componentInstName2Index[componentInstance.name], utilization))
 
@@ -1220,8 +1226,12 @@ class SolverBackend:
 
             componentTypeToAdd.startScript = componentType.startScript
             componentTypeToAdd.stopScript = componentType.stopScript
-            componentTypeToAdd.period = componentType.period
-            componentTypeToAdd.deadline = componentType.deadline
+
+            period = Serialize(**componentType.period)
+            componentTypeToAdd.period = (period.period, period.unit)
+
+            deadline = Serialize(**componentType.deadline)
+            componentTypeToAdd.deadline = (deadline.deadline, deadline.unit)
 
             self.componentTypes.append(componentTypeToAdd)
 
@@ -1250,6 +1260,10 @@ class SolverBackend:
                     device = Serialize(**d)
                     deviceToAdd = Device()
                     deviceToAdd.name = device.name
+                    deviceToAdd.reliability = device.reliability
+
+                    lifetime = Serialize(**device.lifetime)
+                    deviceToAdd.lifetime = (lifetime.lifetime, lifetime.unit)
 
                     for a in device.artifacts:
                         deviceToAdd.artifacts.append((a["name"], a["location"]))
@@ -1270,6 +1284,10 @@ class SolverBackend:
             nodeToAdd = Node()
             nodeToAdd.name = node.name
             nodeToAdd.reliability = node.reliability
+
+            lifetime = Serialize(**node.lifetime)
+            nodeToAdd.lifetime = (lifetime.lifetime, lifetime.unit)
+
             nodeToAdd.nodeTemplate = node.nodeTemplate
             nodeToAdd.status = node.status
 

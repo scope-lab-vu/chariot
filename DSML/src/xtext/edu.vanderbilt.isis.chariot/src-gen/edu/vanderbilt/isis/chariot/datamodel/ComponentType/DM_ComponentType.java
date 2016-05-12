@@ -5,9 +5,11 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_MemoryRequirement;
+import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_Deadline;
 import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_Mode;
-import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_StorageRequirement;
+import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_Period;
+import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory;
+import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedOS;
 import java.util.ArrayList;
@@ -75,19 +77,19 @@ public class DM_ComponentType implements IMongoBean {
     return _modes;
   }
   
-  public DM_MemoryRequirement getMemoryRequirement() {
+  public DM_Memory getMemoryRequirement() {
     return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("memoryRequirement"));
   }
   
-  public void setMemoryRequirement(final DM_MemoryRequirement memoryRequirement) {
+  public void setMemoryRequirement(final DM_Memory memoryRequirement) {
     _dbObject.put("memoryRequirement", WrappingUtil.unwrap(memoryRequirement));
   }
   
-  public DM_StorageRequirement getStorageRequirement() {
+  public DM_Storage getStorageRequirement() {
     return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("storageRequirement"));
   }
   
-  public void setStorageRequirement(final DM_StorageRequirement storageRequirement) {
+  public void setStorageRequirement(final DM_Storage storageRequirement) {
     _dbObject.put("storageRequirement", WrappingUtil.unwrap(storageRequirement));
   }
   
@@ -139,20 +141,20 @@ public class DM_ComponentType implements IMongoBean {
     _dbObject.put("stopScript", stopScript);
   }
   
-  public double getPeriod() {
-    return (Double) _dbObject.get("period");
+  public DM_Period getPeriod() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("period"));
   }
   
-  public void setPeriod(final double period) {
-    _dbObject.put("period", period);
+  public void setPeriod(final DM_Period period) {
+    _dbObject.put("period", WrappingUtil.unwrap(period));
   }
   
-  public double getDeadline() {
-    return (Double) _dbObject.get("deadline");
+  public DM_Deadline getDeadline() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("deadline"));
   }
   
-  public void setDeadline(final double deadline) {
-    _dbObject.put("deadline", deadline);
+  public void setDeadline(final DM_Deadline deadline) {
+    _dbObject.put("deadline", WrappingUtil.unwrap(deadline));
   }
   
   public void init() {
@@ -161,19 +163,19 @@ public class DM_ComponentType implements IMongoBean {
     ArrayList<String> _arrayList = new ArrayList<String>();
     this.setProvidedFunctionalities(_arrayList);
     this.getModes();
-    DM_MemoryRequirement _dM_MemoryRequirement = new DM_MemoryRequirement();
-    final Procedure1<DM_MemoryRequirement> _function = (DM_MemoryRequirement it) -> {
+    DM_Memory _dM_Memory = new DM_Memory();
+    final Procedure1<DM_Memory> _function = (DM_Memory it) -> {
       it.setMemory(0);
       it.setUnit("");
     };
-    DM_MemoryRequirement _doubleArrow = ObjectExtensions.<DM_MemoryRequirement>operator_doubleArrow(_dM_MemoryRequirement, _function);
+    DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, _function);
     this.setMemoryRequirement(_doubleArrow);
-    DM_StorageRequirement _dM_StorageRequirement = new DM_StorageRequirement();
-    final Procedure1<DM_StorageRequirement> _function_1 = (DM_StorageRequirement it) -> {
+    DM_Storage _dM_Storage = new DM_Storage();
+    final Procedure1<DM_Storage> _function_1 = (DM_Storage it) -> {
       it.setStorage(0);
       it.setUnit("");
     };
-    DM_StorageRequirement _doubleArrow_1 = ObjectExtensions.<DM_StorageRequirement>operator_doubleArrow(_dM_StorageRequirement, _function_1);
+    DM_Storage _doubleArrow_1 = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, _function_1);
     this.setStorageRequirement(_doubleArrow_1);
     String _string_1 = new String();
     this.setOsRequirement(_string_1);
@@ -187,8 +189,20 @@ public class DM_ComponentType implements IMongoBean {
     this.setStartScript(_string_3);
     String _string_4 = new String();
     this.setStopScript(_string_4);
-    this.setPeriod(0);
-    this.setDeadline(0);
+    DM_Period _dM_Period = new DM_Period();
+    final Procedure1<DM_Period> _function_2 = (DM_Period it) -> {
+      it.setPeriod(0.0);
+      it.setUnit("");
+    };
+    DM_Period _doubleArrow_2 = ObjectExtensions.<DM_Period>operator_doubleArrow(_dM_Period, _function_2);
+    this.setPeriod(_doubleArrow_2);
+    DM_Deadline _dM_Deadline = new DM_Deadline();
+    final Procedure1<DM_Deadline> _function_3 = (DM_Deadline it) -> {
+      it.setDeadline(0.0);
+      it.setUnit("");
+    };
+    DM_Deadline _doubleArrow_3 = ObjectExtensions.<DM_Deadline>operator_doubleArrow(_dM_Deadline, _function_3);
+    this.setDeadline(_doubleArrow_3);
   }
   
   public void addProvidedFunctionality(final String functionality) {
@@ -220,15 +234,15 @@ public class DM_ComponentType implements IMongoBean {
     _modes.add(modeToAdd);
   }
   
-  public void setMemoryRequirement(final Procedure1<? super DM_MemoryRequirement> initializer) {
-    DM_MemoryRequirement _dM_MemoryRequirement = new DM_MemoryRequirement();
-    DM_MemoryRequirement _doubleArrow = ObjectExtensions.<DM_MemoryRequirement>operator_doubleArrow(_dM_MemoryRequirement, initializer);
+  public void setMemoryRequirement(final Procedure1<? super DM_Memory> initializer) {
+    DM_Memory _dM_Memory = new DM_Memory();
+    DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, initializer);
     this.setMemoryRequirement(_doubleArrow);
   }
   
-  public void setStorageRequirement(final Procedure1<? super DM_StorageRequirement> initializer) {
-    DM_StorageRequirement _dM_StorageRequirement = new DM_StorageRequirement();
-    DM_StorageRequirement _doubleArrow = ObjectExtensions.<DM_StorageRequirement>operator_doubleArrow(_dM_StorageRequirement, initializer);
+  public void setStorageRequirement(final Procedure1<? super DM_Storage> initializer) {
+    DM_Storage _dM_Storage = new DM_Storage();
+    DM_Storage _doubleArrow = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, initializer);
     this.setStorageRequirement(_doubleArrow);
   }
   
@@ -284,6 +298,18 @@ public class DM_ComponentType implements IMongoBean {
         " device already exists in component ") + _name);
       LOGGER.info(_plus);
     }
+  }
+  
+  public void setPeriod(final Procedure1<? super DM_Period> initializer) {
+    DM_Period _dM_Period = new DM_Period();
+    DM_Period _doubleArrow = ObjectExtensions.<DM_Period>operator_doubleArrow(_dM_Period, initializer);
+    this.setPeriod(_doubleArrow);
+  }
+  
+  public void setDeadline(final Procedure1<? super DM_Deadline> initializer) {
+    DM_Deadline _dM_Deadline = new DM_Deadline();
+    DM_Deadline _doubleArrow = ObjectExtensions.<DM_Deadline>operator_doubleArrow(_dM_Deadline, initializer);
+    this.setDeadline(_doubleArrow);
   }
   
   public void insert(final DB database) {

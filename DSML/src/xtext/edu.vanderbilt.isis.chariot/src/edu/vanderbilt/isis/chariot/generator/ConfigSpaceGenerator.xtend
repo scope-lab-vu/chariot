@@ -54,10 +54,11 @@ import edu.vanderbilt.isis.chariot.chariot.CategoryConstraint
 import edu.vanderbilt.isis.chariot.chariot.perNodeFunctionality
 import com.mongodb.MongoException
 import org.slf4j.LoggerFactory
-import edu.vanderbilt.isis.chariot.chariot.ExternalComponentPeriod
-import edu.vanderbilt.isis.chariot.chariot.ExternalComponentDeadline
+import edu.vanderbilt.isis.chariot.chariot.ComponentPeriod
+import edu.vanderbilt.isis.chariot.chariot.ComponentDeadline
 import edu.vanderbilt.isis.chariot.chariot.VoterServiceComponent
 import edu.vanderbilt.isis.chariot.chariot.ConsensusServiceComponent
+import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 
 class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
@@ -147,11 +148,41 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setStopScript(c.parts.filter(StopScript).get(0).getScript())
 			
 			// Filter and store period and deadline.
-			if (c.parts.filter(ExternalComponentPeriod).size() > 0)
-				componentType.setPeriod(c.parts.filter(ExternalComponentPeriod).get(0).getPeriod())
+			if (c.parts.filter(ComponentPeriod).size() > 0) {
+				componentType.setPeriod [
+					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
+					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
+					setPeriod (period)
+					if (unit.months)
+						setUnit (TimeUnit.MONTHS)
+					else if (unit.days)
+						setUnit (TimeUnit.DAYS)
+					else if (unit.seconds)
+						setUnit (TimeUnit.SECONDS)
+					else if (unit.milliseconds)
+						setUnit (TimeUnit.MILLISECONDS)
+					else if (unit.microseconds)
+						setUnit (TimeUnit.MICROSECONDS)
+				]
+			}
 			
-			if (c.parts.filter(ExternalComponentDeadline).size() > 0)
-				componentType.setDeadline(c.parts.filter(ExternalComponentDeadline).get(0).getDeadline())
+			if (c.parts.filter(ComponentDeadline).size() > 0) {
+				componentType.setDeadline [
+					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
+					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
+					setDeadline (deadline)
+					if (unit.months)
+						setUnit (TimeUnit.MONTHS)
+					else if (unit.days)
+						setUnit (TimeUnit.DAYS)
+					else if (unit.seconds)
+						setUnit (TimeUnit.SECONDS)
+					else if (unit.milliseconds)
+						setUnit (TimeUnit.MILLISECONDS)
+					else if (unit.microseconds)
+						setUnit (TimeUnit.MICROSECONDS)
+				]
+			}
 			
 			componentType.insert (db)
 		}
@@ -185,11 +216,41 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setStopScript(c.parts.filter(StopScript).get(0).getScript())
 			
 			// Filter and store period and deadline.
-			if (c.parts.filter(ExternalComponentPeriod).size() > 0)
-				componentType.setPeriod(c.parts.filter(ExternalComponentPeriod).get(0).getPeriod())
+			if (c.parts.filter(ComponentPeriod).size() > 0) {
+				componentType.setPeriod [
+					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
+					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
+					setPeriod (period)
+					if (unit.months)
+						setUnit (TimeUnit.MONTHS)
+					else if (unit.days)
+						setUnit (TimeUnit.DAYS)
+					else if (unit.seconds)
+						setUnit (TimeUnit.SECONDS)
+					else if (unit.milliseconds)
+						setUnit (TimeUnit.MILLISECONDS)
+					else if (unit.microseconds)
+						setUnit (TimeUnit.MICROSECONDS)
+				]
+			}
 			
-			if (c.parts.filter(ExternalComponentDeadline).size() > 0)
-				componentType.setDeadline(c.parts.filter(ExternalComponentDeadline).get(0).getDeadline())
+			if (c.parts.filter(ComponentDeadline).size() > 0) {
+				componentType.setDeadline [
+					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
+					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
+					setDeadline (deadline)
+					if (unit.months)
+						setUnit (TimeUnit.MONTHS)
+					else if (unit.days)
+						setUnit (TimeUnit.DAYS)
+					else if (unit.seconds)
+						setUnit (TimeUnit.SECONDS)
+					else if (unit.milliseconds)
+						setUnit (TimeUnit.MILLISECONDS)
+					else if (unit.microseconds)
+						setUnit (TimeUnit.MICROSECONDS)
+				]
+			}
 			
 			componentType.insert (db)
 		}
@@ -227,11 +288,41 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setStopScript(c.parts.filter(StopScript).get(0).getScript())
 			
 			// Filter and store period and deadline.
-			if (c.parts.filter(ExternalComponentPeriod).size() > 0)
-				componentType.setPeriod(c.parts.filter(ExternalComponentPeriod).get(0).getPeriod())
+			if (c.parts.filter(ComponentPeriod).size() > 0) {
+				componentType.setPeriod [
+					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
+					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
+					setPeriod (period)
+					if (unit.months)
+						setUnit (TimeUnit.MONTHS)
+					else if (unit.days)
+						setUnit (TimeUnit.DAYS)
+					else if (unit.seconds)
+						setUnit (TimeUnit.SECONDS)
+					else if (unit.milliseconds)
+						setUnit (TimeUnit.MILLISECONDS)
+					else if (unit.microseconds)
+						setUnit (TimeUnit.MICROSECONDS)
+				]
+			}
 			
-			if (c.parts.filter(ExternalComponentDeadline).size() > 0)
-				componentType.setDeadline(c.parts.filter(ExternalComponentDeadline).get(0).getDeadline())
+			if (c.parts.filter(ComponentDeadline).size() > 0) {
+				componentType.setDeadline [
+					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
+					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
+					setDeadline (deadline)
+					if (unit.months)
+						setUnit (TimeUnit.MONTHS)
+					else if (unit.days)
+						setUnit (TimeUnit.DAYS)
+					else if (unit.seconds)
+						setUnit (TimeUnit.SECONDS)
+					else if (unit.milliseconds)
+						setUnit (TimeUnit.MILLISECONDS)
+					else if (unit.microseconds)
+						setUnit (TimeUnit.MICROSECONDS)
+				]
+			}
 			
 			componentType.insert (db)
 		}
@@ -294,21 +385,15 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (memoryRequirements.size() > 0) {
 			val memory = memoryRequirements.get(0).getMemory()
 			val memUnit = memoryRequirements.get(0).getUnit()
-			if (memUnit.gb)
-				ct.setMemoryRequirement [
-					setMemory (memory)
+			ct.setMemoryRequirement [
+				setMemory (memory)
+				if (memUnit.gb)
 					setUnit (MemoryUnit::GB)
-				]
-			else if (memUnit.mb)
-				ct.setMemoryRequirement [
-					setMemory (memory)
+				else if (memUnit.mb)
 					setUnit (MemoryUnit::MB)
-				]
-			else if (memUnit.kb)
-				ct.setMemoryRequirement [
-					setMemory (memory)
+				else if (memUnit.kb)
 					setUnit (MemoryUnit::KB)
-				]
+			]
 		}
 		
 		// Store storage requirements.
@@ -316,21 +401,15 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (storageRequirements.size() > 0) {
 			val storage = storageRequirements.get(0).getStorage()
 			val storageUnit = storageRequirements.get(0).getUnit()
-			if (storageUnit.gb)
-				ct.setStorageRequirement [
-					setStorage (storage)
+			ct.setStorageRequirement [
+				setStorage (storage)
+				if (storageUnit.gb)
 					setUnit (StorageUnit::GB)
-				]
-			else if (storageUnit.mb)
-				ct.setStorageRequirement [
-					setStorage (storage)
+				else if (storageUnit.mb)
 					setUnit (StorageUnit::MB)
-				]
-			else if (storageUnit.kb)
-				ct.setStorageRequirement [
-					setStorage (storage)
+				else if (storageUnit.kb)
 					setUnit (StorageUnit::KB)
-				]
+			]
 		}
 			
 		// Store OS requirement.
@@ -348,7 +427,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (middlewareRequirements.size() > 0) {
 			val middlewareRequirement = middlewareRequirements.get(0)
 			if (middlewareRequirement.rtidds)
-				ct.setMiddlewareRequirement (SupportedMiddleware.RTI_DDS)
+				ct.setMiddlewareRequirement (SupportedMiddleware.RTIDDS)
 			else if (middlewareRequirement.alljoyn)
 				ct.setMiddlewareRequirement (SupportedMiddleware.ALLJOYN)
 			else if (middlewareRequirement.lcm)
@@ -408,9 +487,9 @@ class ConfigSpaceGenerator implements IGenerator {
 								setMemory (memory)
 								if (unit.gb)
 									setUnit (MemoryUnit::GB)
-								if (unit.mb)
+								else if (unit.mb)
 									setUnit (MemoryUnit::MB)
-								if (unit.kb)
+								else if (unit.kb)
 									setUnit (MemoryUnit::KB)
 							]
 						}
@@ -422,9 +501,9 @@ class ConfigSpaceGenerator implements IGenerator {
 								setStorage (storage)
 								if (unit.gb)
 									setUnit (StorageUnit::GB)
-								if (unit.mb)
+								else if (unit.mb)
 									setUnit (StorageUnit::MB)
-								if (unit.kb)
+								else if (unit.kb)
 									setUnit (StorageUnit::KB)
 							]
 						}
@@ -441,7 +520,7 @@ class ConfigSpaceGenerator implements IGenerator {
 							val middlewareList = nt.getNodeTemplateInfo().filter(Middleware).get(0)
 							for (m : middlewareList.getMiddleware()) {
 								if (m.rtidds)
-									setMiddleware (SupportedMiddleware::RTI_DDS)
+									setMiddleware (SupportedMiddleware::RTIDDS)
 								if (m.alljoyn)
 									setMiddleware (SupportedMiddleware::ALLJOYN)
 								if (m.lcm)
@@ -464,6 +543,28 @@ class ConfigSpaceGenerator implements IGenerator {
 							addDevice [
 								init()
 								setName (d.getName())
+								
+								// Store device reliability and lifetime.
+								setReliability (d.getReliability())
+								
+								// Store lifetime.
+								setLifetime [
+									val lifetime = d.getLifetime()
+									val unit = d.getUnit()
+									
+									setLifetime (lifetime)
+									if (unit.months)
+										setUnit (TimeUnit.MONTHS)
+									else if (unit.days)
+										setUnit (TimeUnit.DAYS)
+									else if (unit.seconds)
+										setUnit (TimeUnit.SECONDS)
+									else if (unit.milliseconds)
+										setUnit (TimeUnit.MILLISECONDS)
+									else if (unit.microseconds)
+										setUnit (TimeUnit.MICROSECONDS)
+								]
+								
 								for (a : d.getArtifacts()) {
 									addArtifact [
 										init()
@@ -669,6 +770,24 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Store reliability.
 			node.setReliability (n.getReliability())
+			
+			// Store lifetime.
+			node.setLifetime [
+				val lifetime = n.getLifetime()
+				val unit = n.getUnit()
+				
+				setLifetime (lifetime)
+				if (unit.months)
+					setUnit (TimeUnit.MONTHS)
+				else if (unit.days)
+					setUnit (TimeUnit.DAYS)
+				else if (unit.seconds)
+					setUnit (TimeUnit.SECONDS)
+				else if (unit.milliseconds)
+					setUnit (TimeUnit.MILLISECONDS)
+				else if (unit.microseconds)
+					setUnit (TimeUnit.MICROSECONDS)
+			]
 			
 			// Filter and store node template label:
 			// NOTE: Only first should/will be stored.

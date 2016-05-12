@@ -11,7 +11,7 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	DM_SystemDescription {
 		ObjectId _id
 		String name
-		Double reliabilityThreshold
+		double reliabilityThreshold
 		DM_SystemConstraint* constraints
 		DM_Objective* objectives
 		

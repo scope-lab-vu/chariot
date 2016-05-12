@@ -3,9 +3,9 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Artifact;
-import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_AvailableMemory;
-import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_AvailableStorage;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Device;
+import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory;
+import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedOS;
 import java.util.List;
@@ -46,19 +46,19 @@ public class DM_NodeTemplate implements IMongoBean {
     _dbObject.put("name", name);
   }
   
-  public DM_AvailableMemory getAvailableMemory() {
+  public DM_Memory getAvailableMemory() {
     return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("availableMemory"));
   }
   
-  public void setAvailableMemory(final DM_AvailableMemory availableMemory) {
+  public void setAvailableMemory(final DM_Memory availableMemory) {
     _dbObject.put("availableMemory", WrappingUtil.unwrap(availableMemory));
   }
   
-  public DM_AvailableStorage getAvailableStorage() {
+  public DM_Storage getAvailableStorage() {
     return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("availableStorage"));
   }
   
-  public void setAvailableStorage(final DM_AvailableStorage availableStorage) {
+  public void setAvailableStorage(final DM_Storage availableStorage) {
     _dbObject.put("availableStorage", WrappingUtil.unwrap(availableStorage));
   }
   
@@ -97,19 +97,19 @@ public class DM_NodeTemplate implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
-    DM_AvailableMemory _dM_AvailableMemory = new DM_AvailableMemory();
-    final Procedure1<DM_AvailableMemory> _function = (DM_AvailableMemory it) -> {
+    DM_Memory _dM_Memory = new DM_Memory();
+    final Procedure1<DM_Memory> _function = (DM_Memory it) -> {
       it.setMemory(0);
       it.setUnit("");
     };
-    DM_AvailableMemory _doubleArrow = ObjectExtensions.<DM_AvailableMemory>operator_doubleArrow(_dM_AvailableMemory, _function);
+    DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, _function);
     this.setAvailableMemory(_doubleArrow);
-    DM_AvailableStorage _dM_AvailableStorage = new DM_AvailableStorage();
-    final Procedure1<DM_AvailableStorage> _function_1 = (DM_AvailableStorage it) -> {
+    DM_Storage _dM_Storage = new DM_Storage();
+    final Procedure1<DM_Storage> _function_1 = (DM_Storage it) -> {
       it.setStorage(0);
       it.setUnit("");
     };
-    DM_AvailableStorage _doubleArrow_1 = ObjectExtensions.<DM_AvailableStorage>operator_doubleArrow(_dM_AvailableStorage, _function_1);
+    DM_Storage _doubleArrow_1 = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, _function_1);
     this.setAvailableStorage(_doubleArrow_1);
     String _string_1 = new String();
     this.setOS(_string_1);
@@ -119,15 +119,15 @@ public class DM_NodeTemplate implements IMongoBean {
     this.getDevices();
   }
   
-  public void setAvailableMemory(final Procedure1<? super DM_AvailableMemory> initializer) {
-    DM_AvailableMemory _dM_AvailableMemory = new DM_AvailableMemory();
-    DM_AvailableMemory _doubleArrow = ObjectExtensions.<DM_AvailableMemory>operator_doubleArrow(_dM_AvailableMemory, initializer);
+  public void setAvailableMemory(final Procedure1<? super DM_Memory> initializer) {
+    DM_Memory _dM_Memory = new DM_Memory();
+    DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, initializer);
     this.setAvailableMemory(_doubleArrow);
   }
   
-  public void setAvailableStorage(final Procedure1<? super DM_AvailableStorage> initializer) {
-    DM_AvailableStorage _dM_AvailableStorage = new DM_AvailableStorage();
-    DM_AvailableStorage _doubleArrow = ObjectExtensions.<DM_AvailableStorage>operator_doubleArrow(_dM_AvailableStorage, initializer);
+  public void setAvailableStorage(final Procedure1<? super DM_Storage> initializer) {
+    DM_Storage _dM_Storage = new DM_Storage();
+    DM_Storage _doubleArrow = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, initializer);
     this.setAvailableStorage(_doubleArrow);
   }
   

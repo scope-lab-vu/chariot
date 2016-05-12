@@ -2,6 +2,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Lifetime;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Artifact;
 import edu.vanderbilt.isis.chariot.datamodel.Status;
 import java.util.List;
@@ -9,6 +10,7 @@ import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
 import org.xtext.mongobeans.lib.MongoBeanList;
+import org.xtext.mongobeans.lib.WrappingUtil;
 
 @SuppressWarnings("all")
 public class DM_Device implements IMongoBean {
@@ -41,6 +43,22 @@ public class DM_Device implements IMongoBean {
     _dbObject.put("name", name);
   }
   
+  public double getReliability() {
+    return (Double) _dbObject.get("reliability");
+  }
+  
+  public void setReliability(final double reliability) {
+    _dbObject.put("reliability", reliability);
+  }
+  
+  public DM_Lifetime getLifetime() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("lifetime"));
+  }
+  
+  public void setLifetime(final DM_Lifetime lifetime) {
+    _dbObject.put("lifetime", WrappingUtil.unwrap(lifetime));
+  }
+  
   private MongoBeanList<DM_Artifact> _artifacts;
   
   public List<DM_Artifact> getArtifacts() {
@@ -60,9 +78,23 @@ public class DM_Device implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
+    this.setReliability(0.0);
+    DM_Lifetime _dM_Lifetime = new DM_Lifetime();
+    final Procedure1<DM_Lifetime> _function = (DM_Lifetime it) -> {
+      it.setLifetime(0.0);
+      it.setUnit("");
+    };
+    DM_Lifetime _doubleArrow = ObjectExtensions.<DM_Lifetime>operator_doubleArrow(_dM_Lifetime, _function);
+    this.setLifetime(_doubleArrow);
     this.getArtifacts();
     String _string_1 = new String();
     this.setStatus(_string_1);
+  }
+  
+  public void setLifetime(final Procedure1<? super DM_Lifetime> initializer) {
+    DM_Lifetime _dM_Lifetime = new DM_Lifetime();
+    DM_Lifetime _doubleArrow = ObjectExtensions.<DM_Lifetime>operator_doubleArrow(_dM_Lifetime, initializer);
+    this.setLifetime(_doubleArrow);
   }
   
   public void addArtifact(final Procedure1<? super DM_Artifact> initializer) {
