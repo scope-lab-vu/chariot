@@ -111,17 +111,13 @@ class ConfigurationSolver(object):
         print self.nodeComparativeWeights
         print self.componentComparativeWeights
 
-        # Reliability constraints.
-        # rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
-        #                             Product([ self.componentComparativeWeights[k][i]*
-        #                                       self.nodeComparativeWeights[k][j]*
-        #                                       self.compResourceReliability[k][j]
-        #                                       for k in range (len(self.componentComparativeWeights))])
-        #                             for j in range(self.NO_OF_NODES)])
-        #                         for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
-
-        rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]
-                                     for j in range(self.NO_OF_NODES)])
+        #Reliability constraints.
+        rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
+                                    Product([ c2n[i][j] * self.componentComparativeWeights[k][i]*
+                                              self.nodeComparativeWeights[k][j]*
+                                              self.compResourceReliability[k][j]
+                                              for k in range (len(self.componentComparativeWeights))])
+                                    for j in range(self.NO_OF_NODES)])
                                 for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
 
         print self.nodeReliability
