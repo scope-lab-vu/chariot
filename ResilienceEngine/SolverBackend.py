@@ -463,16 +463,16 @@ class Node:
                     retval.append(("memory", template.availableMemory[0]))
         return retval
 
-    # This function returns a list of names of devices hosted by a node.
+    # This function returns a list of devices hosted by a node.
     def compute_device_provisions(self, nodeTemplates):
         retval = list()
 
         for template in nodeTemplates:
             if template.name == self.nodeTemplate:
                 for device in template.devices:
-                    # Only return devices that are active.
-                    if device.status == "ACTIVE":
-                        retval.append(device.name)
+                    # Only return devices that are active. (Skip for now)
+                    #if device.status == "ACTIVE":
+                    retval.append(device)
 
         return retval
 
@@ -598,15 +598,22 @@ class SolverBackend:
     componentInstCumRequiredResources = None
     componentInstCompRequiredResources = None
 
-    # U x C matrix of estimated utilization of compoennt instances.
+    # List of estimated utilization of component instances.
     componentInstUtilization = None
+
+    # List of reliability computed for nodes.
+    nodeReliability = None
+
+    # List of reliability computed for devices. Devices are comparative resources.
+    # Not all comparative resources are devices. As such, reliability for other comparative
+    # resources will always be 0.
+    compResourceReliability = None
 
     # Mapping (using dictionary) between resources and nodes, and resources and components.
     cumResource2nodeIndex = None
     compResource2nodeIndex = None
     cumResource2componentInstIndex = None
     compResource2componentInstIndex = None
-    utilization2componentInstIndex = None
 
     def __init__(self):
         self.systemDescriptions = list()
@@ -636,7 +643,10 @@ class SolverBackend:
         self.componentInstCumRequiredResources = list(list())
         self.componentInstCompRequiredResources = list(list())
 
-        self.componentInstUtilization = list(list())
+        self.componentInstUtilization = list()
+
+        self.nodeReliability = list()
+        self.compResourceReliability = list(list())             # This matrix is only for devices.
 
         # Dict with cumulative resource name as key and value is a list of tuple
         # (node index, provided resource value).
@@ -651,9 +661,6 @@ class SolverBackend:
 
         # Dict with comparative resource name as key and value is a list of component instance index.
         self.compResource2componentInstIndex = dict()
-
-        # Dict with "utilization" as key and value is C/T.
-        self.utilization2componentInstIndex = dict()
 
     # Helper to return nodes that are alive.
     def get_alive_nodes(self):
@@ -723,6 +730,8 @@ class SolverBackend:
         self.load_cumulative_component_requirements()
         self.load_comparative_component_requirements()
         #self.load_component_utilization()   # Load C/T of each component instance for RMS constraint.
+        self.load_node_reliability()
+        self.load_comparative_resource_reliability()
 
     # This function adds node, process, and component failures as constraints to the given solver.
     def add_failure_constraints(self, solver):
@@ -905,6 +914,8 @@ class SolverBackend:
     #
     # NOTE: Current implementation is limited to just memory and does not consider storage.
     def load_cumulative_node_resources(self):
+        # NOTE: For resource related matrices we do not check if node is alive because if a node is
+        # not alive nothing will be deployed on that node.
         for node in self.nodes:
             # The compute_cumulative_provisions only returns memory provision.
             nodeResources = node.compute_cumulative_provisions(self.nodeTemplates)
@@ -921,7 +932,7 @@ class SolverBackend:
                                          for x in range (len(self.cumResource2nodeIndex))]
 
         import operator
-        # Store sorted (based on node index) list.
+        # Store sorted list.
         sorted_names = sorted(self.cumResource2nodeIndex.items(), key = operator.itemgetter(0))
 
         # Fill resource to node mapping (R x N matrix).
@@ -938,17 +949,17 @@ class SolverBackend:
             nodeDeviceResources = node.compute_device_provisions(self.nodeTemplates)
 
             for deviceResource in nodeDeviceResources:
-                if deviceResource not in self.compResource2nodeIndex:
-                    self.compResource2nodeIndex[deviceResource] = list()
+                if deviceResource.name not in self.compResource2nodeIndex:
+                    self.compResource2nodeIndex[deviceResource.name] = list()
 
-                self.compResource2nodeIndex[deviceResource].append(self.nodeName2Index[node.name])
+                self.compResource2nodeIndex[deviceResource.name].append(self.nodeName2Index[node.name])
 
         # Initialize resource to node mapping with 0's to begin with.
         self.nodeCompProvidedResources = [[0 for x in range(len(self.nodes))]
                                           for x in range (len(self.compResource2nodeIndex))]
 
         import operator
-        # Store sorted (based on node index) list.
+        # Store sorted list.
         sorted_names = sorted(self.compResource2nodeIndex.items(), key = operator.itemgetter(0))
 
         # Fill resource to node mapping (R x N matrix).
@@ -956,31 +967,92 @@ class SolverBackend:
             for nodeIndex in sorted_names[i][1]:
                 self.nodeCompProvidedResources[i][nodeIndex] = 1
 
-    # This function stores utilization (C/T, i.e, deadline/period) U x C martix where U is the utilization
-    # (so always 1) and C is the number of component instances.
+    # This function computes and stores list of component instance utilization (C/T, i.e, deadline/period).
     def load_component_utilization(self):
+        utilization2componentInstIndex = list()
         for componentInstance in self.componentInstances:
             for componentType in self.componentTypes:
                 if componentInstance.type == componentType.name:
-                    if "utilization" not in self.utilization2componentInstIndex:
-                        self.utilization2componentInstIndex["utilization"] = list()
-
                     utilization = componentType.deadline[0]/componentType.period[0]
-                    self.utilization2componentInstIndex["utilization"].\
-                        append((self.componentInstName2Index[componentInstance.name], utilization))
+                    utilization2componentInstIndex.append((self.componentInstName2Index[componentInstance.name],
+                                                           utilization))
 
-        # Initialize utilization to component instance mapping with 0's to begin with.
-        self.componentInstUtilization = [[0 for x in range (len(self.componentInstances))]
-                                         for x in range (len(self.utilization2componentInstIndex))]
+        # Initialize list of utilization to component instance mapping with 0's to begin with.
+        self.componentInstUtilization = [0 for x in range (len(self.componentInstances))]
 
         import operator
-        # Store sorted (based on component intance index) list.
-        sorted_names = sorted(self.utilization2componentInstIndex.items(), key = operator.itemgetter(0))
+        # Store sorted list.
+        sorted_names = utilization2componentInstIndex.sort(key = operator.itemgetter(0))
 
-        # Fill utilization to component instance mapping (U x C matrix).
+        # Fill utilization to component instance mapping (list of utilization for different component instances).
         for i in range (len(sorted_names)):
-            for valueList in sorted_names[i][1]:
-                self.componentInstUtilization[i][valueList[0]] = valueList[1] * 100 # Store utilization as percentage.
+            self.componentInstUtilization[i] = sorted_names[i][1] * 100 # Store utilization as percentage.
+
+    # This function computes and stores list of node reliability (exp(-lambda*t)).
+    def load_node_reliability(self):
+        reliability2nodeIndex = list()
+        from math import exp
+        for node in self.nodes:
+            reliability = 0.0
+            if node.reliability != reliability:
+                reliability = exp(-(node.reliability) * node.lifetime[0])   # NOTE: Currently we assume days to be unit of
+                                                                            # lifetime (lifetime[1]). Conversion code needs
+                                                                            # to be added to maintain some standard.
+            reliability2nodeIndex.append((self.nodeName2Index[node.name], reliability))
+
+        # Initialize list of reliability to node mapping with 0's to begin with.
+        self.nodeReliability = [0 for x in range (len(self.nodes))]
+
+        import operator
+        # Store sorted list.
+        #sorted_names = reliability2nodeIndex.sort(key = operator.itemgetter(0))
+        sorted_names = sorted(reliability2nodeIndex, key = operator.itemgetter(0))
+
+        # Fill reliability to node mapping (list of reliability for different nodes).
+        for i in range (len(sorted_names)):
+            self.nodeReliability[i] = sorted_names[i][1]
+
+    # This function computes and stores comparative resource reliability (exp(-lambda*t)) as elements of
+    # R x N matrix where R is the number of different types of comparative resources and N is the number
+    # of nodes.
+    #
+    # NOTE: Devices are the only comparative resources for which reliability is relevant. As such,
+    # we only consider devices.
+    def load_comparative_resource_reliability(self):
+        reliability2compResourceIndex = dict()
+        from math import exp
+        for node in self.nodes:
+            # Store ALL devices.
+            nodeDeviceResources = node.compute_device_provisions(self.nodeTemplates)
+
+            for deviceResource in nodeDeviceResources:
+                if deviceResource.name not in reliability2compResourceIndex:
+                        reliability2compResourceIndex[deviceResource.name] = list()
+
+                reliability = 0.0
+                if deviceResource.reliability != reliability:
+                    reliability = \
+                        exp(-(deviceResource.reliability) * deviceResource.lifetime[0]) # NOTE: Currently we assume days to
+                                                                                        # be unit of lifetime (lifetime[1]).
+                                                                                        # Conversion code needs to be added
+                                                                                        # to maintain some standard.
+
+                reliability2compResourceIndex[deviceResource.name].append((self.nodeName2Index[node.name], reliability))
+
+        # Initialize reliability to comparative resource mapping with 0's to begin with.
+        self.compResourceReliability = [[0 for x in range (len(self.nodes))]
+                                        for x in range (len(reliability2compResourceIndex))]
+
+        import operator
+        # Store sorted list.
+        sorted_names = sorted(reliability2compResourceIndex.items(), key = operator.itemgetter(0))
+
+        # Fill reliability mapping.
+        for i in range (len(sorted_names)):
+            for reliability_value in sorted_names[i][1]:    # Each reliability_value is a pair (node index, reliability).
+                                                            # This represents reliability of comparative resource (i.e.,
+                                                            # device) with index i on node with index node index.
+                self.compResourceReliability[i][reliability_value[0]] = reliability_value[1]
 
     # This function stores cumulative (memory or storage) component requirements in a R x C matrix where R
     # is the number of different types of cumulative resources and C is the number of component instances.
@@ -1002,7 +1074,7 @@ class SolverBackend:
                                                   for x in range (len(self.cumResource2componentInstIndex))]
 
         import operator
-        # Store sorted (based on component instance index) list.
+        # Store sorted list.
         sorted_names = sorted(self.cumResource2componentInstIndex.items(), key = operator.itemgetter(0))
 
         # Fill resource to component instance mapping (R x C matrix).
@@ -1063,7 +1135,7 @@ class SolverBackend:
                                                    for x in range (len(self.compResource2componentInstIndex))]
 
         import operator
-        # Store sorted (based on component instance index) list.
+        # Store sorted list.
         sorted_names = sorted(self.compResource2componentInstIndex.items(), key = operator.itemgetter(0))
 
         # Fill resource to component instance mapping (R x C matrix).

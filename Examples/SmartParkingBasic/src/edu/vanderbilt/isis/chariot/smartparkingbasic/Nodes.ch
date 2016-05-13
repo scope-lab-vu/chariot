@@ -7,6 +7,9 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
 		storage 4096 MB;	// 4 GB
 		middleware LCM;
 		os Linux;
-		device ultrasonic_ranger;
+		device ultrasonic_ranger{
+			reliability 0.5
+			lifetime 6 months
+		}
 	}
 }

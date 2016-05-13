@@ -20,7 +20,14 @@ class NewConfigurationSolverBound(NewConfigurationSolver):
                                                           backend.componentInstCompRequiredResources,
                                                           None,
                                                           backend.convert_processes(),
-                                                          backend.componentInstUtilization)
+                                                          backend.componentInstUtilization,
+                                                          backend.nodeReliability,
+                                                          backend.compResourceReliability,
+                                                          backend.systemDescriptions[0].reliabilityThreshold) # NOTE: See below.
+
+        # NOTE: We currently assume a single system. This makes no difference (as far as we know) to most of the
+        # existing constraints. However, in case of the reliability constraint, different systems can have different
+        # reliability threshold! #TODO: Use component instance to system mapping.
 
         self.componentNames = list()
         for c in backend.componentInstances:

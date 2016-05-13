@@ -1,20 +1,23 @@
 import edu.vanderbilt.isis.chariot.smartparkingbasic.*
 package edu.vanderbilt.isis.chariot.smartparkingbasic {
 	system SmartParkingBasic {
-		reliabilityThreshold 0.42
+		reliabilityThreshold 0.1
 		
 		node beacon1{
 			reliability 0.8
+			lifetime 6 months
 			template Edison;
 			iface if1 address "10.1.1.1" network smartparking
 		}
 		node beacon2{
 			reliability 0.9
+			lifetime 6 months
 			template Edison;
 			iface if1 address "10.1.1.2" network smartparking
 		}
 		node beacon3{
 			reliability 0.7
+			lifetime 6 months
 			template Edison;
 			iface if1 address "10.1.1.3" network smartparking
 		}

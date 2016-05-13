@@ -300,11 +300,11 @@ NodeTemplateInfo:
  * device reliability, lifetime, and device specific artifacts.
  */
 DeviceSupported:
-	'device' name = ID (('{'
-		('reliability' reliability = (FLOATING_PT_LITERAL) ';'?)?
-		('lifetime' lifetime = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)?
-		artifacts += DeviceArtifact
-	'}') | ';'?);
+	'device' name = ID ('{'
+		('reliability' reliability = (FLOATING_PT_LITERAL) ';'?)
+		('lifetime' lifetime = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)
+		(artifacts += DeviceArtifact)*
+	'}') ;
 
 /*
  * Rule to create device specific artifact.
@@ -388,8 +388,8 @@ SystemDescription:
  */
 Node:
 	'node' name = ID '{'
-		('reliability' reliability = (FLOATING_PT_LITERAL) ';'?)?
-		('lifetime' lifetime = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)?
+		('reliability' reliability = (FLOATING_PT_LITERAL) ';'?)
+		('lifetime' lifetime = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)
 		(nodeInfo += NodeInfo)*
 	'}'
 ;

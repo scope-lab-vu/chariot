@@ -6,11 +6,36 @@ from z3 import *
 
 class NewConfigurationSolver(ConfigurationSolver):
 
-    def __init__(self, NO_OF_NODES, NO_OF_COMPONENTS, NO_OF_FUNCTIONS, nodeResourceWeights, componentResourceWeights,
-                 nodeComparativeWeights, componentComparativeWeights, links, actors, componentUtilization, communicationWeights=None):
-        super(NewConfigurationSolver, self).__init__(NO_OF_NODES, NO_OF_COMPONENTS, NO_OF_FUNCTIONS, nodeResourceWeights,
-                                                     componentResourceWeights, nodeComparativeWeights, componentComparativeWeights,
-                                                     links, actors, componentUtilization, communicationWeights)
+    def __init__(self,
+                 NO_OF_NODES,
+                 NO_OF_COMPONENTS,
+                 NO_OF_FUNCTIONS,
+                 nodeResourceWeights,
+                 componentResourceWeights,
+                 nodeComparativeWeights,
+                 componentComparativeWeights,
+                 links,
+                 actors,
+                 componentUtilization,
+                 nodeReliability,
+                 compResourceReliability,
+                 reliabilityThreshold,
+                 communicationWeights=None):
+        super(NewConfigurationSolver, self).__init__(NO_OF_NODES,
+                                                     NO_OF_COMPONENTS,
+                                                     NO_OF_FUNCTIONS,
+                                                     nodeResourceWeights,
+                                                     componentResourceWeights,
+                                                     nodeComparativeWeights,
+                                                     componentComparativeWeights,
+                                                     links,
+                                                     actors,
+                                                     componentUtilization,
+                                                     nodeReliability,
+                                                     compResourceReliability,
+                                                     reliabilityThreshold,
+                                                     communicationWeights)
+
         self.c2n_old = None # Baseline adjacency matrix (initial model)
         self.nodeNames =None # Names for printing, logging, and debugging
         self.nodeNames =None # Names for printing, logging, and debugging

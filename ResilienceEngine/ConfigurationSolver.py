@@ -7,7 +7,21 @@ from GraphvizTemplate import template
 class ConfigurationSolver(object):
 
 
-    def __init__(self, NO_OF_NODES, NO_OF_COMPONENTS, NO_OF_FUNCTIONS, nodeResourceWeights, componentResourceWeights, nodeComparativeWeights, componentComparativeWeights, links, actors, componentUtilization, communicationWeights=None):
+    def __init__(self,
+                 NO_OF_NODES,
+                 NO_OF_COMPONENTS,
+                 NO_OF_FUNCTIONS,
+                 nodeResourceWeights,
+                 componentResourceWeights,
+                 nodeComparativeWeights,
+                 componentComparativeWeights,
+                 links,
+                 actors,
+                 componentUtilization,
+                 nodeReliability,
+                 compResourceReliability,
+                 reliabilityThreshold,
+                 communicationWeights=None):
         self.NO_OF_NODES = NO_OF_NODES # No of hardware nodes
         self.NO_OF_COMPONENTS = NO_OF_COMPONENTS # No of component >>implementations<< ordered by their >>definitions<<
         self.NO_OF_FUNCTIONS = NO_OF_FUNCTIONS # No of function implementations (if the same service is offered more times, it counts as 2)
@@ -18,6 +32,9 @@ class ConfigurationSolver(object):
         self.nodeComparativeWeights = nodeComparativeWeights # Comparative weights for nodes
         self.componentComparativeWeights = componentComparativeWeights  # Comparative weights for components
         self.componentUtilization = componentUtilization
+        self.nodeReliability = nodeReliability
+        self.compResourceReliability = compResourceReliability
+        self.reliabilityThreshold = reliabilityThreshold
 
         self.actors = actors
 
@@ -55,9 +72,9 @@ class ConfigurationSolver(object):
     # Defines tha Component instance to Node matrix, and sets up the following constraints:
     # (i) The matrix elements are zero or one; (ii) A component instance can belong to only one node.
     # (iii) The sum of resource weights of the components deployed on a node cannot exceed the resource weight of the
-    # node.
+    # node; (iv) Total resilience of a configuration (product of each component's resilience) should be greater
+    # that the system's resilience threshold.
     def defineComponent2NodeMatrix(self):
-
         # Component-Node matrix
         # If component i uses node j, c2n_i_j is true; false otherwise
         self.c2n = [ [ Int("c2n_%s_%s" % (i, j)) for j in range(self.NO_OF_NODES) ]
@@ -71,7 +88,7 @@ class ConfigurationSolver(object):
 
         # A component can be assigned at most one node
         assignment_c2n = [  Sum([c2n[i][j] for j in range(self.NO_OF_NODES)]) == 1
-          for i in range(self.NO_OF_COMPONENTS)]
+            for i in range(self.NO_OF_COMPONENTS)]
 
 
         # Resource constraints
@@ -86,14 +103,32 @@ class ConfigurationSolver(object):
                     for j in range(self.NO_OF_NODES)
                         for k in range (len(self.nodeComparativeWeights))]
 
-        # TODO: Rate Monotonic Scheduling constraint.
-        # rms_c2n = [69 >= Sum([c2n[i][j]*self.componentUtilization[0][i]
+        # Rate Monotonic Scheduling constraint.
+        #rms_c2n = [69 >= Sum([c2n[i][j]*self.componentUtilization[i]
         #    for i in range(self.NO_OF_COMPONENTS)])
         #        for j in range (self.NO_OF_NODES)]
 
+        print self.nodeComparativeWeights
+        print self.componentComparativeWeights
+
+        # Reliability constraints.
+        # rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
+        #                             Product([ self.componentComparativeWeights[k][i]*
+        #                                       self.nodeComparativeWeights[k][j]*
+        #                                       self.compResourceReliability[k][j]
+        #                                       for k in range (len(self.componentComparativeWeights))])
+        #                             for j in range(self.NO_OF_NODES)])
+        #                         for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
+
+        rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]
+                                     for j in range(self.NO_OF_NODES)])
+                                for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
+
+        print self.nodeReliability
+        print rel_const
+
         # Adding constraints to the solver
-        #self.solver.add(val_c2n + assignment_c2n + perf_c2n)
-        self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const)
+        self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
         #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rms_c2n)
 
     # This method removes assignment constraint (assignment_c2n) for a given list of components (indexes).
