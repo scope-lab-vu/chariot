@@ -108,8 +108,8 @@ class ConfigurationSolver(object):
         #    for i in range(self.NO_OF_COMPONENTS)])
         #        for j in range (self.NO_OF_NODES)]
 
-        print self.nodeComparativeWeights
-        print self.componentComparativeWeights
+        # print self.nodeComparativeWeights
+        # print self.componentComparativeWeights
 
         #Reliability constraints.
         rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
@@ -120,8 +120,8 @@ class ConfigurationSolver(object):
                                     for j in range(self.NO_OF_NODES)])
                                 for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
 
-        print self.nodeReliability
-        print rel_const
+        #print self.nodeReliability
+        #print rel_const
 
         # Adding constraints to the solver
         self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
@@ -260,8 +260,8 @@ class ConfigurationSolver(object):
         c2n = self.c2n
         c2l = [ Implies(And(c2n[i][n1]*c2n[j][n2]!=0, n1!=n2), self.links[n1][n2] >=self.communicationWeights[i][j])
         for n1 in range(self.NO_OF_NODES) for n2 in range(self.NO_OF_NODES) ]
-
-        return And(c2l)
+        return c2l
+        #return And(c2l)
 
     # Input a component and a list of components
     # Effect A constraint that enforces that the component c1 requires

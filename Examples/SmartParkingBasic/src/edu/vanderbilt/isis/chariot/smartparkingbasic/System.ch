@@ -29,6 +29,8 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
 			keep occupancy_sensor perNode;
 		}
 		
-		//replicate parking_manager asVoterCluster with [3,5] instances and ParkingManagerVoter;
+		replicate parking_manager asVoterCluster with [3,5] instances and ParkingManagerVoter;
+		
+		//replicate parking_manager asConsensusCluster with [2, 3] instances and ParkingManagerConsensus;
 	}
 }

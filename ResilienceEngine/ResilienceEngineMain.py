@@ -146,6 +146,9 @@ def invoke_solver(db, initial):
     # Store current deployment.
     solver.c2n_old = backend.c2n
 
+    # Add component instance dependencies.
+    backend.add_component_instance_dependencies(solver)
+
     # Add failure constraints.
     backend.add_failure_constraints(solver)
 

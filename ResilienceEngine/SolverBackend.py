@@ -22,9 +22,11 @@ class SystemDescription:
     functionalityConstraints = None     # List of constraints in terms of functionality instances. This list
                                         # will be used to generate solver constraints, which should be in terms
                                         # of component instances
+    funcInstancesToCompInstances = None # Dictionary with key = functionality instance name, and value = component
+                                        # instance name.
 
     # TODO: Some notion of componentConstraints will also be required to store constraints related to multiple
-    # components providing same functionality.
+    # TODO: components providing same functionality.
 
     def __init__(self):
         self.name = ""
@@ -37,6 +39,7 @@ class SystemDescription:
         self.compTypesToFuncInstances = list()
         self.componentInstances = list()
         self.functionalityConstraints = list()
+        self.funcInstancesToCompInstances = dict()
 
     def get_objective_instances(self):
         return self.objectiveInstances
@@ -53,6 +56,86 @@ class SystemDescription:
     def get_constraints(self):
         return self.constraints
 
+    # This function returns replication of a functionality instance if it's functionality has any.
+    def get_replication(self, functionalityInstanceName):
+        functionalityName = None
+        for functionalityInst in self.functionalityInstances:
+            if functionalityInstanceName == functionalityInst.name:
+                functionalityName = functionalityInst.functionalityName
+
+        if functionalityName == None:
+            return None
+
+        for constraint in self.constraints:
+            for functionality in constraint.functionalities:
+                if functionalityName == functionality:
+                    return constraint.kind
+
+    # This function computes dependencies for each component instance and returns a list of tuple <component instance
+    # name, list of names of component instances it depends on>.
+    def get_component_instances_dependencies(self):
+        retVal = list(list())
+
+        for compInst in self.componentInstances:
+            compInstDependencies = list()
+            # Get functionality instance object corresponding to componentInstance.
+            functionalityInstance = None
+            for funcInst in self.functionalityInstances:
+                if funcInst.name == compInst.functionalityInstance:
+                    functionalityInstance = funcInst
+                    break
+
+            # Collect functionality dependencies if above functionalityInstance is NOT a voter.
+            # Check validity of above functionalityInstance.
+            if functionalityInstance is not None and not functionalityInstance.isVoter:
+                functionalityDependencies = list()
+                for obj in self.objectives:
+                    for func in obj.functionalities:
+                        if func.name == functionalityInstance.functionalityName:
+                            for dependency in func.dependsOn:
+                                functionalityDependencies.append(dependency)    # Append because a functionality might
+                                                                                # be present in multiple objectives.
+
+                # For each functionality in above collected functionality dependencies, find and store corresponding
+                # functionality instances in retVal.
+                voterDependencyHandled = False
+                for funcDependency in functionalityDependencies:
+                    for funcInst in self.functionalityInstances:
+                        if funcInst.functionalityName == funcDependency:
+                            # Handle scenario where the functionality dependency is a voter. In this case the
+                            # functionality instance should have dependency related to the voter and not funcInst.
+                            if self.get_replication(funcInst.name) == "VOTER_REPLICATION":
+                                if not voterDependencyHandled:
+                                    voterFuncInstName = self.find_voter_functionality_instance_name(funcInst.functionalityName)
+                                    if voterFuncInstName is not None and \
+                                                    voterFuncInstName in self.funcInstancesToCompInstances:
+                                        compInstDependencies.append(self.funcInstancesToCompInstances[voterFuncInstName])
+                                    voterDependencyHandled = True
+                            else:
+                                if funcInst.name in self.funcInstancesToCompInstances:
+                                    compInstDependencies.append(self.funcInstancesToCompInstances[funcInst.name])
+            elif functionalityInstance.isVoter:
+                # If functionality instance is a voter, establish dependency between functionality instances that
+                # use the voter and the voter itself. Relying on consistent naming convention.
+                for funcInst in self.functionalityInstances:
+                    if functionalityInstance.name != funcInst.name and functionalityInstance.name[:-8] in funcInst.name:
+                        compInstDependencies.append(self.funcInstancesToCompInstances[funcInst.name])
+
+            retVal.append((compInst.name, compInstDependencies))
+
+        return retVal
+
+    # This function returns name of the voter functionality instance corresponding to the given functionality.
+    def find_voter_functionality_instance_name(self, functionality):
+        retVal = None
+
+        for funcInst in self.functionalityInstances:
+            if functionality in funcInst.name and "_voter_service" in funcInst.name:
+                retVal = funcInst.name
+                break
+
+        return retVal
+
     # This function computes objective instances and stores in objectiveInstances list.
     def compute_objective_instances(self, nodes, nodeTemplates):
         if len(self.objectiveInstances) > 0:
@@ -65,7 +148,6 @@ class SystemDescription:
                 # node of that category.
                 for nodeCategory in objective.nodeCategories:
                     for node in self.get_node_names(nodeCategory, nodes, nodeTemplates):
-                        # TODO: Check if node is active!
                         objectiveInstanceToAdd = ObjectiveInstance()
                         objectiveInstanceToAdd.name = objective.name + "_obj_instance_" + node.name
                         objectiveInstanceToAdd.objectiveName = objective.name
@@ -78,19 +160,20 @@ class SystemDescription:
                 objectiveInstanceToAdd.objectiveName = objective.name
                 self.objectiveInstances.append(objectiveInstanceToAdd)
 
-    # This function finds and returns name of all nodes of category nodeCategory.
+    # This function finds and returns name of all ACTIVE nodes of category nodeCategory.
     def get_node_names(self, nodeCategory, nodes, nodeTemplates):
         retval = list()
 
         for node in nodes:
-            categoryFound = None
+            if node.status == "ACTIVE":
+                categoryFound = None
 
-            for nodeTemplate in nodeTemplates:
-                if node.nodeTemplate == nodeTemplate.name:
-                    categoryFound = nodeTemplate.nodeCategory
+                for nodeTemplate in nodeTemplates:
+                    if node.nodeTemplate == nodeTemplate.name:
+                        categoryFound = nodeTemplate.nodeCategory
 
-            if categoryFound == nodeCategory:
-                retval.append(node)
+                if categoryFound == nodeCategory:
+                    retval.append(node)
 
         return retval
 
@@ -120,11 +203,13 @@ class SystemDescription:
             # Store component types for voter and consensus service providers.
             if functionalityInstance.isVoter or functionalityInstance.isConsensusProvider:
                 componentInstanceToAdd = ComponentInstance()
-                componentInstanceToAdd.name = functionalityInstance.name.replace("func", "comp")
+                componentInstanceToAdd.name = functionalityInstance.componentType + "_" + \
+                                              functionalityInstance.name.replace("func", "comp")
                 componentInstanceToAdd.type = functionalityInstance.componentType
                 componentInstanceToAdd.status = "TO_BE_DEPLOYED"
                 componentInstanceToAdd.functionalityInstance = functionalityInstance.name
                 self.componentInstances.append(componentInstanceToAdd)
+                self.funcInstancesToCompInstances[functionalityInstance.name] = componentInstanceToAdd.name
             else:
                 # If not voter then find component types that provide functionality associated with
                 for componentType in componentTypes:
@@ -145,6 +230,7 @@ class SystemDescription:
 
                 componentInstanceToAdd.functionalityInstance = functionalityInstance.name
                 self.componentInstances.append(componentInstanceToAdd)
+                self.funcInstancesToCompInstances[functionalityInstance.name] = componentInstanceToAdd.name
 
     # This function handles creation of functionality instances assocaited with replication constraints,
     # including singleton functionality instances.
@@ -569,7 +655,7 @@ class SolverBackend:
     componentTypes = None
     constraints = None
 
-    # Generated lists.
+    # Generated lists. These lists store cross system description instances.
     objectiveInstances = None
     functionalityInstances = None
     functionalityConstraints = None
@@ -700,8 +786,8 @@ class SolverBackend:
             if type == componentType.name:
                 return [componentType.startScript, componentType.stopScript]
 
-    # This function returns replication of a component if it has any.
-    def get_component_replication(self, functionalityInstance):
+    # This function returns replication of a functionality instance if it's functionality has any.
+    def get_replication(self, functionalityInstance):
         functionalityName = None
         for functionalityInst in self.functionalityInstances:
             if functionalityInstance == functionalityInst.name:
@@ -732,6 +818,17 @@ class SolverBackend:
         #self.load_component_utilization()   # Load C/T of each component instance for RMS constraint.
         self.load_node_reliability()
         self.load_comparative_resource_reliability()
+
+    # This function communicates constraint for each component instance using the component instance's dependencies.
+    def add_component_instance_dependencies(self, solver):
+        for systemDesc in self.systemDescriptions:
+            dependencies = systemDesc.get_component_instances_dependencies()
+            for dependency in dependencies:
+                if len(dependency[1]) > 0:
+                    for dependencySource in dependency[1]:
+                        srcCompIndex = self.componentInstName2Index[dependencySource]
+                        destCompIndex = self.componentInstName2Index[dependency[0]]
+                        solver.solver.add(solver.Communicates(srcCompIndex, destCompIndex))
 
     # This function adds node, process, and component failures as constraints to the given solver.
     def add_failure_constraints(self, solver):
@@ -870,7 +967,7 @@ class SolverBackend:
         ciColl = db["ComponentInstances"]
 
         for componentInstance in self.componentInstances:
-            replication = self.get_component_replication(componentInstance.functionalityInstance)
+            replication = self.get_replication(componentInstance.functionalityInstance)
 
             if replication is None:
                 replication = ""
