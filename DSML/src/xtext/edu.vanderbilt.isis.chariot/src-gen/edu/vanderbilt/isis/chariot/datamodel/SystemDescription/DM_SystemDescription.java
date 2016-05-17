@@ -8,6 +8,7 @@ import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time;
 import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_Objective;
 import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_SystemConstraint;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 import org.bson.types.ObjectId;
@@ -64,6 +65,14 @@ public class DM_SystemDescription implements IMongoBean {
     _dbObject.put("activeTime", WrappingUtil.unwrap(activeTime));
   }
   
+  public Date getStartTime() {
+    return (Date) _dbObject.get("startTime");
+  }
+  
+  public void setStartTime(final Date startTime) {
+    _dbObject.put("startTime", startTime);
+  }
+  
   private MongoBeanList<DM_SystemConstraint> _constraints;
   
   public List<DM_SystemConstraint> getConstraints() {
@@ -90,6 +99,8 @@ public class DM_SystemDescription implements IMongoBean {
     };
     DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, _function);
     this.setActiveTime(_doubleArrow);
+    Date _date = new Date();
+    this.setStartTime(_date);
     this.getConstraints();
     this.getObjectives();
   }

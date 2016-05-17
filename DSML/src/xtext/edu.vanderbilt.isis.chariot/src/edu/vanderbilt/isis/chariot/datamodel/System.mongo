@@ -7,12 +7,15 @@ import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time
+import java.util.Date
+//import java.text.DateFormat
 
 package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	DM_SystemDescription {
 		ObjectId _id
 		String name
 		DM_Time activeTime
+		Date startTime
 		DM_SystemConstraint* constraints
 		DM_Objective* objectives
 		
@@ -25,6 +28,11 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 				setTime (0.0)
 				setUnit ("")
 			]
+			
+			this.startTime = new Date()
+			//DateFormat dateFormat = new SimpleDataFormat("yyyy-MM-dd HH:mm:ss")
+			//this.date = dateFormat.format(this.date)
+			
 			this.getConstraints()	// This initializes constraints.
 			this.getObjectives()	// This initializes objectives.
 		}

@@ -1499,7 +1499,8 @@ class SolverBackend:
 
             activeTime = Serialize(**systemDescription.activeTime)
             systemDescriptionToAdd.activeTime = (activeTime.time, activeTime.unit)
-            systemDescriptionToAdd.startTime = datetime.datetime.now()
+
+            systemDescriptionToAdd.startTime = systemDescription.startTime
 
             # Add constraints.
             for c in systemDescription.constraints:
