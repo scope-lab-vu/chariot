@@ -112,19 +112,20 @@ class ConfigurationSolver(object):
         # print self.componentComparativeWeights
 
         #Reliability constraints.
-        rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
-                                    Product([ c2n[i][j] * self.componentComparativeWeights[k][i]*
-                                              self.nodeComparativeWeights[k][j]*
-                                              self.compResourceReliability[k][j]
-                                              for k in range (len(self.componentComparativeWeights))])
-                                    for j in range(self.NO_OF_NODES)])
-                                for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
+        #rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
+        #                            Product([ c2n[i][j] * self.componentComparativeWeights[k][i]*
+        #                                      self.nodeComparativeWeights[k][j]*
+        #                                      self.compResourceReliability[k][j]
+        #                                      for k in range (len(self.componentComparativeWeights))])
+        #                            for j in range(self.NO_OF_NODES)])
+        #                        for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
 
         #print self.nodeReliability
         #print rel_const
 
         # Adding constraints to the solver
-        self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
+        self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const)
+        #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
         #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rms_c2n)
 
     # This method removes assignment constraint (assignment_c2n) for a given list of components (indexes).

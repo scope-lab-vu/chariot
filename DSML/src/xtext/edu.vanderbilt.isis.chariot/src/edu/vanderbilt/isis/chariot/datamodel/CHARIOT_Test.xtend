@@ -3,8 +3,6 @@ package edu.vanderbilt.isis.chariot.datamodel
 import com.mongodb.Mongo
 import org.junit.Test
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_NodeCategory
-import edu.vanderbilt.isis.chariot.datamodel.Status
-import static org.junit.Assert.*
 
 
 class CHARIOT_Test {

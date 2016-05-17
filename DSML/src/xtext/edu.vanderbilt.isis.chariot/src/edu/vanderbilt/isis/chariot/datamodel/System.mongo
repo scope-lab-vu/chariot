@@ -6,12 +6,13 @@ import java.util.ArrayList
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time
 
 package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	DM_SystemDescription {
 		ObjectId _id
 		String name
-		double reliabilityThreshold
+		DM_Time activeTime
 		DM_SystemConstraint* constraints
 		DM_Objective* objectives
 		
@@ -20,7 +21,10 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 		 */
 		void init() {
 			this.name = new String()
-			this.reliabilityThreshold = 0.0
+			this.activeTime = new DM_Time() => [
+				setTime (0.0)
+				setUnit ("")
+			]
 			this.getConstraints()	// This initializes constraints.
 			this.getObjectives()	// This initializes objectives.
 		}

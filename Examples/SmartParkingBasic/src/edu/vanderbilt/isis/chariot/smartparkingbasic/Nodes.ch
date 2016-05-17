@@ -8,8 +8,7 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
 		middleware LCM;
 		os Linux;
 		device ultrasonic_ranger{
-			reliability 0.5
-			lifetime 6 months
+			meanTimeToFailure 3 months
 		}
 	}
 }

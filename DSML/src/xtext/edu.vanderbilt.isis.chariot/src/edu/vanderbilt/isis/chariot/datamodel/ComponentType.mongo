@@ -7,9 +7,9 @@ import java.util.ArrayList
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
-import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time
 
 package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 	DM_ComponentType {
@@ -31,29 +31,8 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		String stopScript
 		
 		// Period and deadline.
-		DM_Period {
-			double period
-			String unit
-			
-			/*
-			 * 
-			 */
-			void setUnit (TimeUnit unit) {
-				this.unit = unit.toString()
-			}
-		} period
-		
-		DM_Deadline {
-			double deadline
-			String unit
-			
-			/*
-			 * 
-			 */
-			void setUnit (TimeUnit unit) {
-				this.unit = unit.toString()
-			}
-		} deadline
+		DM_Time period
+		DM_Time  deadline
 		
 		/*
 		 * 
@@ -76,12 +55,12 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.deviceRequirements = new ArrayList<String>()
 			this.startScript = new String()
 			this.stopScript = new String()
-			this.period = new DM_Period () => [
-				setPeriod (0.0)
+			this.period = new DM_Time () => [
+				setTime (0.0)
 				setUnit ("")
 			]
-			this.deadline = new DM_Deadline () => [
-				setDeadline (0.0)
+			this.deadline = new DM_Time () => [
+				setTime (0.0)
 				setUnit ("")
 			]
 		}
@@ -178,15 +157,15 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		/*
 		 * 
 		 */
-		void setPeriod ((DM_Period)=>void initializer) {
-			this.period = new DM_Period => initializer
+		void setPeriod ((DM_Time)=>void initializer) {
+			this.period = new DM_Time => initializer
 		}
 		
 		/*
 		 * 
 		 */
-		void setDeadline ((DM_Deadline)=>void initializer) {
-			this.deadline = new DM_Deadline => initializer
+		void setDeadline ((DM_Time)=>void initializer) {
+			this.deadline = new DM_Time => initializer
 		}
 		
 		/*

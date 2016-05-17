@@ -10,9 +10,8 @@ package edu.vanderbilt.isis.chariot.datamodel.Node {
 	DM_Node {
 		ObjectId _id
 		String name
-		double reliability
-		DM_Lifetime {
-			double lifetime
+		DM_Time {
+			double time
 			String unit
 			
 			/*
@@ -21,7 +20,7 @@ package edu.vanderbilt.isis.chariot.datamodel.Node {
 			void setUnit (TimeUnit unit) {
 				this.unit = unit.toString()
 			}
-		} lifetime
+		} meanTimeToFailure
 		String nodeTemplate
 		String status
 		DM_Interface* interfaces
@@ -32,9 +31,8 @@ package edu.vanderbilt.isis.chariot.datamodel.Node {
 		 */
 		void init() {
 			this.name = new String()
-			this.reliability = 0.0
-			this.lifetime = new DM_Lifetime() => [
-				setLifetime (0.0)
+			this.meanTimeToFailure = new DM_Time() => [
+				setTime (0.0)
 				setUnit ("")
 			]
 			this.nodeTemplate = new String()
@@ -46,8 +44,8 @@ package edu.vanderbilt.isis.chariot.datamodel.Node {
 		/*
 		 * 
 		 */
-		void setLifetime ((DM_Lifetime)=>void initializer) {
-			this.lifetime = new DM_Lifetime => initializer
+		void setMeanTimeToFailure ((DM_Time)=>void initializer) {
+			this.meanTimeToFailure = new DM_Time => initializer
 		}
 		
 		/*

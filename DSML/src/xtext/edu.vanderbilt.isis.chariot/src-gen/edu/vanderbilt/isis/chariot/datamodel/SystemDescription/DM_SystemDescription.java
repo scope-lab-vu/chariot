@@ -5,6 +5,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time;
 import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_Objective;
 import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_SystemConstraint;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
 import org.xtext.mongobeans.lib.MongoBeanList;
+import org.xtext.mongobeans.lib.WrappingUtil;
 
 @SuppressWarnings("all")
 public class DM_SystemDescription implements IMongoBean {
@@ -54,12 +56,12 @@ public class DM_SystemDescription implements IMongoBean {
     _dbObject.put("name", name);
   }
   
-  public double getReliabilityThreshold() {
-    return (Double) _dbObject.get("reliabilityThreshold");
+  public DM_Time getActiveTime() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("activeTime"));
   }
   
-  public void setReliabilityThreshold(final double reliabilityThreshold) {
-    _dbObject.put("reliabilityThreshold", reliabilityThreshold);
+  public void setActiveTime(final DM_Time activeTime) {
+    _dbObject.put("activeTime", WrappingUtil.unwrap(activeTime));
   }
   
   private MongoBeanList<DM_SystemConstraint> _constraints;
@@ -81,7 +83,13 @@ public class DM_SystemDescription implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
-    this.setReliabilityThreshold(0.0);
+    DM_Time _dM_Time = new DM_Time();
+    final Procedure1<DM_Time> _function = (DM_Time it) -> {
+      it.setTime(0.0);
+      it.setUnit("");
+    };
+    DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, _function);
+    this.setActiveTime(_doubleArrow);
     this.getConstraints();
     this.getObjectives();
   }

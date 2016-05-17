@@ -23,7 +23,8 @@ class NewConfigurationSolverBound(NewConfigurationSolver):
                                                           backend.componentInstUtilization,
                                                           backend.nodeReliability,
                                                           backend.compResourceReliability,
-                                                          backend.systemDescriptions[0].reliabilityThreshold) # NOTE: See below.
+                                                          #backend.systemDescriptions[0].reliabilityThreshold) # NOTE: See below.
+                                                          0)
 
         # NOTE: We currently assume a single system. This makes no difference (as far as we know) to most of the
         # existing constraints. However, in case of the reliability constraint, different systems can have different

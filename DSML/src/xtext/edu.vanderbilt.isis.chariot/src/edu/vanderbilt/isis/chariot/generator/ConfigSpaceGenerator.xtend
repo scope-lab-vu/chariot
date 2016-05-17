@@ -152,7 +152,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setPeriod [
 					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
 					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
-					setPeriod (period)
+					setTime (period)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
 					else if (unit.days)
@@ -170,7 +170,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setDeadline [
 					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
 					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
-					setDeadline (deadline)
+					setTime (deadline)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
 					else if (unit.days)
@@ -220,7 +220,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setPeriod [
 					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
 					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
-					setPeriod (period)
+					setTime (period)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
 					else if (unit.days)
@@ -238,7 +238,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setDeadline [
 					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
 					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
-					setDeadline (deadline)
+					setTime (deadline)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
 					else if (unit.days)
@@ -292,7 +292,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setPeriod [
 					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
 					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
-					setPeriod (period)
+					setTime (period)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
 					else if (unit.days)
@@ -310,7 +310,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				componentType.setDeadline [
 					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
 					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
-					setDeadline (deadline)
+					setTime (deadline)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
 					else if (unit.days)
@@ -544,15 +544,12 @@ class ConfigSpaceGenerator implements IGenerator {
 								init()
 								setName (d.getName())
 								
-								// Store device reliability and lifetime.
-								setReliability (d.getReliability())
-								
-								// Store lifetime.
-								setLifetime [
-									val lifetime = d.getLifetime()
+								// Store mean time to failure.
+								setMeanTimeToFailure [
+									val time = d.getMeanTimeToFailure()
 									val unit = d.getUnit()
 									
-									setLifetime (lifetime)
+									setTime (time)
 									if (unit.months)
 										setUnit (TimeUnit.MONTHS)
 									else if (unit.days)
@@ -598,9 +595,6 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Store name.
 			system.setName (s.getName())
-			
-			// Store reliability threshold.
-			system.setReliabilityThreshold (s.getReliabilityThreshold())
 			
 			// Store constraints.
 			for (c : s.getConstraints()) {
@@ -768,15 +762,12 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Store name.
 			node.setName (n.getName())
 			
-			// Store reliability.
-			node.setReliability (n.getReliability())
-			
-			// Store lifetime.
-			node.setLifetime [
-				val lifetime = n.getLifetime()
+			// Store mean time to failure.
+			node.setMeanTimeToFailure [
+				val time = n.getMeanTimeToFailure()
 				val unit = n.getUnit()
 				
-				setLifetime (lifetime)
+				setTime (time)
 				if (unit.months)
 					setUnit (TimeUnit.MONTHS)
 				else if (unit.days)

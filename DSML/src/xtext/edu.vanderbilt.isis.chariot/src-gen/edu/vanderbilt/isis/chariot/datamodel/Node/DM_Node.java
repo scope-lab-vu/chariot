@@ -6,8 +6,8 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Interface;
-import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Lifetime;
 import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Process;
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time;
 import edu.vanderbilt.isis.chariot.datamodel.Status;
 import java.util.List;
 import java.util.logging.Logger;
@@ -57,20 +57,12 @@ public class DM_Node implements IMongoBean {
     _dbObject.put("name", name);
   }
   
-  public double getReliability() {
-    return (Double) _dbObject.get("reliability");
+  public DM_Time getMeanTimeToFailure() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("meanTimeToFailure"));
   }
   
-  public void setReliability(final double reliability) {
-    _dbObject.put("reliability", reliability);
-  }
-  
-  public DM_Lifetime getLifetime() {
-    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("lifetime"));
-  }
-  
-  public void setLifetime(final DM_Lifetime lifetime) {
-    _dbObject.put("lifetime", WrappingUtil.unwrap(lifetime));
+  public void setMeanTimeToFailure(final DM_Time meanTimeToFailure) {
+    _dbObject.put("meanTimeToFailure", WrappingUtil.unwrap(meanTimeToFailure));
   }
   
   public String getNodeTemplate() {
@@ -108,14 +100,13 @@ public class DM_Node implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
-    this.setReliability(0.0);
-    DM_Lifetime _dM_Lifetime = new DM_Lifetime();
-    final Procedure1<DM_Lifetime> _function = (DM_Lifetime it) -> {
-      it.setLifetime(0.0);
+    DM_Time _dM_Time = new DM_Time();
+    final Procedure1<DM_Time> _function = (DM_Time it) -> {
+      it.setTime(0.0);
       it.setUnit("");
     };
-    DM_Lifetime _doubleArrow = ObjectExtensions.<DM_Lifetime>operator_doubleArrow(_dM_Lifetime, _function);
-    this.setLifetime(_doubleArrow);
+    DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, _function);
+    this.setMeanTimeToFailure(_doubleArrow);
     String _string_1 = new String();
     this.setNodeTemplate(_string_1);
     String _string_2 = new String();
@@ -124,10 +115,10 @@ public class DM_Node implements IMongoBean {
     this.getProcesses();
   }
   
-  public void setLifetime(final Procedure1<? super DM_Lifetime> initializer) {
-    DM_Lifetime _dM_Lifetime = new DM_Lifetime();
-    DM_Lifetime _doubleArrow = ObjectExtensions.<DM_Lifetime>operator_doubleArrow(_dM_Lifetime, initializer);
-    this.setLifetime(_doubleArrow);
+  public void setMeanTimeToFailure(final Procedure1<? super DM_Time> initializer) {
+    DM_Time _dM_Time = new DM_Time();
+    DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, initializer);
+    this.setMeanTimeToFailure(_doubleArrow);
   }
   
   public void setStatus(final Status status) {

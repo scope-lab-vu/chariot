@@ -8,7 +8,7 @@ import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.Status
-import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Lifetime
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time
 
 package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 	DM_NodeCategory {
@@ -240,8 +240,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 	
 	DM_Device {
 		String name
-		double reliability
-		DM_Lifetime lifetime
+		DM_Time meanTimeToFailure
 		DM_Artifact* artifacts
 		String status
 		
@@ -250,9 +249,8 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 */
 		void init() {
 			this.name = new String()
-			this.reliability = 0.0
-			this.lifetime = new DM_Lifetime() => [
-				setLifetime (0.0)
+			this.meanTimeToFailure = new DM_Time() => [
+				setTime (0.0)
 				setUnit ("")
 			]
 			this.getArtifacts()	// This initializes artifacts
@@ -262,8 +260,8 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		/*
 		 * 
 		 */
-		void setLifetime ((DM_Lifetime)=>void initializer) {
-			this.lifetime = new DM_Lifetime => initializer
+		void setMeanTimeToFailure ((DM_Time)=>void initializer) {
+			this.meanTimeToFailure = new DM_Time => initializer
 		}
 
 		/*

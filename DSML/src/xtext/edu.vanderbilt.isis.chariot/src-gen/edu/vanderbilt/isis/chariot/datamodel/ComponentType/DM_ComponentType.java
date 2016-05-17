@@ -5,9 +5,8 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_Deadline;
 import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_Mode;
-import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_Period;
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware;
@@ -141,19 +140,19 @@ public class DM_ComponentType implements IMongoBean {
     _dbObject.put("stopScript", stopScript);
   }
   
-  public DM_Period getPeriod() {
+  public DM_Time getPeriod() {
     return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("period"));
   }
   
-  public void setPeriod(final DM_Period period) {
+  public void setPeriod(final DM_Time period) {
     _dbObject.put("period", WrappingUtil.unwrap(period));
   }
   
-  public DM_Deadline getDeadline() {
+  public DM_Time getDeadline() {
     return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("deadline"));
   }
   
-  public void setDeadline(final DM_Deadline deadline) {
+  public void setDeadline(final DM_Time deadline) {
     _dbObject.put("deadline", WrappingUtil.unwrap(deadline));
   }
   
@@ -189,19 +188,19 @@ public class DM_ComponentType implements IMongoBean {
     this.setStartScript(_string_3);
     String _string_4 = new String();
     this.setStopScript(_string_4);
-    DM_Period _dM_Period = new DM_Period();
-    final Procedure1<DM_Period> _function_2 = (DM_Period it) -> {
-      it.setPeriod(0.0);
+    DM_Time _dM_Time = new DM_Time();
+    final Procedure1<DM_Time> _function_2 = (DM_Time it) -> {
+      it.setTime(0.0);
       it.setUnit("");
     };
-    DM_Period _doubleArrow_2 = ObjectExtensions.<DM_Period>operator_doubleArrow(_dM_Period, _function_2);
+    DM_Time _doubleArrow_2 = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, _function_2);
     this.setPeriod(_doubleArrow_2);
-    DM_Deadline _dM_Deadline = new DM_Deadline();
-    final Procedure1<DM_Deadline> _function_3 = (DM_Deadline it) -> {
-      it.setDeadline(0.0);
+    DM_Time _dM_Time_1 = new DM_Time();
+    final Procedure1<DM_Time> _function_3 = (DM_Time it) -> {
+      it.setTime(0.0);
       it.setUnit("");
     };
-    DM_Deadline _doubleArrow_3 = ObjectExtensions.<DM_Deadline>operator_doubleArrow(_dM_Deadline, _function_3);
+    DM_Time _doubleArrow_3 = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time_1, _function_3);
     this.setDeadline(_doubleArrow_3);
   }
   
@@ -300,15 +299,15 @@ public class DM_ComponentType implements IMongoBean {
     }
   }
   
-  public void setPeriod(final Procedure1<? super DM_Period> initializer) {
-    DM_Period _dM_Period = new DM_Period();
-    DM_Period _doubleArrow = ObjectExtensions.<DM_Period>operator_doubleArrow(_dM_Period, initializer);
+  public void setPeriod(final Procedure1<? super DM_Time> initializer) {
+    DM_Time _dM_Time = new DM_Time();
+    DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, initializer);
     this.setPeriod(_doubleArrow);
   }
   
-  public void setDeadline(final Procedure1<? super DM_Deadline> initializer) {
-    DM_Deadline _dM_Deadline = new DM_Deadline();
-    DM_Deadline _doubleArrow = ObjectExtensions.<DM_Deadline>operator_doubleArrow(_dM_Deadline, initializer);
+  public void setDeadline(final Procedure1<? super DM_Time> initializer) {
+    DM_Time _dM_Time = new DM_Time();
+    DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, initializer);
     this.setDeadline(_doubleArrow);
   }
   

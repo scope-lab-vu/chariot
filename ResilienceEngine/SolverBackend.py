@@ -3,6 +3,7 @@ __author__ = "Subhav Pradhan, 2015"
 import json
 import operator
 from operator import attrgetter
+import datetime
 
 class Serialize:
     def __init__(self, **entries):
@@ -10,7 +11,8 @@ class Serialize:
 
 class SystemDescription:
     name = None
-    reliabilityThreshold = None
+    activeTime = None                   # Time for which the goal must be active. We assume the default unit to be months.
+    startTime = None                    # Time when the system was first introduced. NOTE: This is not deployment time.
     constraints = None                  # List of constraints read from the database.
     objectives = None
     objectiveInstances = None           # List of objective instances.
@@ -30,7 +32,8 @@ class SystemDescription:
 
     def __init__(self):
         self.name = ""
-        self.reliabilityThreshold = 0.0
+        self.activeTime = (0.0, "")
+        self.startTime = datetime.time(0,0,0)
         self.constraints = list()
         self.objectives = list()
         self.objectiveInstances = list()
@@ -524,16 +527,14 @@ class Process:
 
 class Node:
     name = None
-    reliability = None
-    lifetime = None         # Tuple (amount, unit)
+    meanTimeToFailure = None    # Tuple (amount, unit)
     nodeTemplate = None
     status = None
-    processes = None        # List of processes instances.
+    processes = None            # List of processes instances.
 
     def __init__(self):
         self.name = ""
-        self.reliability = 0.0
-        self.lifetime = (0.0, "")
+        self.meanTimeToFailure = (0.0, "")
         self.nodeTemplate = ""
         self.status = ""
         self.processes = list()
@@ -584,15 +585,13 @@ class NodeTemplate:
 
 class Device:
     name = None
-    reliability = None
-    lifetime = None     # Tuple (amount, unit)
-    artifacts = None    # List of device related artifacts as tuple (name, location).
+    meanTimeToFailure = None    # Tuple (amount, unit)
+    artifacts = None            # List of device related artifacts as tuple (name, location).
     status = None
 
     def __init__(self):
         self.name = ""
-        self.reliability = 0.0
-        self.lifetime = (0.0, "")
+        self.meanTimeToFailure = (0.0, "")
         self.artifacts = list()
         self.status = ""
 
@@ -816,8 +815,8 @@ class SolverBackend:
         self.load_cumulative_component_requirements()
         self.load_comparative_component_requirements()
         #self.load_component_utilization()   # Load C/T of each component instance for RMS constraint.
-        self.load_node_reliability()
-        self.load_comparative_resource_reliability()
+        #self.load_node_reliability()
+        #self.load_comparative_resource_reliability()
 
     # This function communicates constraint for each component instance using the component instance's dependencies.
     def add_component_instance_dependencies(self, solver):
@@ -1397,10 +1396,10 @@ class SolverBackend:
             componentTypeToAdd.stopScript = componentType.stopScript
 
             period = Serialize(**componentType.period)
-            componentTypeToAdd.period = (period.period, period.unit)
+            componentTypeToAdd.period = (period.time, period.unit)
 
             deadline = Serialize(**componentType.deadline)
-            componentTypeToAdd.deadline = (deadline.deadline, deadline.unit)
+            componentTypeToAdd.deadline = (deadline.time, deadline.unit)
 
             self.componentTypes.append(componentTypeToAdd)
 
@@ -1429,10 +1428,9 @@ class SolverBackend:
                     device = Serialize(**d)
                     deviceToAdd = Device()
                     deviceToAdd.name = device.name
-                    deviceToAdd.reliability = device.reliability
 
-                    lifetime = Serialize(**device.lifetime)
-                    deviceToAdd.lifetime = (lifetime.lifetime, lifetime.unit)
+                    meanTimeToFailure = Serialize(**device.meanTimeToFailure)
+                    deviceToAdd.meanTimeToFailure = (meanTimeToFailure.time, meanTimeToFailure.unit)
 
                     for a in device.artifacts:
                         deviceToAdd.artifacts.append((a["name"], a["location"]))
@@ -1452,10 +1450,9 @@ class SolverBackend:
             print "Adding Node with name:", node.name
             nodeToAdd = Node()
             nodeToAdd.name = node.name
-            nodeToAdd.reliability = node.reliability
 
-            lifetime = Serialize(**node.lifetime)
-            nodeToAdd.lifetime = (lifetime.lifetime, lifetime.unit)
+            meanTimeToFailure = Serialize(**node.meanTimeToFailure)
+            nodeToAdd.meanTimeToFailure = (meanTimeToFailure.time, meanTimeToFailure.unit)
 
             nodeToAdd.nodeTemplate = node.nodeTemplate
             nodeToAdd.status = node.status
@@ -1499,7 +1496,10 @@ class SolverBackend:
             print "Adding SystemDescription with name:", systemDescription.name
             systemDescriptionToAdd = SystemDescription()
             systemDescriptionToAdd.name = systemDescription.name
-            systemDescriptionToAdd.reliabilityThreshold = systemDescription.reliabilityThreshold
+
+            activeTime = Serialize(**systemDescription.activeTime)
+            systemDescriptionToAdd.activeTime = (activeTime.time, activeTime.unit)
+            systemDescriptionToAdd.startTime = datetime.datetime.now()
 
             # Add constraints.
             for c in systemDescription.constraints:
