@@ -1,7 +1,8 @@
 import edu.vanderbilt.isis.chariot.smartparkingbasic.*
 package edu.vanderbilt.isis.chariot.smartparkingbasic {
 	system SmartParkingBasic {
-		activeTime 5 months
+		lifeTime 5 months
+		reliabilityThreshold 0.2
 		
 		node beacon1{
 			meanTimeToFailure 2 months

@@ -376,7 +376,9 @@ NodeCategoryLabel:
  */
 SystemDescription:
 	'system' name = ID '{'
-		('activeTime' activeTime = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)?
+		('lifeTime' lifeTime = (FLOATING_PT_LITERAL) lifeTimeUnit = TimeUnit ';'?)
+		('maintenancePeriod' maintenancePeriod = (FLOATING_PT_LITERAL) maintenancePeriodUnit = TimeUnit ';'?)?
+		('reliabilityThreshold' reliabilityThreshold = (FLOATING_PT_LITERAL))
 		(nodes += Node)+
 	 	(requiredobjectives += SystemObjective)+
 		(constraints += SystemConstraint)* //(initialConfiguration = InitialConfiguration)? 

@@ -11,8 +11,9 @@ class Serialize:
 
 class SystemDescription:
     name = None
-    activeTime = None                   # Time for which the goal must be active. We assume the default unit to be months.
+    LifeTime = None                   # Time for which the goal must be active. We assume the default unit to be months.
     startTime = None                    # Time when the system was first introduced. NOTE: This is not deployment time.
+    reliabilityThreshold = None
     constraints = None                  # List of constraints read from the database.
     objectives = None
     objectiveInstances = None           # List of objective instances.
@@ -32,8 +33,9 @@ class SystemDescription:
 
     def __init__(self):
         self.name = ""
-        self.activeTime = (0.0, "")
+        self.lifeTime = (0.0, "")
         self.startTime = datetime.time(0,0,0)
+        self.reliabilityThreshold = 0.0
         self.constraints = list()
         self.objectives = list()
         self.objectiveInstances = list()
@@ -803,20 +805,21 @@ class SolverBackend:
     # This function loads different state related information.
     def load_state(self, db):
         self.load_node_templates(db)
-        self.load_nodes_info(db)            # IMPORTANT: This ordering between template and nodes matter.
-        self.load_component_instances(db)   # Load any existing component instances
+        self.load_nodes_info(db)                        # IMPORTANT: This ordering between template and nodes matter.
+        self.load_component_instances(db)               # Load any existing component instances
         self.load_component_types(db)
-        self.load_system_descriptions(db)   # Any required component instances that are were not present in existing
-                                            # state (loaded as part of load_component_instances) will be generated here.
+        self.load_system_descriptions(db)               # Any required component instances that are were not present
+                                                        # in existing state (loaded as part of load_component_instances)
+                                                        # will be generated here.
 
         self.load_component_to_node_assignment(db)
         self.load_cumulative_node_resources()
         self.load_comparative_node_resource()
         self.load_cumulative_component_requirements()
         self.load_comparative_component_requirements()
-        #self.load_component_utilization()   # Load C/T of each component instance for RMS constraint.
-        #self.load_node_reliability()
-        #self.load_comparative_resource_reliability()
+        #self.load_component_utilization()              # Load C/T of each component instance for RMS constraint.
+        self.load_node_reliability()
+        self.load_comparative_resource_reliability()
 
     # This function communicates constraint for each component instance using the component instance's dependencies.
     def add_component_instance_dependencies(self, solver):
@@ -1084,56 +1087,75 @@ class SolverBackend:
         for i in range (len(sorted_names)):
             self.componentInstUtilization[i] = sorted_names[i][1] * 100 # Store utilization as percentage.
 
-    # This function computes and stores list of node reliability (exp(-lambda*t)).
+    # This function computes and stores list of node reliability (exp(-TCritical/MTTF)).
+    #
+    # NOTE: Currently we only consider a single system. We assume that the default unit of all time is months.
     def load_node_reliability(self):
         reliability2nodeIndex = list()
-        from math import exp
-        for node in self.nodes:
-            reliability = 0.0
-            if node.reliability != reliability:
-                reliability = exp(-(node.reliability) * node.lifetime[0])   # NOTE: Currently we assume days to be unit of
-                                                                            # lifetime (lifetime[1]). Conversion code needs
-                                                                            # to be added to maintain some standard.
-            reliability2nodeIndex.append((self.nodeName2Index[node.name], reliability))
+
+        systemTimeElapsed = datetime.datetime.now() - self.systemDescriptions[0].startTime
+        avgDaysPerMonth = 30.42
+        systemTimeElapsedInMonths = float(systemTimeElapsed.days)/avgDaysPerMonth
+
+        # Compute reliability of each node if elapsed system time hasn't surpassed expected system lifetime.
+        if systemTimeElapsedInMonths < self.systemDescriptions[0].lifeTime[0]:
+            tCritical = self.systemDescriptions[0].lifeTime[0] - systemTimeElapsedInMonths
+            from math import exp
+            for node in self.nodes:
+                reliability = exp(-tCritical/node.meanTimeToFailure[0])
+                reliability2nodeIndex.append((self.nodeName2Index[node.name], reliability))
+        # If elapsed system time has surpassed expected system lifetime, set reliability to maximum (i.e., 1).
+        else:
+            for node in self.nodes:
+                reliability2nodeIndex.append((self.nodeName2Index[node.name], 1))
 
         # Initialize list of reliability to node mapping with 0's to begin with.
         self.nodeReliability = [0 for x in range (len(self.nodes))]
 
         import operator
         # Store sorted list.
-        #sorted_names = reliability2nodeIndex.sort(key = operator.itemgetter(0))
         sorted_names = sorted(reliability2nodeIndex, key = operator.itemgetter(0))
 
         # Fill reliability to node mapping (list of reliability for different nodes).
         for i in range (len(sorted_names)):
             self.nodeReliability[i] = sorted_names[i][1]
 
-    # This function computes and stores comparative resource reliability (exp(-lambda*t)) as elements of
-    # R x N matrix where R is the number of different types of comparative resources and N is the number
+    # This function computes and stores comparative resource reliability (exp(-TCritical/MTTF)) as elements
+    # of R x N matrix where R is the number of different types of comparative resources and N is the number
     # of nodes.
     #
-    # NOTE: Devices are the only comparative resources for which reliability is relevant. As such,
-    # we only consider devices.
+    # NOTE: Devices are the only comparative resources for which reliability is relevant. As such, we only
+    # consider devices.
     def load_comparative_resource_reliability(self):
         reliability2compResourceIndex = dict()
-        from math import exp
-        for node in self.nodes:
-            # Store ALL devices.
-            nodeDeviceResources = node.compute_device_provisions(self.nodeTemplates)
 
-            for deviceResource in nodeDeviceResources:
-                if deviceResource.name not in reliability2compResourceIndex:
+        systemTimeElapsed = datetime.datetime.now() - self.systemDescriptions[0].startTime
+        avgDaysPerMonth = 30.42
+        systemTimeElapsedInMonths = float(systemTimeElapsed.days) / avgDaysPerMonth
+
+        # Compute reliability of each comparative resource if elapsed system time hasn't surpassed expected
+        # system lifetime.
+        if systemTimeElapsedInMonths < self.systemDescriptions[0].lifeTime[0]:
+            tCritical = self.systemDescriptions[0].lifeTime[0] - systemTimeElapsedInMonths
+            from math import exp
+            for node in self.nodes:
+                # Store ALL devices.
+                nodeDeviceResources = node.compute_device_provisions(self.nodeTemplates)
+
+                for deviceResource in nodeDeviceResources:
+                    if deviceResource.name not in reliability2compResourceIndex:
                         reliability2compResourceIndex[deviceResource.name] = list()
 
-                reliability = 0.0
-                if deviceResource.reliability != reliability:
-                    reliability = \
-                        exp(-(deviceResource.reliability) * deviceResource.lifetime[0]) # NOTE: Currently we assume days to
-                                                                                        # be unit of lifetime (lifetime[1]).
-                                                                                        # Conversion code needs to be added
-                                                                                        # to maintain some standard.
-
-                reliability2compResourceIndex[deviceResource.name].append((self.nodeName2Index[node.name], reliability))
+                    reliability = exp(-tCritical / deviceResource.meanTimeToFailure[0])
+                    reliability2compResourceIndex[deviceResource.name].append((self.nodeName2Index[node.name],
+                                                                               reliability))
+        else:
+            # If elapsed system time has surpassed expected system lifetime, set reliability to maximum (i.e., 1).
+            for node in self.nodes:
+                nodeDeviceResources = node.compute_device_provisions(self.nodeTemplates)
+                for deviceResource in nodeDeviceResources:
+                    reliability2compResourceIndex[deviceResource.name].append((self.nodeName2Index[node.name],
+                                                                               1))
 
         # Initialize reliability to comparative resource mapping with 0's to begin with.
         self.compResourceReliability = [[0 for x in range (len(self.nodes))]
@@ -1497,10 +1519,11 @@ class SolverBackend:
             systemDescriptionToAdd = SystemDescription()
             systemDescriptionToAdd.name = systemDescription.name
 
-            activeTime = Serialize(**systemDescription.activeTime)
-            systemDescriptionToAdd.activeTime = (activeTime.time, activeTime.unit)
+            lifeTime = Serialize(**systemDescription.lifeTime)
+            systemDescriptionToAdd.lifeTime = (lifeTime.time, lifeTime.unit)
 
             systemDescriptionToAdd.startTime = systemDescription.startTime
+            systemDescriptionToAdd.reliabilityThreshold = systemDescription.reliabilityThreshold
 
             # Add constraints.
             for c in systemDescription.constraints:

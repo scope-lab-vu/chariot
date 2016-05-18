@@ -596,6 +596,44 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Store name.
 			system.setName (s.getName())
 			
+			// Store life time and maintenance period.
+			system.setLifeTime [
+				val time = s.getLifeTime()
+				val unit = s.getLifeTimeUnit()
+				
+				setTime (time)
+				if (unit.months)
+					setUnit (TimeUnit.MONTHS)
+				else if (unit.days)
+					setUnit (TimeUnit.DAYS)
+				else if (unit.seconds)
+					setUnit (TimeUnit.SECONDS)
+				else if (unit.milliseconds)
+					setUnit (TimeUnit.MILLISECONDS)
+				else if (unit.microseconds)
+					setUnit (TimeUnit.MICROSECONDS)
+			]
+			
+			/*system.setMaintenancePeriod [
+				val time = s.getMaintenancePeriod()
+				val unit = s.getMaintenancePeriodUnit()
+				
+				setTime (time)
+				if (unit.months)
+					setUnit (TimeUnit.MONTHS)
+				else if (unit.days)
+					setUnit (TimeUnit.DAYS)
+				else if (unit.seconds)
+					setUnit (TimeUnit.SECONDS)
+				else if (unit.milliseconds)
+					setUnit (TimeUnit.MILLISECONDS)
+				else if (unit.microseconds)
+					setUnit (TimeUnit.MICROSECONDS)
+			]*/
+			
+			// Store reliabilityThreshold.
+			system.setReliabilityThreshold(s.getReliabilityThreshold)
+			
 			// Store constraints.
 			for (c : s.getConstraints()) {
 				system.addConstraint [

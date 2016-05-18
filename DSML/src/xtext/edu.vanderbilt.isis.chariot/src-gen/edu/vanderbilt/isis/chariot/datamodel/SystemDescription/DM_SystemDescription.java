@@ -57,12 +57,28 @@ public class DM_SystemDescription implements IMongoBean {
     _dbObject.put("name", name);
   }
   
-  public DM_Time getActiveTime() {
-    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("activeTime"));
+  public DM_Time getLifeTime() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("lifeTime"));
   }
   
-  public void setActiveTime(final DM_Time activeTime) {
-    _dbObject.put("activeTime", WrappingUtil.unwrap(activeTime));
+  public void setLifeTime(final DM_Time lifeTime) {
+    _dbObject.put("lifeTime", WrappingUtil.unwrap(lifeTime));
+  }
+  
+  public DM_Time getMaintenancePeriod() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("maintenancePeriod"));
+  }
+  
+  public void setMaintenancePeriod(final DM_Time maintenancePeriod) {
+    _dbObject.put("maintenancePeriod", WrappingUtil.unwrap(maintenancePeriod));
+  }
+  
+  public double getReliabilityThreshold() {
+    return (Double) _dbObject.get("reliabilityThreshold");
+  }
+  
+  public void setReliabilityThreshold(final double reliabilityThreshold) {
+    _dbObject.put("reliabilityThreshold", reliabilityThreshold);
   }
   
   public Date getStartTime() {
@@ -98,11 +114,31 @@ public class DM_SystemDescription implements IMongoBean {
       it.setUnit("");
     };
     DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, _function);
-    this.setActiveTime(_doubleArrow);
+    this.setLifeTime(_doubleArrow);
+    DM_Time _dM_Time_1 = new DM_Time();
+    final Procedure1<DM_Time> _function_1 = (DM_Time it) -> {
+      it.setTime(0.0);
+      it.setUnit("");
+    };
+    DM_Time _doubleArrow_1 = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time_1, _function_1);
+    this.setMaintenancePeriod(_doubleArrow_1);
+    this.setReliabilityThreshold(0.0);
     Date _date = new Date();
     this.setStartTime(_date);
     this.getConstraints();
     this.getObjectives();
+  }
+  
+  public void setLifeTime(final Procedure1<? super DM_Time> initializer) {
+    DM_Time _dM_Time = new DM_Time();
+    DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, initializer);
+    this.setLifeTime(_doubleArrow);
+  }
+  
+  public void setMaintenancePeriod(final Procedure1<? super DM_Time> initializer) {
+    DM_Time _dM_Time = new DM_Time();
+    DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, initializer);
+    this.setMaintenancePeriod(_doubleArrow);
   }
   
   public void addConstraint(final Procedure1<? super DM_SystemConstraint> initializer) {

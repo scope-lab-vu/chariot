@@ -14,7 +14,9 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	DM_SystemDescription {
 		ObjectId _id
 		String name
-		DM_Time activeTime
+		DM_Time lifeTime
+		DM_Time maintenancePeriod
+		double reliabilityThreshold
 		Date startTime
 		DM_SystemConstraint* constraints
 		DM_Objective* objectives
@@ -24,17 +26,35 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 		 */
 		void init() {
 			this.name = new String()
-			this.activeTime = new DM_Time() => [
+			
+			this.lifeTime = new DM_Time() => [
 				setTime (0.0)
 				setUnit ("")
 			]
 			
-			this.startTime = new Date()
-			//DateFormat dateFormat = new SimpleDataFormat("yyyy-MM-dd HH:mm:ss")
-			//this.date = dateFormat.format(this.date)
+			this.maintenancePeriod = new DM_Time() => [
+				setTime (0.0)
+				setUnit ("")
+			]
 			
+			this.reliabilityThreshold = 0.0
+			this.startTime = new Date()
 			this.getConstraints()	// This initializes constraints.
 			this.getObjectives()	// This initializes objectives.
+		}
+		
+		/*
+		 * 
+		 */
+		void setLifeTime ((DM_Time)=>void initializer) {
+			this.lifeTime = new DM_Time => initializer
+		}
+		
+		/*
+		 * 
+		 */
+		void setMaintenancePeriod ((DM_Time)=>void initializer) {
+			this.maintenancePeriod = new DM_Time => initializer
 		}
 		
 		/*
