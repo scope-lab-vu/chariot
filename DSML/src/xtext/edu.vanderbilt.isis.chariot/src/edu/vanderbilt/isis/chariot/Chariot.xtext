@@ -1,5 +1,7 @@
 grammar edu.vanderbilt.isis.chariot.Chariot with org.eclipse.xtext.common.Terminals
 
+//org.eclipse.xtext.xbase.Xbase
+
 import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 import "http://www.vanderbilt.edu/isis/chariot/Datatypes" as ChariotMessage
 generate chariot "http://www.vanderbilt.edu/isis/chariot/Chariot"
@@ -61,14 +63,14 @@ Functionality:
  */
 FunctionalityInputParams:
 	('input' inputParams += FunctionalityParam
-		(',' inputParams += FunctionalityParam)*';'?); //('atleast' minrequirement = INT)? ';'?);
+		(',' inputParams += FunctionalityParam)*); //('atleast' minrequirement = INT)?);
 
 /*
  * Rule to create output parameters for a functionality.
  */
 FunctionalityOutputParams:
 	('output' outputParams += FunctionalityParam
-	(',' outputParams += FunctionalityParam)* ';'?);
+	(',' outputParams += FunctionalityParam)*);
 
 /*
  * Rule to create a functionality parameter.
@@ -90,58 +92,48 @@ Composition:
  */
 FunctionalityConnection:
 	fromPort = [FunctionalityParam|QualifiedName] 'to' 
-		toPort = [FunctionalityParam|QualifiedName]';'?;
+		toPort = [FunctionalityParam|QualifiedName];
 
 /*
  * Rule to create a component.
- * 
- * NOTE: Creation of CHARIOT components not supported for now.
  */
 Component:
 		ExternalComponent
+	|	ChariotComponent
 	|	VoterServiceComponent
 	|	ConsensusServiceComponent;
-	//|	ChariotComponent;
-
+	
 /*
- * Rule to create an external component, which is composed of
- * different parts.
+ * Rule to create an external component.
  */
 ExternalComponent:
-	'external' 'app' name = ID '{'
-		(parts += ExternalComponentPart)+
+	'externalComponent' name = ID '{'
+		(parts += ExternalComponentPart)*
+	'}';
+	
+/*
+ * Rule to create a chariot component.
+ */
+ChariotComponent:
+	'chariotComponent' name = ID '{'
+		(parts += ChariotComponentPart)*
 	'}';
 	
 /*
  * Rule to create a voter service.
  */
 VoterServiceComponent:
-	'voter' 'service' name = ID '{'
-		(parts += ServiceComponentPart)+
+	'voterComponent' name = ID '{'
+		(parts += ServiceComponentPart)*
 	'}';
 	
 /*
  * Rule to create a consensus service.
  */
 ConsensusServiceComponent:
-	'consensus' 'service' name = ID '{'
-		(parts += ServiceComponentPart)+
+	'consensusComponent' name = ID '{'
+		(parts += ServiceComponentPart)*
 	'}';
-	
-/*
- * Rule that allows creation of different parts for a service
- * component. The difference between this and external component
- * parts (defined below) is that the latter allows definition of
- * functionality provision. We do not assign functionalities with
- * service component as we want to enforce tight coupling between
- * a service component and corresponding external component.
- */
-ServiceComponentPart:
-		StartScript
-	| 	StopScript
-	| 	ComponentPeriod
-	| 	ComponentDeadline
-	|	AbstractRequirement;
 
 /*
  * Rule that allows creation of different parts for an external
@@ -156,21 +148,21 @@ ExternalComponentPart:
 	|	AbstractRequirement;
 
 /*
- * Rule to declare a functionality provided by an external component.
- * As part of this rule, you can also assign message type to different
+ * Rule to declare a functionality provided by an external component. 
+ * As part of this rule, we can also assign message type to different
  * functionality parameters.
  */
 ExternalFunctionalityProvision:
-	'provides' functionality = [Functionality|QualifiedName] (('{'
-		messageAssignment += ExternalFunctionalityParam+
-	'}') | ';')?;
+	'provides' functionality = [Functionality|QualifiedName] '{'
+		(messageAssignments += MessageAssignment)+
+	'}';
 
 /*
  * Rule to assign a message type to a functionality parameter.
  */
-ExternalFunctionalityParam:
+MessageAssignment:
 	message = [ChariotMessage::Message|QualifiedName] 'as' 
-		functionalityParam=[FunctionalityParam|QualifiedName] ';'?;
+		functionalityParam=[FunctionalityParam|QualifiedName];
 
 /*
  * Rule to declare start script. This script will be used to launch
@@ -190,15 +182,13 @@ StopScript:
  * Rule to declare period for an external components
  */
 ComponentPeriod:
-	'period' period = FLOATING_PT_LITERAL unit = TimeUnit';'?
-;
+	'period' period = FLOATING_PT_LITERAL unit = TimeUnit;
 
 /*
  * Rule to declare deadline for an external component.
  */
 ComponentDeadline:
-	'deadline' deadline = FLOATING_PT_LITERAL unit = TimeUnit';'?
-;
+	'deadline' deadline = FLOATING_PT_LITERAL unit = TimeUnit;
 
 /*
  * Rule that defines different supported time units.
@@ -226,20 +216,19 @@ AbstractRequirement:
  * Rule to specify artifact requirement.
  */
 ArtifactRequirement:
-	'requires' artifact = [Artifact|QualifiedName] 'artifact' ';'?;
+	'requires' artifact = [Artifact|QualifiedName] 'artifact';
 
 /*
  * Rule to specify device requirement.
  */
 DeviceRequirement:
-	'requires' device = [DeviceSupported|QualifiedName] 'device' ';'?
-;
+	'requires' device = [DeviceSupported|QualifiedName] 'device';
 
 /*
  * Rule to specify memory requirement.
  */
 MemoryRequirement:
-	'requires' memory = INT unit = MemoryUnits 'memory' ';'?;
+	'requires' memory = INT unit = MemoryUnits 'memory';
 
 /*
  * Rule that defines different supported memory units. 
@@ -253,25 +242,162 @@ MemoryUnits:
  * Rule to specify storage requirement.
  */
 StorageRequirement:
-	'requires' storage = INT unit = MemoryUnits 'storage' ';'?;
+	'requires' storage = INT unit = MemoryUnits 'storage';
 
 /*
  * Rule to specify operating system requirement.
  */
 OSRequirement:
-	'requires' (linux ?= 'Linux' | android ?= 'Android') ';'?;
+	'requires' (linux ?= 'Linux' | android ?= 'Android');
 
 /*
  * Rule to specify middleware requirement.
  */
 MiddlewareRequirement:
-	'requires' (alljoyn?='AllJoyn' | rtidds?='RTIDDS' | lcm?= 'LCM') ';'?;
+	'requires' (alljoyn?='AllJoyn' | rtidds?='RTIDDS' | lcm?= 'LCM');
+	
+/*
+ * Rule that allows creation of different parts for an external
+ * component.
+ */
+ChariotComponentPart:
+		Port
+	|	FunctionalityProvision
+	|	StateVariable
+	|	CustomStateVariable
+	|	ExecutionLogic
+	|	AbstractRequirement;
+	
+/*
+ * Rule that allows creation of interaction ports. There are
+ * four different kinds of ports currently supported.
+ */
+Port:
+		PullInPort
+	|	PushInPort
+	|	PullOutPort
+	| 	PushOutPort;
+	
+/*
+ * Rule that allows creation of a pull-in port. This kind of
+ * port is useful for modeling client side of a request/response
+ * interaction.
+ */
+PullInPort:
+	'pullInPort' name = ID messageType = [ChariotMessage::Message|QualifiedName] ('{'
+		'timeout' timeout = INT unit = TimeUnit
+	'}')?;
+
+/*
+ * Rule that allows creation of a push-in port. This kind of
+ * port is useful for modeling a message listener and therefore
+ * can be used to model the sink/destination of an event 
+ * (message) driven interaction.
+ */
+PushInPort:
+	'pushInPort' name = ID messageType = [ChariotMessage::Message|QualifiedName] ('[' buffersize = INT ']')?;
+	
+/*
+ * Rule that allows creation of a pull-out port. This kind of
+ * port is useful for modeling server side of a request/response
+ * interaction.
+ */
+PullOutPort:
+	'pullOutPort' name = ID messageType = [ChariotMessage::Message|QualifiedName];
+	
+/*
+ * Rule that allows creation of a push-out port. This kind of
+ * port is useful for modeling message sender and therefore can
+ * be used to model the source of an event (message) driven 
+ * interaction.
+ */
+PushOutPort:
+	'pushOutPort' name = ID messageType = [ChariotMessage::Message|QualifiedName];	
+	
+/*
+ * Rule to specify functionality provided by a chariot component.
+ * This involves modeling port-to-functionality parameter mapping.
+ */
+FunctionalityProvision:
+	'provides' functionality = [Functionality|QualifiedName] '{'
+  		(portAssignments += PortAssignment)+ 
+  	'}';
+  
+/*
+ * Rule to specify a port-to-functionality parameter mapping.
+ */
+PortAssignment:
+  port=[Port|QualifiedName] 'as' functionalityParam=[FunctionalityParam|QualifiedName];
+  
+/*
+ * Rule to specify a state variable.
+ */
+StateVariable:
+	'stateVar' type = STRING 'as' name = ID;
+	
+/*
+ * Rule to specify a custom state variable that used chariot
+ * data type.
+ */
+CustomStateVariable:
+	'stateVar' type = [ChariotMessage::Message|QualifiedName] 'as' name = ID;
+	
+/*
+ * Rule to specify execution logic of a chariot component. An
+ * execution logic has an associated trigger, run block (actual
+ * business logic), and deadline.
+ */
+ExecutionLogic:
+	trigger = ExecutionTrigger
+	runOperation = ExecutionRunOperation
+	(deadline = ComponentDeadline)?;
+
+/*
+ * Rule to specify a trigger. They are of two kinds - periodic
+ * and sporadic. Periodic triggers are fired based on pre-defined
+ * periodicity. Sporadic triggers are fired based on external
+ * events, such as, arrival of a message in one or more ports.
+ */
+ExecutionTrigger:
+		PeriodicTrigger
+	|	SporadicTrigger;
+	
+/*
+ * Rule that allows creation of a periodic trigger. This
+ * requires specification of the association period.
+ */
+PeriodicTrigger:
+	'periodicTrigger' '@' period = INT unit = TimeUnit;
+	
+/*
+ * Rule that allows creation of a sporadic trigger. This
+ * requires specification of a message port at which messages
+ * are expected.
+ */
+SporadicTrigger:
+	'sporadicTrigger' 'for' 'port' port =  [Port];
+
+/*
+ * Rule to specify the actual business logic.
+ */
+ExecutionRunOperation:
+	//'run'  body = XBlockExpression;
+	'run' '{' body = STRING '}';
+
+/*
+ * Rule that allows creation of different parts for a service
+ * component.
+ */
+ServiceComponentPart:
+		Port
+	| 	ExecutionLogic
+	|	AbstractRequirement;
 
 /*
  * Rule to create a node category, which only has a name.
  */
 NodesCategory:
-	'nodeCategory' name = ID ';'?;
+	'nodeCategory' name = ID;
 	
 /*
  * Rule to create a node template.
@@ -301,7 +427,7 @@ NodeTemplateInfo:
  */
 DeviceSupported:
 	'device' name = ID ('{'
-		('meanTimeToFailure' meanTimeToFailure = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)
+		('meanTimeToFailure' meanTimeToFailure = (FLOATING_PT_LITERAL) unit = TimeUnit)
 		(artifacts += DeviceArtifact)*
 	'}') ;
 
@@ -330,27 +456,27 @@ Artifact:
  * Rule to specify memory provision.
  */
 MemoryProvision:
-	'memory' memory = INT unit = MemoryUnits ';'?;
+	'memory' memory = INT unit = MemoryUnits;
 	
 /*
  * Rule to specify storage provision.
  */
 StorageProvision:
-	'storage' storage = INT unit = MemoryUnits';'?;
+	'storage' storage = INT unit = MemoryUnits;
 	
 /*
  * Rule to specify operating system associated with a
  * node template. Currently supported OSs: Linux, Android.
  */
 OSSupported:
-	'os' (linux ?= 'Linux' | android ?= 'Android') ';'?;
+	'os' (linux ?= 'Linux' | android ?= 'Android');
 
 /*
  * Rule to specify middleware assocaited with a node template.
  * Currently supported middleware: AllJoyn, RTI-DDS, LCM. 
  */
 Middleware :
-  'middleware' middleware+=MiddlewareChoice (',' middleware+=MiddlewareChoice )* ';'?;
+  'middleware' middleware+=MiddlewareChoice (',' middleware+=MiddlewareChoice )*;
   
 /*
  * Rule that lists different supported middleware.
@@ -365,7 +491,7 @@ MiddlewareChoice:
  */
 NodeCategoryLabel:
 	'category' label += [NodesCategory|QualifiedName] 
-		(',' label += [NodesCategory|QualifiedName])* ';'?;
+		(',' label += [NodesCategory|QualifiedName])*;
 	
 /*
  * Rule to create a system description, which comprises nodes and
@@ -376,8 +502,8 @@ NodeCategoryLabel:
  */
 SystemDescription:
 	'system' name = ID '{'
-		('lifeTime' lifeTime = (FLOATING_PT_LITERAL) lifeTimeUnit = TimeUnit ';'?)
-		('maintenancePeriod' maintenancePeriod = (FLOATING_PT_LITERAL) maintenancePeriodUnit = TimeUnit ';'?)?
+		('lifeTime' lifeTime = (FLOATING_PT_LITERAL) lifeTimeUnit = TimeUnit)
+		('maintenancePeriod' maintenancePeriod = (FLOATING_PT_LITERAL) maintenancePeriodUnit = TimeUnit)?
 		('reliabilityThreshold' reliabilityThreshold = (FLOATING_PT_LITERAL))
 		(nodes += Node)+
 	 	(requiredobjectives += SystemObjective)+
@@ -389,7 +515,7 @@ SystemDescription:
  */
 Node:
 	'node' name = ID '{'
-		('meanTimeToFailure' meanTimeToFailure = (FLOATING_PT_LITERAL) unit = TimeUnit ';'?)
+		('meanTimeToFailure' meanTimeToFailure = (FLOATING_PT_LITERAL) unit = TimeUnit)
 		(nodeInfo += NodeInfo)*
 	'}'
 ;
@@ -407,14 +533,13 @@ NodeInfo:
  * Rule to associate a node with existing node template.
  */
 NodeTemplateLabel:
-	'template' template = [NodeTemplate | QualifiedName] ';'?
-;
+	'template' template = [NodeTemplate | QualifiedName];
 
 /*
  * Rule to specify network interface of a node.
  */
 NetworkInterface:
-	'iface' name = ID 'address' address = STRING 'network' network = ID ';'?;
+	'iface' name = ID 'address' address = STRING 'network' network = ID;
 
 /*
  * Rule to specify required (system) objectives. An objective
@@ -431,8 +556,7 @@ SystemObjective:
  */
 ObjectiveConstraints:
 		CategoryConstraint
-	|	perNodeFunctionality
-;
+	|	perNodeFunctionality;
 
 /*
  * Rule to specify category constraint for a local objective.
@@ -441,7 +565,7 @@ ObjectiveConstraints:
  */
 CategoryConstraint:
 	'appliesTo' categories += [NodesCategory|QualifiedName] 
-		(',' categories += [NodesCategory|QualifiedName])* 'nodes' ';'?;
+		(',' categories += [NodesCategory|QualifiedName])* 'nodes';
 
 /*
  * Rule to specify per-node constraint for a local objective.
@@ -451,7 +575,7 @@ CategoryConstraint:
  */
 perNodeFunctionality:
 	'keep' functionality += [Functionality|QualifiedName] 
-		(',' functionality += [Functionality|QualifiedName])* 'perNode' ';'?;
+		(',' functionality += [Functionality|QualifiedName])* 'perNode';
 
 /*
  * Rule to create system constraints. Currently these are
@@ -475,14 +599,14 @@ ResilienceRange:
 ConsensusReplicationConstraint:
 	'replicate' functionality = [Functionality|QualifiedName] 'asConsensusCluster' 
 		'with' range = ResilienceRange 'instances' 
-		'and' serviceComponent = [ConsensusServiceComponent|QualifiedName]';'?;
+		'and' serviceComponent = [ConsensusServiceComponent|QualifiedName];
 
 /*
  * Rule to create active replication (no consensus) constraint.
  */
 ActiveReplicationConstraint:
 	'replicate' functionality = [Functionality|QualifiedName] 'asCluster'
-		'with' range=ResilienceRange 'instances' ';'?;
+		'with' range=ResilienceRange 'instances';
 
 /*
  * Rule to create voter replication constraint.
@@ -490,7 +614,7 @@ ActiveReplicationConstraint:
 VoterReplicationConstraint:
 	'replicate' functionality = [Functionality|QualifiedName] 'asVoterCluster' 
 		'with' range=ResilienceRange 'instances' 
-		'and' serviceComponent = [VoterServiceComponent|QualifiedName] ';'?;
+		'and' serviceComponent = [VoterServiceComponent|QualifiedName];
 	
 /*
  * Terminal rules.

@@ -62,7 +62,7 @@ MessageOperation:
 MessageElement:
 	(iskey ?= 'key')? (type = JvmTypeReference) name = ValidID 
 		(isArray?='['maxbound=INT']')?
-		(unitProperty=UnitProperty)? ';'?;
+		(unitProperty=UnitProperty)?;
 
 /*
  * Rule to create physical unit.
@@ -75,10 +75,3 @@ UnitProperty:
  */
 Invariant:
 	'invariant' name = ID invariantExpression = XBlockExpression;
-
-	
-
-
-	
-
-
