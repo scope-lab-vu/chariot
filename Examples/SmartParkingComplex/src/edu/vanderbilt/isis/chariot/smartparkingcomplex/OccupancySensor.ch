@@ -1,5 +1,5 @@
-import edu.vanderbilt.isis.chariot.smartparkingbasic.*
-package edu.vanderbilt.isis.chariot.smartparkingbasic {
+import edu.vanderbilt.isis.chariot.smartparkingcomplex.*
+package edu.vanderbilt.isis.chariot.smartparkingcomplex {
 	// External application that describes an OccupancySensor.
 	// We consider OccupancySensor to be a periodic application
 	// for this example.
@@ -21,6 +21,6 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
  		
  		// Location of script that can be used to launch the
  		// associated executable.
- 		startScript "sh SmartParkingBasic/OccupancySensor.sh"
+ 		startScript "sh SmartParkingComplex/OccupancySensor.sh"
  	}
 }

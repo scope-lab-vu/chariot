@@ -1,4 +1,4 @@
-package edu.vanderbilt.isis.chariot.smartparkingbasic {
+package edu.vanderbilt.isis.chariot.smartparkingcomplex {
 	// Data type for parking request. This will 
 	// be used by clients to make parking request 
 	// to a ParkingManager. 
@@ -29,4 +29,30 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
 		// the parking space with given ID.
 		boolean isEmpty;
 	}
+	
+	// Data type to represent a client's location.
+	// This will be used by a location source (such
+	// as DecaWave) to send client location information
+	// to a LocalizationServer. This will also be used
+	// by LocalizationServer to send localized location
+	// information to a NavigationServer.
+	struct location_t {
+		// Unique client ID.
+    	long client_id;
+    	// x-coordinate of client's location.
+    	double location_x;
+    	// y-coordinate of client's location.
+    	double location_y;
+  	}
+
+	// Data type to represent suggested heading 
+	// direction that will be provided to a client by 
+	// a NavigationServer.
+  	struct heading_t {
+  		// Unique client ID.
+    	long client_id;
+    	// String to represent which direction
+    	// a client should head.
+    	String heading;
+  	}
 }

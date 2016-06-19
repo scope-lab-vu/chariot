@@ -1,5 +1,5 @@
-import edu.vanderbilt.isis.chariot.smartparkingbasic.*
-package edu.vanderbilt.isis.chariot.smartparkingbasic {
+import edu.vanderbilt.isis.chariot.smartparkingcomplex.*
+package edu.vanderbilt.isis.chariot.smartparkingcomplex {
 	// External application that describes a ParkingManager.
 	external app ParkingManager{
 		// Declaration of functionalities provided.
@@ -16,6 +16,6 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
  		
  		// Location of script that can be used to launch the
  		// associated executable.
- 		startScript "sh SmartParkingBasic/ParkingManager.sh"
+ 		startScript "sh SmartParkingComplex/ParkingManager.sh"
  	}
 }
