@@ -1,4 +1,4 @@
-__author__ = 'Subhav Pradhan'
+__author__ = "Subhav Pradhan"
 
 from pymongo import MongoClient
 from time import sleep

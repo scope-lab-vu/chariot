@@ -1,4 +1,4 @@
-__author__ = 'Tihamer Levendovszky'
+__author__ = "Tihamer Levendovszky, Subhav Pradhan"
 
 
 from NewConfigurationSolver import NewConfigurationSolver

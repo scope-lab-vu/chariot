@@ -1,4 +1,4 @@
-__author__ = "Subhav Pradhan, 2015"
+__author__ = "Subhav Pradhan"
 
 import sys
 import getopt

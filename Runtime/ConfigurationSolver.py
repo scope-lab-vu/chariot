@@ -1,4 +1,4 @@
-__author__ = 'Tihamer Levendovszky, 2014'
+__author__ = "Subhav Pradhan, Tihamer Levendovszky"
 # Base class file for all solvers. General encoding.
 
 from z3 import *
