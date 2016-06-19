@@ -22,6 +22,7 @@ def execute_start_action(actionNode, actionProcess, actionStartScript):
     retval = -1
 
     env_str = os.getenv('APP_HOME','/home/vagrant/chariot_apps/')
+    #env_str = os.getenv('APP_HOME','/home/root/ISORC-experiments/Application/')
     actionStartScript = str(actionStartScript)
     
     cmd = actionStartScript.split(" ")
