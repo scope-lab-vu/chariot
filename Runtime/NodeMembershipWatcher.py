@@ -97,8 +97,9 @@ def handle_failure(node):
 
 
 def invoke_solver():
-    SOLVER_IP = "master"
+    SOLVER_IP = "solver"
     SOLVER_PORT = 7778
+    MY_IP = "zk"
     MY_PORT = 8888
     PING = "PING"
     PING_RESPONSE_READY = "READY"
@@ -108,7 +109,7 @@ def invoke_solver():
 
     sock = socket.socket(socket.AF_INET,    # Internet
                          socket.SOCK_DGRAM) # UDP
-    sock.bind((SOLVER_IP, MY_PORT))
+    sock.bind((MY_IP, MY_PORT))
 
     print "Pinging solver for status"
 

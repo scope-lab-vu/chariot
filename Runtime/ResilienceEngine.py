@@ -1,15 +1,12 @@
 __author__ = "Subhav Pradhan"
 
-import sys
-import getopt
+import sys, thread, time, getopt
 import pymongo
-from multiprocessing import freeze_support
-import socket
-import thread
-import time
+import socket, zmq
 
-SOLVER_IP = "localhost"
-SOLVER_PORT = 7778
+MY_IP = "solver"
+MY_PORT = 7778
+ZMQ_PORT = 8889
 
 PING = "PING"
 PING_RESPONSE_READY = "READY"
@@ -17,13 +14,13 @@ PING_RESPONSE_BUSY = "BUSY"
 SOLVE = "SOLVE"
 SOLVE_RESPONSE_OK = "OK"
 
-def solver_loop (db):
+def solver_loop (db, zmq_socket):
     print "Solver loop started"
     sock = None
     try:
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
-        sock.bind((SOLVER_IP, SOLVER_PORT))
+        sock.bind((MY_IP, MY_PORT))
         inComputation = False
         while True:
             print "Waiting for request..."
@@ -39,7 +36,7 @@ def solver_loop (db):
                 else:
                     inComputation = True
                     sock.sendto(SOLVE_RESPONSE_OK, addr)
-                    find_solution(db)
+                    find_solution(db, zmq_socket)
                     inComputation = False
             else: # ID
                 if addr is not None:
@@ -89,11 +86,11 @@ def connect(serverName, replicaSetName):
     return client
 
 
-def find_solution(db):
+def find_solution(db, zmq_socket):
     if (LOOK_AHEAD):
         # Current implementation only does look ahead for node failures, so look for nodes that
-        # has failed, find corresponding solution in LookAhead collection, and store solution
-        # actions in DeploymentActions collection.
+        # has failed, find corresponding solution in LookAhead collection, and send solution
+        # actions to related DM.
         lsColl = db["LiveSystem"]
         lsResult = lsColl.find({"status":"FAULTY"})
 
@@ -102,7 +99,6 @@ def find_solution(db):
             faultyNodes.append(r["name"])
 
         laColl = db["LookAhead"]
-        daColl = db["DeploymentActions"]
         deploymentActions = list()
         for node in faultyNodes:
             print "Searching pre-computed solution for failure of node:", node
@@ -117,7 +113,10 @@ def find_solution(db):
             for r in laResult:
                 for action in r["recoveryActions"]:
                     deploymentActions.append(action)
-                    daColl.insert(action)
+                    actionNode = action["node"]
+                    # Send action (which is a json document) with its target
+                    # node as topic. 
+                    zmq_socket.send_json(actionNode, action)
 
         # Look ahead again
         look_ahead(db, deploymentActions)
@@ -125,6 +124,7 @@ def find_solution(db):
         invoke_solver(db, False)
 
 # This function gets current configuration and invokes the solver. No looking ahead.
+# This function returns list of deployment actions if solution found.
 def invoke_solver(db, initial):
     from SolverBackend import SolverBackend
 
@@ -161,11 +161,14 @@ def invoke_solver(db, initial):
     # Get new deployment.
     result = solver.get_difference()
 
+    # List of actions to return.
+    actions = None
+
     if(result is not None):
         [componentsToShutDown, componentsToStart, model, dist] = result
         if (dist == None):
             print "No deployment found!"
-            return False
+            return None
         else:
             if(dist!=0):
                 print "Deployment computation done"
@@ -183,14 +186,21 @@ def invoke_solver(db, initial):
                     solver.print_difference(componentsToShutDown, componentsToStart)
                     print "Populating LiveSystem with information about processes and component instances"
                     populate_live_system(db, backend, solver, componentsToStart, componentsToShutDown)
-                    print "Populating DeploymentActions capped collection with new deployment actions."
-                    actions = populate_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
-                    if (initial and LOOK_AHEAD):
-                        print "Initial lookahead mechanism"
-                        look_ahead(db, actions)
+                    print "Computing new deployment actions."
+                    actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
+                    # Send actions using zeromq if not lookahead.
+                    if (!LOOK_AHEAD)
+                        # TODO: Send actions using zeriomq.
+                    else:
+                        # If lookahead then do initial lookahead for initial deployment.
+                        if (initial)
+                            print "Initial lookahead mechanism"
+                            look_ahead(db, actions)
             elif (dist == 0):
                 print "Same deployment as before. No need for any changes."
-    return True
+                return None
+    
+    return actions
 
 def look_ahead(db, actions):
     startTime = time.time()
@@ -225,18 +235,16 @@ def look_ahead(db, actions):
         mark_node_failure(tmpDb, node)
 
         # If solver found solution, query deployment actions to get solution.
-        if (invoke_solver(tmpDb, False)):
-            solColl = tmpDb["DeploymentActions"]
-            result = solColl.find({"status":"0_TAKEN"})
-
+        recoveryActions = invoke_solver(tmpDb, False)
+        if (recoveryActions is not None):
             # Store solution in main (ConfigSpace) db.
             entry = dict()
             entry["failedEntity"] = node
             entry["failureKind"] = "NODE"
             entry["recoveryActions"] = list()
 
-            for r in result:
-                entry["recoveryActions"].append(r)
+            for action in recoveryActions:
+                entry["recoveryActions"].append(action)
 
             laColl.insert(entry)
 
@@ -334,16 +342,7 @@ def populate_live_system(db, backend, solver, componentsToStart, componentsToShu
         else:
             print "WARNING: Component instance with name:", componentInstanceToAddName, "not found!"
 
-def populate_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
-    deplActionsColl = None
-    if "DeploymentActions" in db.collection_names():
-        print "DeploymentActions collection already exist, using existing collection"
-        deplActionsColl = db["DeploymentActions"]
-    else:
-        print "DeploymentActions collection doesn't exist, creating a new one."
-        # Create capped collection of size 100 MB.
-        deplActionsColl = db.create_collection("DeploymentActions", capped = True, size = 100000000, max = 100)
-
+def compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
     actions = list()
     import time
     actionsTimeStamp = time.time()
@@ -390,11 +389,6 @@ def populate_deployment_actions(db, backend, solver, componentsToStart, componen
 
         actions.append(action)
 
-    print "Inserting", len(actions), "new deployment commands"
-
-    for action in actions:
-        deplActionsColl.insert(action)
-
     return actions
 
 def print_usage():
@@ -440,6 +434,9 @@ def main():
 
     # If valid server name, start solver loop, which will listen for solver request messages.
     if serverName != "":
+        client = None
+        db = None
+
         print "Connecting to:", serverName
 
         if replicaSetName is not None:
@@ -458,16 +455,15 @@ def main():
             print "MongoClient not constructed correctly"
             sys.exit()
 
+        # Creating ZeroMQ context and publisher socket.
+        zmq_context = zmq.Context()
+        zmq_socket = zmq_context.socket(zmq.PUB)
+        zmq_socket.bind("tcp://*:%d"%ZMQ_PORT)
+
         if initialDeployment:
             invoke_solver(db, True)
         else:
-            solver_loop(db)
-
-    #invoke_solver()
-
-    # Solver invoked directly for now.
-    #invokeSolver()
+            solver_loop(db, zmq_socket)
 
 if __name__ == "__main__":
-    freeze_support()
     main()
