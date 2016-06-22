@@ -121,11 +121,11 @@ def find_solution(db, zmq_socket):
         # Look ahead again
         look_ahead(db, deploymentActions)
     else:
-        invoke_solver(db, False)
+        invoke_solver(db, zmq_socket, False)
 
 # This function gets current configuration and invokes the solver. No looking ahead.
 # This function returns list of deployment actions if solution found.
-def invoke_solver(db, initial):
+def invoke_solver(db, zmq_socket, initial):
     from SolverBackend import SolverBackend
 
     backend = SolverBackend()
@@ -189,11 +189,14 @@ def invoke_solver(db, initial):
                     print "Computing new deployment actions."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
                     # Send actions using zeromq if not lookahead.
-                    if (!LOOK_AHEAD)
-                        # TODO: Send actions using zeriomq.
+                    if (not LOOK_AHEAD):
+                        # TODO: Send actions using zeromq.
+                        for action in actions:
+                            # TODO: Convert action to json here.
+                            zmq_socket.send_json()
                     else:
                         # If lookahead then do initial lookahead for initial deployment.
-                        if (initial)
+                        if (initial):
                             print "Initial lookahead mechanism"
                             look_ahead(db, actions)
             elif (dist == 0):
@@ -235,7 +238,7 @@ def look_ahead(db, actions):
         mark_node_failure(tmpDb, node)
 
         # If solver found solution, query deployment actions to get solution.
-        recoveryActions = invoke_solver(tmpDb, False)
+        recoveryActions = invoke_solver(tmpDb, None, False)
         if (recoveryActions is not None):
             # Store solution in main (ConfigSpace) db.
             entry = dict()
@@ -461,7 +464,7 @@ def main():
         zmq_socket.bind("tcp://*:%d"%ZMQ_PORT)
 
         if initialDeployment:
-            invoke_solver(db, True)
+            invoke_solver(db, zmq_socket, True)
         else:
             solver_loop(db, zmq_socket)
 
