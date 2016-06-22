@@ -14,7 +14,6 @@ import edu.vanderbilt.isis.chariot.chariot.Component
 //import edu.vanderbilt.isis.chariot.chariot.ServerPort
 //import edu.vanderbilt.isis.chariot.chariot.ClientPort
 import edu.vanderbilt.isis.chariot.chariot.SystemObjective
-import edu.vanderbilt.isis.chariot.chariot.perNodeFunctionality
 //import edu.vanderbilt.isis.chariot.chariot.SporadicTrigger
 //import edu.vanderbilt.isis.chariot.chariot.periodicTrigger
 //import edu.vanderbilt.isis.chariot.chariot.ChariotComponent

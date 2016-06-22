@@ -1,64 +1,64 @@
 package edu.vanderbilt.isis.chariot.generator
 
-import org.eclipse.xtext.generator.IGenerator
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IFileSystemAccess
-//import com.google.inject.Inject
-//import org.eclipse.xtext.naming.IQualifiedNameProvider
-import com.mongodb.Mongo
-import com.mongodb.DB
-import java.util.ArrayList
+import com.google.common.collect.HashMultimap
 import com.google.common.collect.Lists
-import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_ComponentType
-import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit
-import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
-import edu.vanderbilt.isis.chariot.chariot.MemoryRequirement
-import edu.vanderbilt.isis.chariot.chariot.StorageRequirement
-import edu.vanderbilt.isis.chariot.chariot.OSRequirement
-import edu.vanderbilt.isis.chariot.datamodel.SupportedOS
-import edu.vanderbilt.isis.chariot.chariot.MiddlewareRequirement
-import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
+import com.google.common.collect.Multimap
+import com.mongodb.DB
+import com.mongodb.Mongo
+import com.mongodb.MongoException
+import edu.vanderbilt.isis.chariot.chariot.ActiveReplicationConstraint
+import edu.vanderbilt.isis.chariot.chariot.Artifact
+import edu.vanderbilt.isis.chariot.chariot.ArtifactRequirement
+import edu.vanderbilt.isis.chariot.chariot.CategoryConstraint
 import edu.vanderbilt.isis.chariot.chariot.Component
+import edu.vanderbilt.isis.chariot.chariot.ComponentDeadline
+import edu.vanderbilt.isis.chariot.chariot.ComponentPeriod
+import edu.vanderbilt.isis.chariot.chariot.Composition
+import edu.vanderbilt.isis.chariot.chariot.ConsensusReplicationConstraint
+import edu.vanderbilt.isis.chariot.chariot.ConsensusServiceComponent
+import edu.vanderbilt.isis.chariot.chariot.DeviceRequirement
+import edu.vanderbilt.isis.chariot.chariot.DeviceSupported
 import edu.vanderbilt.isis.chariot.chariot.ExternalComponent
 import edu.vanderbilt.isis.chariot.chariot.ExternalFunctionalityProvision
-import edu.vanderbilt.isis.chariot.chariot.NodesCategory
-import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_NodeCategory
+import edu.vanderbilt.isis.chariot.chariot.Functionality
+import edu.vanderbilt.isis.chariot.chariot.MemoryProvision
+import edu.vanderbilt.isis.chariot.chariot.MemoryRequirement
+import edu.vanderbilt.isis.chariot.chariot.Middleware
+import edu.vanderbilt.isis.chariot.chariot.MiddlewareRequirement
+import edu.vanderbilt.isis.chariot.chariot.NetworkInterface
 import edu.vanderbilt.isis.chariot.chariot.Node
 import edu.vanderbilt.isis.chariot.chariot.NodeCategoryLabel
-import edu.vanderbilt.isis.chariot.chariot.MemoryProvision
-import edu.vanderbilt.isis.chariot.chariot.StorageProvision
+import edu.vanderbilt.isis.chariot.chariot.NodeTemplate
+import edu.vanderbilt.isis.chariot.chariot.NodeTemplateLabel
+import edu.vanderbilt.isis.chariot.chariot.NodesCategory
+import edu.vanderbilt.isis.chariot.chariot.OSRequirement
 import edu.vanderbilt.isis.chariot.chariot.OSSupported
-import edu.vanderbilt.isis.chariot.chariot.Middleware
-import edu.vanderbilt.isis.chariot.chariot.NetworkInterface
-import edu.vanderbilt.isis.chariot.chariot.Artifact
-import edu.vanderbilt.isis.chariot.chariot.DeviceRequirement
+import edu.vanderbilt.isis.chariot.chariot.PerNodeFunctionality
 import edu.vanderbilt.isis.chariot.chariot.StartScript
 import edu.vanderbilt.isis.chariot.chariot.StopScript
-import edu.vanderbilt.isis.chariot.chariot.ArtifactRequirement
-import edu.vanderbilt.isis.chariot.chariot.NodeTemplate
-import edu.vanderbilt.isis.chariot.chariot.DeviceSupported
-import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Node
-import edu.vanderbilt.isis.chariot.chariot.NodeTemplateLabel
-import edu.vanderbilt.isis.chariot.datamodel.Status
+import edu.vanderbilt.isis.chariot.chariot.StorageProvision
+import edu.vanderbilt.isis.chariot.chariot.StorageRequirement
 import edu.vanderbilt.isis.chariot.chariot.SystemDescription
-import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_SystemDescription
-import edu.vanderbilt.isis.chariot.datamodel.SystemConstraintKind
-import edu.vanderbilt.isis.chariot.chariot.ConsensusReplicationConstraint
-import edu.vanderbilt.isis.chariot.chariot.ActiveReplicationConstraint
 import edu.vanderbilt.isis.chariot.chariot.VoterReplicationConstraint
-import edu.vanderbilt.isis.chariot.chariot.Composition
-import edu.vanderbilt.isis.chariot.chariot.Functionality
-import com.google.common.collect.Multimap
-import com.google.common.collect.HashMultimap
-import edu.vanderbilt.isis.chariot.chariot.CategoryConstraint
-import edu.vanderbilt.isis.chariot.chariot.perNodeFunctionality
-import com.mongodb.MongoException
-import org.slf4j.LoggerFactory
-import edu.vanderbilt.isis.chariot.chariot.ComponentPeriod
-import edu.vanderbilt.isis.chariot.chariot.ComponentDeadline
 import edu.vanderbilt.isis.chariot.chariot.VoterServiceComponent
-import edu.vanderbilt.isis.chariot.chariot.ConsensusServiceComponent
+import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_ComponentType
+import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit
+import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Node
+import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_NodeCategory
+import edu.vanderbilt.isis.chariot.datamodel.Status
+import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
+import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
+import edu.vanderbilt.isis.chariot.datamodel.SupportedOS
+import edu.vanderbilt.isis.chariot.datamodel.SystemConstraintKind
+import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_SystemDescription
 import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
+import java.util.ArrayList
+import java.util.HashMap
+import java.util.Map
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IGenerator
+import org.slf4j.LoggerFactory
 
 class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
@@ -72,7 +72,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	override doGenerate(Resource input, IFileSystemAccess fsa){// throws MongoException {
 		//throw new UnsupportedOperationException("TODO: auto-generated method stub")
 		//var mongo = new Mongo("192.168.1.6")
-		var mongo = new Mongo()
+		val mongo = new Mongo()
 		try {
 		  mongo.getConnector().getDBPortPool(mongo.getAddress()).get().ensureOpen();
 		} catch (Exception e) {
@@ -82,7 +82,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		
 		try {
 			// Get database.
-			var db = mongo.getDB('ConfigSpace') 
+			val db = mongo.getDB('ConfigSpace') 
 			
 			// Call get status to check remote connection. This will throw MongoException is
 			// Mongo server is unreachable.
@@ -126,7 +126,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	def generateVoterServiceComponents (Iterable<VoterServiceComponent> voterServiceComponents, DB db) {
 		// Loop through each voter service component.
 		for (c : voterServiceComponents) {
-			val DM_ComponentType componentType = new DM_ComponentType ()
+			var DM_ComponentType componentType = new DM_ComponentType ()
 			
 			componentType.init ()
 			
@@ -150,8 +150,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Filter and store period and deadline.
 			if (c.parts.filter(ComponentPeriod).size() > 0) {
 				componentType.setPeriod [
-					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
-					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
+					var period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
+					var unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
 					setTime (period)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
@@ -168,8 +168,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			if (c.parts.filter(ComponentDeadline).size() > 0) {
 				componentType.setDeadline [
-					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
-					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
+					var deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
+					var unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
 					setTime (deadline)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
@@ -194,7 +194,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	def generateConsensusServiceComponents (Iterable<ConsensusServiceComponent> consensusServiceComponents, DB db) {
 		// Loop through each consensus service component.
 		for (c : consensusServiceComponents) {
-			val DM_ComponentType componentType = new DM_ComponentType ()
+			var DM_ComponentType componentType = new DM_ComponentType ()
 			
 			componentType.init ()
 			
@@ -218,8 +218,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Filter and store period and deadline.
 			if (c.parts.filter(ComponentPeriod).size() > 0) {
 				componentType.setPeriod [
-					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
-					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
+					var period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
+					var unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
 					setTime (period)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
@@ -236,8 +236,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			if (c.parts.filter(ComponentDeadline).size() > 0) {
 				componentType.setDeadline [
-					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
-					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
+					var deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
+					var unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
 					setTime (deadline)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
@@ -263,7 +263,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	def generateExternalComponents (Iterable<ExternalComponent> externalComponents, DB db) {
 		// Loop through each external component.
 		for (c : externalComponents) {
-			val DM_ComponentType componentType = new DM_ComponentType ()
+			var DM_ComponentType componentType = new DM_ComponentType ()
 
 			componentType.init()
 			
@@ -271,7 +271,7 @@ class ConfigSpaceGenerator implements IGenerator {
 			componentType.setName (c.getName())
 			
 			// Filter for external functionality provisions and store them.
-			val externalFunctionalityProvisions = c.parts.filter(ExternalFunctionalityProvision)
+			var externalFunctionalityProvisions = c.parts.filter(ExternalFunctionalityProvision)
 			for (f : externalFunctionalityProvisions) {
 				componentType.addProvidedFunctionality(f.getFunctionality().getName())
 			}
@@ -290,8 +290,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Filter and store period and deadline.
 			if (c.parts.filter(ComponentPeriod).size() > 0) {
 				componentType.setPeriod [
-					val period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
-					val unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
+					var period = c.parts.filter(ComponentPeriod).get(0).getPeriod()
+					var unit = c.parts.filter(ComponentPeriod).get(0).getUnit()
 					setTime (period)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
@@ -308,8 +308,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			if (c.parts.filter(ComponentDeadline).size() > 0) {
 				componentType.setDeadline [
-					val deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
-					val unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
+					var deadline = c.parts.filter(ComponentDeadline).get(0).getDeadline()
+					var unit = c.parts.filter(ComponentDeadline).get(0).getUnit()
 					setTime (deadline)
 					if (unit.months)
 						setUnit (TimeUnit.MONTHS)
@@ -415,7 +415,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		// Store OS requirement.
 		// NOTE: Only first should/will be stored.
 		if (osRequirements.size() > 0) {
-			val osRequirement = osRequirements.get(0)
+			var osRequirement = osRequirements.get(0)
 			if (osRequirement.linux)
 				ct.setOSRequirement (SupportedOS.LINUX)
 			else if (osRequirement.android)
@@ -425,7 +425,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		// Store middleware requirement.
 		// NOTE: Only first should/will be stored.
 		if (middlewareRequirements.size() > 0) {
-			val middlewareRequirement = middlewareRequirements.get(0)
+			var middlewareRequirement = middlewareRequirements.get(0)
 			if (middlewareRequirement.rtidds)
 				ct.setMiddlewareRequirement (SupportedMiddleware.RTIDDS)
 			else if (middlewareRequirement.alljoyn)
@@ -453,7 +453,7 @@ class ConfigSpaceGenerator implements IGenerator {
 								DB db) {
 		// Loop through each node category.
 		for (nc : nodeCategories) {
-			val DM_NodeCategory nodeCategory = new DM_NodeCategory()
+			var DM_NodeCategory nodeCategory = new DM_NodeCategory()
 			
 			nodeCategory.init()
 			
@@ -465,7 +465,7 @@ class ConfigSpaceGenerator implements IGenerator {
 			for (nt : nodeTemplates) {
 				var boolean generateNodeTemplate = false
 				
-				val nodeCategoryLabels = nt.getNodeTemplateInfo().filter(NodeCategoryLabel)
+				var nodeCategoryLabels = nt.getNodeTemplateInfo().filter(NodeCategoryLabel)
 				for (ncl : nodeCategoryLabels) {
 					for (l : ncl.getLabel()) {
 						if (l.getName().equals (nc.getName())) {
@@ -509,7 +509,7 @@ class ConfigSpaceGenerator implements IGenerator {
 						}
 						
 						if (nt.getNodeTemplateInfo().filter(OSSupported).size() > 0) {
-							val os = nt.getNodeTemplateInfo().filter(OSSupported).get(0)
+							var os = nt.getNodeTemplateInfo().filter(OSSupported).get(0)
 							if (os.linux)
 								setOS (SupportedOS::LINUX)
 							if (os.android)
@@ -517,7 +517,7 @@ class ConfigSpaceGenerator implements IGenerator {
 						}
 						
 						if (nt.getNodeTemplateInfo().filter(Middleware).size() > 0) {
-							val middlewareList = nt.getNodeTemplateInfo().filter(Middleware).get(0)
+							var middlewareList = nt.getNodeTemplateInfo().filter(Middleware).get(0)
 							for (m : middlewareList.getMiddleware()) {
 								if (m.rtidds)
 									setMiddleware (SupportedMiddleware::RTIDDS)
@@ -546,8 +546,8 @@ class ConfigSpaceGenerator implements IGenerator {
 								
 								// Store mean time to failure.
 								setMeanTimeToFailure [
-									val time = d.getMeanTimeToFailure()
-									val unit = d.getUnit()
+									var time = d.getMeanTimeToFailure()
+									var unit = d.getUnit()
 									
 									setTime (time)
 									if (unit.months)
@@ -589,7 +589,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	def generateSystems (Iterable<SystemDescription> systems, DB db) {
 		// Loop through each system.
 		for (s : systems) {
-			val DM_SystemDescription system = new DM_SystemDescription()
+			var DM_SystemDescription system = new DM_SystemDescription()
 			
 			system.init()
 			
@@ -598,8 +598,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Store life time and maintenance period.
 			system.setLifeTime [
-				val time = s.getLifeTime()
-				val unit = s.getLifeTimeUnit()
+				var time = s.getLifeTime()
+				var unit = s.getLifeTimeUnit()
 				
 				setTime (time)
 				if (unit.months)
@@ -672,21 +672,27 @@ class ConfigSpaceGenerator implements IGenerator {
 					init()
 					setName(o.getName())
 					
-					// If local objective, store corresponding node categories.
-					// "Per node" requirement will be associated later.
-					if (o.isLocal) {
-						for (oc : o.getConstraints()) {
-							if(oc.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.CategoryConstraintImpl")) {
-								for (category : (oc as CategoryConstraint).getCategories())
-									addNodeCategory(category.getName())
-							}
-						}
+					// Store functionalities that have "per node" constraint and their corresponding
+					// node categories.
+					val Map<String, ArrayList<String>> perNodeFunctionalities = new HashMap<String, ArrayList<String>>()
+					for (oc : o.getConstraints()) {
+						var funcs = new ArrayList<String>()
+						var nodeCats = new ArrayList<String>()
+						for (functionality : (oc as PerNodeFunctionality).getFunctionality())
+							funcs.add(functionality.getName())
+						for (nodeCategory : (oc as PerNodeFunctionality).getCategories())
+							nodeCats.add(nodeCategory.getName())
+							
+						for (f : funcs)
+							perNodeFunctionalities.put(f, nodeCats)
 					}
 					
-					// Store functionalities.
+					// Store functionalities in a map where key represents functionalities that
+					// have dependencies and corresponding value represents those dependencies.
 					val functionalityMap = getFunctionalities (o.getComposition())
 					
-					val addedFunctionalities = new ArrayList<String>()
+					// List to keep track of added functionalities.
+					var addedFunctionalities = new ArrayList<String>()
 					
 					// First add keys of the functionalitiyMap. These keys represent functionalities that
 					// have dependencies.
@@ -697,14 +703,15 @@ class ConfigSpaceGenerator implements IGenerator {
 								setName(f)
 								for (d : functionalityMap.get(f))
 									addDependsOn(d)
-								// Check and set "per node" requirement flag.
-								for (oc : o.getConstraints()) {
-									if(oc.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.perNodeFunctionalityImpl")) {
-										for (functionality: (oc as perNodeFunctionality).getFunctionality()) {
-											if (functionality.getName().equals(f))
-												setPerNode(true)
-										}
-									}
+								
+								// Check and set "per node" constraint.
+								var ArrayList<String> nodeCategories
+								nodeCategories = perNodeFunctionalities.get(f)
+								
+								if (nodeCategories != null) {
+									setPerNode(true)
+									for (nc : nodeCategories)
+										addNodeCategory(nc)
 								}
 							]
 							addedFunctionalities.add(f)
@@ -719,14 +726,14 @@ class ConfigSpaceGenerator implements IGenerator {
 								init()
 								setName(f)
 								
-								// Check and set "per node" requirement flag.
-								for (oc : o.getConstraints()) {
-									if(oc.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.perNodeFunctionalityImpl")) {
-										for (functionality: (oc as perNodeFunctionality).getFunctionality()) {
-											if (functionality.getName().equals(f))
-												setPerNode(true)
-										}
-									}
+								// Check and set "per node" constraint.
+								var ArrayList<String> nodeCategories
+								nodeCategories = perNodeFunctionalities.get(f)
+								
+								if (nodeCategories != null) {
+									setPerNode(true)
+									for (nc : nodeCategories)
+										addNodeCategory(nc)
 								}
 							]
 							addedFunctionalities.add(f)
@@ -792,7 +799,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	def generateNodes (Iterable<Node> nodes, DB db) {
 		// Loop through each node.
 		for (n : nodes) {
-			val DM_Node node = new DM_Node()
+			var DM_Node node = new DM_Node()
 			
 			node.init()
 			
@@ -801,8 +808,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Store mean time to failure.
 			node.setMeanTimeToFailure [
-				val time = n.getMeanTimeToFailure()
-				val unit = n.getUnit()
+				var time = n.getMeanTimeToFailure()
+				var unit = n.getUnit()
 				
 				setTime (time)
 				if (unit.months)
@@ -819,7 +826,7 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Filter and store node template label:
 			// NOTE: Only first should/will be stored.
-			val nodeTemplates = n.getNodeInfo().filter(NodeTemplateLabel)
+			var nodeTemplates = n.getNodeInfo().filter(NodeTemplateLabel)
 			if (nodeTemplates.size() > 0)
 				node.setNodeTemplate(nodeTemplates.get(0).getTemplate().getName())
 				
