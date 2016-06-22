@@ -169,8 +169,6 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	
 	DM_Objective {
 		String name
-		boolean isLocal
-		List<String> nodeCategories
 		DM_Functionality* functionalities
 		
 		/*
@@ -178,25 +176,7 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 		 */
 		void init() {
 			this.name = new String()
-			this.isLocal = false
-			this.nodeCategories = new ArrayList<String>()
 			this.getFunctionalities()	// This initializes functionalities.
-		}
-		
-		/*
-		 * 
-		 */
-		void addNodeCategory(String nodeCategory) {
-			val LOGGER = Logger.getLogger("DM_Objective")
-			
-			if (this.nodeCategories == null)
-				this.nodeCategories = new ArrayList<String>
-			
-			if (!this.nodeCategories.contains(nodeCategory))
-				this.nodeCategories.add(nodeCategory)
-			else
-				LOGGER.info (nodeCategory + 
-					" node category already exists in objective " + this.name)
 		}
 		
 		/*
@@ -218,7 +198,8 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	DM_Functionality {
 		String name
 		List<String> dependsOn
-		boolean perNode		// This can only be true if parent Objective isLocal is true.
+		boolean perNode
+		List<String> nodeCategories	// If perNode is true, this cannot be empty.
 		
 		/*
 		 * 
@@ -227,6 +208,7 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 			this.name = new String()
 			this.dependsOn = new ArrayList<String>()
 			this.perNode = false
+			this.nodeCategories = new ArrayList<String>()
 		}
 		
 		/*
@@ -243,6 +225,22 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 			else
 				LOGGER.info (dependsOn + 
 					" functionality already exists as dependency for functionality " + this.name)
+		}
+		
+		/*
+		 * 
+		 */
+		void addNodeCategory(String nodeCategory) {
+			val LOGGER = Logger.getLogger("DM_Objective")
+			
+			if (this.nodeCategories == null)
+				this.nodeCategories = new ArrayList<String>
+			
+			if (!this.nodeCategories.contains(nodeCategory))
+				this.nodeCategories.add(nodeCategory)
+			else
+				LOGGER.info (nodeCategory + 
+					" node category already exists in objective " + this.name)
 		}
 	}
 }

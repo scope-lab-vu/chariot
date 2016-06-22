@@ -99,7 +99,7 @@ FunctionalityConnection:
  */
 Component:
 		ExternalComponent
-	|	ChariotComponent
+//	|	ChariotComponent
 	|	VoterServiceComponent
 	|	ConsensusServiceComponent;
 	
@@ -107,7 +107,7 @@ Component:
  * Rule to create an external component.
  */
 ExternalComponent:
-	'externalComponent' name = ID '{'
+	(hardwareComponent ?= 'hardware') 'externalComponent' name = ID '{'
 		(parts += ExternalComponentPart)*
 	'}';
 	
@@ -543,39 +543,24 @@ NetworkInterface:
 
 /*
  * Rule to specify required (system) objectives. An objective
- * can be specified to be local. If an objective is local, then
- * associated objective constraints can be specified.
+ * can have constraints using which its one or more constituent 
+ * functionalities can be assigned to each node of certain category.
  */
 SystemObjective:
 	composition = [Composition|QualifiedName] 'as' 
-		('objective'|isLocal ?= 'localObjective') name = ID 
-			('{' (constraints += ObjectiveConstraints)+ '}'| ';')?;
+		('objective') name = ID 
+			('{' (constraints += PerNodeFunctionality)+ '}'| ';')?;
 
 /*
- * Rule to specify objective constraints.
+ * Rule to specify per-node constraint for a functionality. This 
+ * will be used to specify that a functionality will require 
+ * replication across all nodes of a given node category.
  */
-ObjectiveConstraints:
-		CategoryConstraint
-	|	perNodeFunctionality;
-
-/*
- * Rule to specify category constraint for a local objective.
- * This defines which category of nodes the associated local 
- * objective will be relevant for.
- */
-CategoryConstraint:
-	'appliesTo' categories += [NodesCategory|QualifiedName] 
-		(',' categories += [NodesCategory|QualifiedName])* 'nodes';
-
-/*
- * Rule to specify per-node constraint for a local objective.
- * This will be used to specify which functionalities associated
- * with a local objective will require replication across all
- * nodes of category associated with the local objective.
- */
-perNodeFunctionality:
+PerNodeFunctionality:
 	'keep' functionality += [Functionality|QualifiedName] 
-		(',' functionality += [Functionality|QualifiedName])* 'perNode';
+		(',' functionality += [Functionality|QualifiedName])* 
+		'perNode' 'of' 'category' categories += [NodesCategory|QualifiedName] 
+			(',' categories += [NodesCategory|QualifiedName])*;
 
 /*
  * Rule to create system constraints. Currently these are

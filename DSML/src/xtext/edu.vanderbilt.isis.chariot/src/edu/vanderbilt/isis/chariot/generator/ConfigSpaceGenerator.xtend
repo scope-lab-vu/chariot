@@ -671,7 +671,6 @@ class ConfigSpaceGenerator implements IGenerator {
 				system.addObjective [
 					init()
 					setName(o.getName())
-					setIsLocal(o.isLocal)
 					
 					// If local objective, store corresponding node categories.
 					// "Per node" requirement will be associated later.

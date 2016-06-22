@@ -55,12 +55,22 @@ public class DM_Functionality implements IMongoBean {
     _dbObject.put("perNode", perNode);
   }
   
+  public List<String> getNodeCategories() {
+    return (List<String>) _dbObject.get("nodeCategories");
+  }
+  
+  public void setNodeCategories(final List<String> nodeCategories) {
+    _dbObject.put("nodeCategories", nodeCategories);
+  }
+  
   public void init() {
     String _string = new String();
     this.setName(_string);
     ArrayList<String> _arrayList = new ArrayList<String>();
     this.setDependsOn(_arrayList);
     this.setPerNode(false);
+    ArrayList<String> _arrayList_1 = new ArrayList<String>();
+    this.setNodeCategories(_arrayList_1);
   }
   
   public void addDependsOn(final String dependsOn) {
@@ -81,6 +91,28 @@ public class DM_Functionality implements IMongoBean {
       String _name = this.getName();
       String _plus = ((dependsOn + 
         " functionality already exists as dependency for functionality ") + _name);
+      LOGGER.info(_plus);
+    }
+  }
+  
+  public void addNodeCategory(final String nodeCategory) {
+    final Logger LOGGER = Logger.getLogger("DM_Objective");
+    List<String> _nodeCategories = this.getNodeCategories();
+    boolean _equals = Objects.equal(_nodeCategories, null);
+    if (_equals) {
+      ArrayList<String> _arrayList = new ArrayList<String>();
+      this.setNodeCategories(_arrayList);
+    }
+    List<String> _nodeCategories_1 = this.getNodeCategories();
+    boolean _contains = _nodeCategories_1.contains(nodeCategory);
+    boolean _not = (!_contains);
+    if (_not) {
+      List<String> _nodeCategories_2 = this.getNodeCategories();
+      _nodeCategories_2.add(nodeCategory);
+    } else {
+      String _name = this.getName();
+      String _plus = ((nodeCategory + 
+        " node category already exists in objective ") + _name);
       LOGGER.info(_plus);
     }
   }

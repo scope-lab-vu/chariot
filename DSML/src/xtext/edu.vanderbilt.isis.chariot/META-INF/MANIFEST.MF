@@ -39,6 +39,4 @@ Export-Package: edu.vanderbilt.isis.chariot,
  edu.vanderbilt.isis.chariot.validation,
  edu.vanderbilt.isis.chariot.scoping,
  edu.vanderbilt.isis.chariot.generator,
- edu.vanderbilt.isis.chariot.formatting,
- edu.vanderbilt.isis.chariot.jvmmodel
-
+ edu.vanderbilt.isis.chariot.formatting

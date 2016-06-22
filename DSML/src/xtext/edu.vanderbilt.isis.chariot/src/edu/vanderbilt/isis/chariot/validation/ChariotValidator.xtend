@@ -117,21 +117,6 @@ class ChariotValidator extends AbstractChariotValidator {
 //		}
 //
 //	}
-	
-
-
-	
-	@Check
-	def checkLocalObjective(SystemObjective e)
-	{
-		if(e.isIsLocal)
-		{
-			if(e.constraints.filter(typeof(perNodeFunctionality)).size<1)
-				error('at least one per node functionality must be defined for local objectives', null)
-		}
-		
-	}
-
 //	@Check
 //	def checkSingleComponentOnly(Component s) {
 //		var x = s.eContainer
