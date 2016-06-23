@@ -22,9 +22,8 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
 		
 		request_handling as objective RequestHandling;
 
-		occupancy_checking as localObjective OccupancyChecking {
-			appliesTo EdgeNode nodes
-			keep occupancy_sensor perNode
+		occupancy_checking as objective OccupancyChecking {
+			keep occupancy_sensor perNode for category EdgeNode
 		}
 		
 		replicate parking_manager asVoterCluster with [3,5] instances and ParkingManagerVoter

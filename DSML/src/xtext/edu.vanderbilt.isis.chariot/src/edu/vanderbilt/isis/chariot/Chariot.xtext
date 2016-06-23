@@ -99,7 +99,7 @@ FunctionalityConnection:
  */
 Component:
 		ExternalComponent
-//	|	ChariotComponent
+	|	ChariotComponent
 	|	VoterServiceComponent
 	|	ConsensusServiceComponent;
 	
@@ -107,7 +107,7 @@ Component:
  * Rule to create an external component.
  */
 ExternalComponent:
-	(hardwareComponent ?= 'hardware') 'externalComponent' name = ID '{'
+	(hardwareComponent ?= 'hardware')? 'externalComponent' name = ID '{'
 		(parts += ExternalComponentPart)*
 	'}';
 	
@@ -559,7 +559,7 @@ SystemObjective:
 PerNodeFunctionality:
 	'keep' functionality += [Functionality|QualifiedName] 
 		(',' functionality += [Functionality|QualifiedName])* 
-		'perNode' 'of' 'category' categories += [NodesCategory|QualifiedName] 
+		'perNode' 'for' 'category' categories += [NodesCategory|QualifiedName] 
 			(',' categories += [NodesCategory|QualifiedName])*;
 
 /*
