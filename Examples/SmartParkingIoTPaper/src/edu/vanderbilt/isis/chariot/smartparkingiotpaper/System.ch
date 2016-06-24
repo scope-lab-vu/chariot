@@ -1,8 +1,8 @@
 import edu.vanderbilt.isis.chariot.smartparkingiotpaper.*
 package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 	system SmartParkingIoTPaper {
-		lifeTime 5 months
-		reliabilityThreshold 0.2
+		lifeTime 5 months			// Expected lifetime.
+		reliabilityThreshold 0.2	// Required threshold.
 		
 		node Camera1 {
 			meanTimeToFailure 3 months

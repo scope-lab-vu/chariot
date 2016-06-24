@@ -7,8 +7,8 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
  			occupancy_status_t as parking_manager.occupancy_status
  		}
  		
- 		requires 1024 MB memory
+ 		requires 1024 MB memory	// Minimum memory required.
  		
- 		startScript "sh ParkingManager.sh"
+ 		startScript "sh ParkingManager.sh"	// Launch script.
  	}
 }
