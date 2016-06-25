@@ -614,23 +614,6 @@ class ConfigSpaceGenerator implements IGenerator {
 					setUnit (TimeUnit.MICROSECONDS)
 			]
 			
-			/*system.setMaintenancePeriod [
-				val time = s.getMaintenancePeriod()
-				val unit = s.getMaintenancePeriodUnit()
-				
-				setTime (time)
-				if (unit.months)
-					setUnit (TimeUnit.MONTHS)
-				else if (unit.days)
-					setUnit (TimeUnit.DAYS)
-				else if (unit.seconds)
-					setUnit (TimeUnit.SECONDS)
-				else if (unit.milliseconds)
-					setUnit (TimeUnit.MILLISECONDS)
-				else if (unit.microseconds)
-					setUnit (TimeUnit.MICROSECONDS)
-			]*/
-			
 			// Store reliabilityThreshold.
 			system.setReliabilityThreshold(s.getReliabilityThreshold)
 			
@@ -674,7 +657,7 @@ class ConfigSpaceGenerator implements IGenerator {
 					
 					// Store functionalities that have "per node" constraint and their corresponding
 					// node categories.
-					val Map<String, ArrayList<String>> perNodeFunctionalities = new HashMap<String, ArrayList<String>>()
+					/*val Map<String, ArrayList<String>> perNodeFunctionalities = new HashMap<String, ArrayList<String>>()
 					for (oc : o.getConstraints()) {
 						var funcs = new ArrayList<String>()
 						var nodeCats = new ArrayList<String>()
@@ -685,7 +668,7 @@ class ConfigSpaceGenerator implements IGenerator {
 							
 						for (f : funcs)
 							perNodeFunctionalities.put(f, nodeCats)
-					}
+					}*/
 					
 					// Store functionalities in a map where key represents functionalities that
 					// have dependencies and corresponding value represents those dependencies.
@@ -705,14 +688,14 @@ class ConfigSpaceGenerator implements IGenerator {
 									addDependsOn(d)
 								
 								// Check and set "per node" constraint.
-								var ArrayList<String> nodeCategories
+								/*var ArrayList<String> nodeCategories
 								nodeCategories = perNodeFunctionalities.get(f)
 								
 								if (nodeCategories != null) {
 									setPerNode(true)
 									for (nc : nodeCategories)
 										addNodeCategory(nc)
-								}
+								}*/
 							]
 							addedFunctionalities.add(f)
 						}
@@ -727,14 +710,14 @@ class ConfigSpaceGenerator implements IGenerator {
 								setName(f)
 								
 								// Check and set "per node" constraint.
-								var ArrayList<String> nodeCategories
+								/*var ArrayList<String> nodeCategories
 								nodeCategories = perNodeFunctionalities.get(f)
 								
 								if (nodeCategories != null) {
 									setPerNode(true)
 									for (nc : nodeCategories)
 										addNodeCategory(nc)
-								}
+								}*/
 							]
 							addedFunctionalities.add(f)
 						}

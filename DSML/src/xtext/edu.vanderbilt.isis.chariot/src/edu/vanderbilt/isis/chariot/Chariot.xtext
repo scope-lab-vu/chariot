@@ -548,19 +548,7 @@ NetworkInterface:
  */
 SystemObjective:
 	composition = [Composition|QualifiedName] 'as' 
-		('objective') name = ID 
-			('{' (constraints += PerNodeFunctionality)+ '}'| ';')?;
-
-/*
- * Rule to specify per-node constraint for a functionality. This 
- * will be used to specify that a functionality will require 
- * replication across all nodes of a given node category.
- */
-PerNodeFunctionality:
-	'keep' functionality += [Functionality|QualifiedName] 
-		(',' functionality += [Functionality|QualifiedName])* 
-		'perNode' 'for' 'category' categories += [NodesCategory|QualifiedName] 
-			(',' categories += [NodesCategory|QualifiedName])*;
+		('objective') name = ID;
 
 /*
  * Rule to create system constraints. Currently these are
@@ -568,9 +556,17 @@ PerNodeFunctionality:
  * constraints (e.g. node collocation).
  */
 SystemConstraint:
-		ConsensusReplicationConstraint
+		PerNodeReplicationConstraint
+	|	ConsensusReplicationConstraint
 	|	ActiveReplicationConstraint
 	|	VoterReplicationConstraint;
+	
+/*
+ * 
+ */
+PerNodeReplicationConstraint:
+	'replicate' functionality = [Functionality|QualifiedName] 'asPerNode'
+		'for' 'category' categories += [NodesCategory|QualifiedName];
 
 /*
  * Rule to create range associated with resilience constraints.
