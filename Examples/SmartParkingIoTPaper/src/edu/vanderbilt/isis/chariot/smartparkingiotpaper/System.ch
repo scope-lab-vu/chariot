@@ -46,12 +46,11 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 			iface if1 address "10.1.1.8" network smartparking
 		}
 		
-		client_interaction as objective ClientInteraction;
+		client_interaction as objective ClientInteraction
 
-		occupancy_checking as objective OccupancyChecking {
-			keep image_capture perNode for category CameraNode
-		}
+		occupancy_checking as objective OccupancyChecking
 		
+		replicate image_capture asPerNode for category CameraNode
 		replicate occupancy_detector asCluster with [2,4] instances
 	}
 }
