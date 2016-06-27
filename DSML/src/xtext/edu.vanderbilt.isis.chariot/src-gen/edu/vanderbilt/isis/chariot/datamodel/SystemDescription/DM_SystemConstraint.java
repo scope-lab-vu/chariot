@@ -40,12 +40,12 @@ public class DM_SystemConstraint implements IMongoBean {
     _dbObject.put("kind", kind);
   }
   
-  public List<String> getFunctionalities() {
-    return (List<String>) _dbObject.get("functionalities");
+  public String getFunctionality() {
+    return (String) _dbObject.get("functionality");
   }
   
-  public void setFunctionalities(final List<String> functionalities) {
-    _dbObject.put("functionalities", functionalities);
+  public void setFunctionality(final String functionality) {
+    _dbObject.put("functionality", functionality);
   }
   
   public int getMaxInstances() {
@@ -80,16 +80,26 @@ public class DM_SystemConstraint implements IMongoBean {
     _dbObject.put("serviceComponentType", serviceComponentType);
   }
   
+  public List<String> getNodeCategories() {
+    return (List<String>) _dbObject.get("nodeCategories");
+  }
+  
+  public void setNodeCategories(final List<String> nodeCategories) {
+    _dbObject.put("nodeCategories", nodeCategories);
+  }
+  
   public void init() {
     String _string = new String();
     this.setKind(_string);
-    ArrayList<String> _arrayList = new ArrayList<String>();
-    this.setFunctionalities(_arrayList);
+    String _string_1 = new String();
+    this.setFunctionality(_string_1);
     this.setMaxInstances(0);
     this.setMinInstances(0);
     this.setNumInstances(0);
-    String _string_1 = new String();
-    this.setServiceComponentType(_string_1);
+    String _string_2 = new String();
+    this.setServiceComponentType(_string_2);
+    ArrayList<String> _arrayList = new ArrayList<String>();
+    this.setNodeCategories(_arrayList);
   }
   
   public void setKind(final SystemConstraintKind kind) {
@@ -97,25 +107,23 @@ public class DM_SystemConstraint implements IMongoBean {
     this.setKind(_string);
   }
   
-  public void addFunctionality(final String functionality) {
-    final Logger LOGGER = Logger.getLogger("DM_SystemDescription");
-    List<String> _functionalities = this.getFunctionalities();
-    boolean _equals = Objects.equal(_functionalities, null);
+  public void addNodeCategory(final String nodeCategory) {
+    final Logger LOGGER = Logger.getLogger("DM_SystemConstraint");
+    List<String> _nodeCategories = this.getNodeCategories();
+    boolean _equals = Objects.equal(_nodeCategories, null);
     if (_equals) {
       ArrayList<String> _arrayList = new ArrayList<String>();
-      this.setFunctionalities(_arrayList);
+      this.setNodeCategories(_arrayList);
     }
-    List<String> _functionalities_1 = this.getFunctionalities();
-    boolean _contains = _functionalities_1.contains(functionality);
+    List<String> _nodeCategories_1 = this.getNodeCategories();
+    boolean _contains = _nodeCategories_1.contains(nodeCategory);
     boolean _not = (!_contains);
     if (_not) {
-      List<String> _functionalities_2 = this.getFunctionalities();
-      _functionalities_2.add(functionality);
+      List<String> _nodeCategories_2 = this.getNodeCategories();
+      _nodeCategories_2.add(nodeCategory);
     } else {
-      String _kind = this.getKind();
-      String _plus = ((functionality + 
-        " functionality already exists in system constraint of kind ") + _kind);
-      LOGGER.info(_plus);
+      LOGGER.info((nodeCategory + 
+        " node category already exists"));
     }
   }
 }

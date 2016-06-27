@@ -124,23 +124,24 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	
 	DM_SystemConstraint {
 		String kind
-		List<String> functionalities
+		String functionality
 		int maxInstances
 		int minInstances
 		int numInstances
 		String serviceComponentType
-		
+		List<String> nodeCategories
 		
 		/*
 		 * 
 		 */
 		void init() {
 			this.kind = new String()
-			this.functionalities = new ArrayList<String>()
+			this.functionality = new String()
 			this.maxInstances = 0
 			this.minInstances = 0
 			this.numInstances = 0
 			this.serviceComponentType = new String() 
+			this.nodeCategories = new ArrayList<String>()
 		}
 		
 		/*
@@ -153,17 +154,17 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 		/*
 		 * 
 		 */
-		void addFunctionality (String functionality) {
-			val LOGGER = Logger.getLogger("DM_SystemDescription")
+		void addNodeCategory(String nodeCategory) {
+			val LOGGER = Logger.getLogger("DM_SystemConstraint")
 			
-			if (this.functionalities == null)
-				this.functionalities = new ArrayList<String>
+			if (this.nodeCategories == null)
+				this.nodeCategories = new ArrayList<String>
 			
-			if (!this.functionalities.contains(functionality))
-				this.functionalities.add(functionality)
+			if (!this.nodeCategories.contains(nodeCategory))
+				this.nodeCategories.add(nodeCategory)
 			else
-				LOGGER.info (functionality + 
-					" functionality already exists in system constraint of kind " + this.kind)
+				LOGGER.info (nodeCategory + 
+					" node category already exists")
 		}
 	}
 	
@@ -198,8 +199,6 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 	DM_Functionality {
 		String name
 		List<String> dependsOn
-		boolean perNode
-		List<String> nodeCategories	// If perNode is true, this cannot be empty.
 		
 		/*
 		 * 
@@ -207,8 +206,6 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 		void init() {
 			this.name = new String()
 			this.dependsOn = new ArrayList<String>()
-			this.perNode = false
-			this.nodeCategories = new ArrayList<String>()
 		}
 		
 		/*
@@ -225,22 +222,6 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 			else
 				LOGGER.info (dependsOn + 
 					" functionality already exists as dependency for functionality " + this.name)
-		}
-		
-		/*
-		 * 
-		 */
-		void addNodeCategory(String nodeCategory) {
-			val LOGGER = Logger.getLogger("DM_Objective")
-			
-			if (this.nodeCategories == null)
-				this.nodeCategories = new ArrayList<String>
-			
-			if (!this.nodeCategories.contains(nodeCategory))
-				this.nodeCategories.add(nodeCategory)
-			else
-				LOGGER.info (nodeCategory + 
-					" node category already exists in objective " + this.name)
 		}
 	}
 }

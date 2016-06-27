@@ -59,6 +59,7 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import org.slf4j.LoggerFactory
+import edu.vanderbilt.isis.chariot.chariot.PerNodeReplicationConstraint
 
 class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
@@ -623,7 +624,7 @@ class ConfigSpaceGenerator implements IGenerator {
 					init()
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ConsensusReplicationConstraintImpl")) {
 						setKind(SystemConstraintKind::CONSENSUS_REPLICATION)
-						addFunctionality((c as ConsensusReplicationConstraint).getFunctionality().getName())
+						setFunctionality((c as ConsensusReplicationConstraint).getFunctionality().getName())
 						setMinInstances((c as ConsensusReplicationConstraint).getRange().getLower())
 						setMaxInstances((c as ConsensusReplicationConstraint).getRange().getUpper())
 						setNumInstances((c as ConsensusReplicationConstraint).getRange().getExact())
@@ -632,7 +633,7 @@ class ConfigSpaceGenerator implements IGenerator {
 					
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ActiveReplicationConstraintImpl")) {
 						setKind(SystemConstraintKind::CLUSTER_REPLICATION)
-						addFunctionality((c as ActiveReplicationConstraint).getFunctionality().getName())
+						setFunctionality((c as ActiveReplicationConstraint).getFunctionality().getName())
 						setMinInstances((c as ActiveReplicationConstraint).getRange().getLower())
 						setMaxInstances((c as ActiveReplicationConstraint).getRange().getUpper())
 						setNumInstances((c as ActiveReplicationConstraint).getRange().getExact())
@@ -640,11 +641,18 @@ class ConfigSpaceGenerator implements IGenerator {
 						
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.VoterReplicationConstraintImpl")) {
 						setKind(SystemConstraintKind::VOTER_REPLICATION)
-						addFunctionality((c as VoterReplicationConstraint).getFunctionality().getName())
+						setFunctionality((c as VoterReplicationConstraint).getFunctionality().getName())
 						setMinInstances((c as VoterReplicationConstraint).getRange().getLower())
 						setMaxInstances((c as VoterReplicationConstraint).getRange().getUpper())
 						setNumInstances((c as VoterReplicationConstraint).getRange().getExact())
 						setServiceComponentType((c as VoterReplicationConstraint).getServiceComponent().getName())
+					}
+					
+					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.PerNodeReplicationConstraintImpl")) {
+						setKind(SystemConstraintKind::PER_NODE_REPLICATION)
+						setFunctionality((c as PerNodeReplicationConstraint).getFunctionality().getName())
+						for (nodeCategory : (c as PerNodeReplicationConstraint).getCategories())
+							addNodeCategory(nodeCategory.getName())
 					}
 				]
 			}
@@ -654,21 +662,6 @@ class ConfigSpaceGenerator implements IGenerator {
 				system.addObjective [
 					init()
 					setName(o.getName())
-					
-					// Store functionalities that have "per node" constraint and their corresponding
-					// node categories.
-					/*val Map<String, ArrayList<String>> perNodeFunctionalities = new HashMap<String, ArrayList<String>>()
-					for (oc : o.getConstraints()) {
-						var funcs = new ArrayList<String>()
-						var nodeCats = new ArrayList<String>()
-						for (functionality : (oc as PerNodeFunctionality).getFunctionality())
-							funcs.add(functionality.getName())
-						for (nodeCategory : (oc as PerNodeFunctionality).getCategories())
-							nodeCats.add(nodeCategory.getName())
-							
-						for (f : funcs)
-							perNodeFunctionalities.put(f, nodeCats)
-					}*/
 					
 					// Store functionalities in a map where key represents functionalities that
 					// have dependencies and corresponding value represents those dependencies.
@@ -686,16 +679,6 @@ class ConfigSpaceGenerator implements IGenerator {
 								setName(f)
 								for (d : functionalityMap.get(f))
 									addDependsOn(d)
-								
-								// Check and set "per node" constraint.
-								/*var ArrayList<String> nodeCategories
-								nodeCategories = perNodeFunctionalities.get(f)
-								
-								if (nodeCategories != null) {
-									setPerNode(true)
-									for (nc : nodeCategories)
-										addNodeCategory(nc)
-								}*/
 							]
 							addedFunctionalities.add(f)
 						}
@@ -708,16 +691,6 @@ class ConfigSpaceGenerator implements IGenerator {
 							addFunctionality[
 								init()
 								setName(f)
-								
-								// Check and set "per node" constraint.
-								/*var ArrayList<String> nodeCategories
-								nodeCategories = perNodeFunctionalities.get(f)
-								
-								if (nodeCategories != null) {
-									setPerNode(true)
-									for (nc : nodeCategories)
-										addNodeCategory(nc)
-								}*/
 							]
 							addedFunctionalities.add(f)
 						}

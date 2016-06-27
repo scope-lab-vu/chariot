@@ -566,7 +566,8 @@ SystemConstraint:
  */
 PerNodeReplicationConstraint:
 	'replicate' functionality = [Functionality|QualifiedName] 'asPerNode'
-		'for' 'category' categories += [NodesCategory|QualifiedName];
+		'for' 'category' categories += [NodesCategory|QualifiedName] 
+			(',' categories += [NodesCategory|QualifiedName])*;
 
 /*
  * Rule to create range associated with resilience constraints.
