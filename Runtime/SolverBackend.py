@@ -11,7 +11,7 @@ class Serialize:
 
 class SystemDescription:
     name = None
-    LifeTime = None                   # Time for which the goal must be active. We assume the default unit to be months.
+    LifeTime = None                     # Time for which the goal must be active. We assume the default unit to be months.
     startTime = None                    # Time when the system was first introduced. NOTE: This is not deployment time.
     reliabilityThreshold = None
     constraints = None                  # List of constraints read from the database.
@@ -397,20 +397,22 @@ class SystemDescription:
 
 class SystemConstraint:
     kind = None
-    functionalities = None  # List of string (functionality name).
+    functionality = None        # Functionality name
     minInstances = None
     maxInstances = None
     numInstances = None
     serviceComponentType = None
+    nodeCategories = None       # List of node categories. This is only valid for per node constraints.
 
 
     def __init__(self):
         self.kind = ""
-        self.functionalities = list()
+        self.functionality = ""
         self.minInstances = 0
         self.maxInstances = 0
         self.numInstances = 0
         self.serviceComponentType = ""
+        self.nodeCategories = list()
 
 class Objective:
     name = None
@@ -423,15 +425,11 @@ class Objective:
 class Functionality:
     name = None
     dependsOn = None
-    perNode = None
-    nodeCategories = None   # This is only relevant if perNode is True.
 
 
     def __init__(self):
         self.name = ""
         self.dependsOn = list()
-        self.perNode = False
-        self.nodeCategories = list()
 
     # This function returns constraints associated with a functionality.
     def get_constraints(self, constraints):
@@ -1486,14 +1484,14 @@ class SolverBackend:
                 constraint = Serialize(**c)
                 constraintToAdd = SystemConstraint()
                 constraintToAdd.kind = constraint.kind
-
-                for f in constraint.functionalities:
-                    constraintToAdd.functionalities.append(f)
-
+                constraintToAdd.functionality = constraint.functionality
                 constraintToAdd.minInstances = constraint.minInstances
                 constraintToAdd.maxInstances = constraint.maxInstances
                 constraintToAdd.numInstances = constraint.numInstances
                 constraintToAdd.serviceComponentType = constraint.serviceComponentType
+
+                for nc in constraint.nodeCategories:
+                    constraintToAdd.nodeCategories.append(nc)
 
                 systemDescriptionToAdd.constraints.append(constraintToAdd)
 
@@ -1511,11 +1509,6 @@ class SolverBackend:
 
                     for do in functionality.dependsOn:
                         functionalityToAdd.dependsOn.append(do)
-
-                    functionalityToAdd.perNode = functionality.perNode
-
-                    for nc in functionality.nodeCategories:
-                        functionalityToAdd.nodeCategories.append(nc)
 
                     objectiveToAdd.functionalities.append(functionalityToAdd)
 

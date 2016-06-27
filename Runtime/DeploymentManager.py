@@ -120,12 +120,6 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
                                {"$set":{"status":"ACTIVE"}},
                                upsert = False)
 
-    # Mark action as taken.
-    daColl = db["DeploymentActions"]
-    daColl.update({"action":"START", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
-                  {"$set":{"status":"1_TAKEN"}},
-                  upsert = False)
-
 def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
     import re
     component = re.sub("process_", "", actionProcess)
@@ -134,12 +128,6 @@ def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
 
     result = lsColl.update({"name":actionNode},
                            {"$pull":{"processes":{"name":actionProcess}}})
-
-    # Mark action as taken.
-    daColl = db["DeploymentActions"]
-    daColl.update({"action":"STOP", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
-                  {"$set":{"status":"1_TAKEN"}},
-                  upsert = False)
 
 def handle_action(db, actionDoc):
     actionNode = actionDoc["node"]
