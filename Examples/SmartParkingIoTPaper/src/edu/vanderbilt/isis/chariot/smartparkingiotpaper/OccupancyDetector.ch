@@ -6,7 +6,7 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
  			occupancy_status_t as occupancy_detector.occupancy_status
  		}
  		
- 		requires 1024 MB memory
+ 		//requires 1024 MB memory
  		
  		startScript "sh OccupancyDetector.sh"
  	}

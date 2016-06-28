@@ -4,26 +4,26 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 		lifeTime 5 months			// Expected lifetime.
 		reliabilityThreshold 0.2	// Required threshold.
 		
-		node Camera1 {
+		node camera1 {
 			meanTimeToFailure 3 months
 			template wifi_cam
 			iface if1 address "10.1.1.1" network smartparking
 		}
-		node Camera2 {
+		/*node camera2 {
 			meanTimeToFailure 4 months
 			template wifi_cam
 			iface if1 address "10.1.1.2" network smartparking
 		}
-		node Camera3 {
+		node camera3 {
 			meanTimeToFailure 2 months
 			template wifi_cam
 			iface if1 address "10.1.1.3" network smartparking
 		}
-		node Camera4 {
+		node camera4 {
 			meanTimeToFailure 5 months
 			template wifi_cam
 			iface if1 address "10.1.1.4" network smartparking
-		}
+		}*/
 		
 		node edison1 {
 			meanTimeToFailure 2 months
@@ -35,7 +35,7 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 			template edison
 			iface if1 address "10.1.1.6" network smartparking
 		}
-		node edison3 {
+		/*node edison3 {
 			meanTimeToFailure 5 months
 			template edison
 			iface if1 address "10.1.1.7" network smartparking
@@ -44,7 +44,7 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 			meanTimeToFailure 2 months
 			template edison
 			iface if1 address "10.1.1.8" network smartparking
-		}
+		}*/
 		
 		client_interaction as objective ClientInteraction
 

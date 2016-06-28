@@ -6,7 +6,7 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
  			detector_response_t as load_balancer.detector_response
  		}
  		
- 		requires 512 MB memory
+ 		//requires 512 MB memory
  		
  		startScript "sh LoadBalancer.sh"
  	}
