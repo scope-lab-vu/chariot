@@ -9,7 +9,6 @@ import com.mongodb.MongoException
 import edu.vanderbilt.isis.chariot.chariot.ActiveReplicationConstraint
 import edu.vanderbilt.isis.chariot.chariot.Artifact
 import edu.vanderbilt.isis.chariot.chariot.ArtifactRequirement
-import edu.vanderbilt.isis.chariot.chariot.CategoryConstraint
 import edu.vanderbilt.isis.chariot.chariot.Component
 import edu.vanderbilt.isis.chariot.chariot.ComponentDeadline
 import edu.vanderbilt.isis.chariot.chariot.ComponentPeriod
@@ -33,7 +32,6 @@ import edu.vanderbilt.isis.chariot.chariot.NodeTemplateLabel
 import edu.vanderbilt.isis.chariot.chariot.NodesCategory
 import edu.vanderbilt.isis.chariot.chariot.OSRequirement
 import edu.vanderbilt.isis.chariot.chariot.OSSupported
-import edu.vanderbilt.isis.chariot.chariot.PerNodeFunctionality
 import edu.vanderbilt.isis.chariot.chariot.StartScript
 import edu.vanderbilt.isis.chariot.chariot.StopScript
 import edu.vanderbilt.isis.chariot.chariot.StorageProvision
@@ -53,8 +51,6 @@ import edu.vanderbilt.isis.chariot.datamodel.SystemConstraintKind
 import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_SystemDescription
 import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 import java.util.ArrayList
-import java.util.HashMap
-import java.util.Map
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
@@ -99,9 +95,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				generateConsensusServiceComponents (input.allContents.toIterable.filter(ConsensusServiceComponent), db)
 			}
 			if ((input.allContents.toIterable.filter(NodesCategory)).size() > 0) {
-				generateNodeCategories (input.allContents.toIterable.filter(NodesCategory), 
-										input.allContents.toIterable.filter(NodeTemplate),
-										db)
+				generateNodeCategories (input.allContents.toIterable.filter(NodesCategory), db)
 			}
 			if ((input.allContents.toIterable.filter(SystemDescription).size() > 0)) {
 				generateSystems (input.allContents.toIterable.filter(SystemDescription), db)
@@ -449,9 +443,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	/*
 	 * 
 	 */
-	def generateNodeCategories (Iterable<NodesCategory> nodeCategories, 
-								Iterable<NodeTemplate> nodeTemplates,
-								DB db) {
+	def generateNodeCategories (Iterable<NodesCategory> nodeCategories, DB db) {
 		// Loop through each node category.
 		for (nc : nodeCategories) {
 			var DM_NodeCategory nodeCategory = new DM_NodeCategory()
@@ -461,125 +453,108 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Store name.
 			nodeCategory.setName (nc.getName())
 			
-			// Loop through each node template and add nodes templates that are part 
-			// of above nodeCategory.
-			for (nt : nodeTemplates) {
-				var boolean generateNodeTemplate = false
-				
-				var nodeCategoryLabels = nt.getNodeTemplateInfo().filter(NodeCategoryLabel)
-				for (ncl : nodeCategoryLabels) {
-					for (l : ncl.getLabel()) {
-						if (l.getName().equals (nc.getName())) {
-							generateNodeTemplate = true	
+			// Store templates.
+			for (nt : nc.getNodeTemplates()) {
+				nodeCategory.addNodeTemplate [
+					init()
+					setName (nt.getName())
+					if (nt.getNodeTemplateInfo().filter(MemoryProvision).size() > 0) {
+						val memory = nt.getNodeTemplateInfo().filter(MemoryProvision).get(0).getMemory()
+						val unit = nt.getNodeTemplateInfo().filter(MemoryProvision).get(0).getUnit()
+						setAvailableMemory [
+							setMemory (memory)
+							if (unit.gb)
+								setUnit (MemoryUnit::GB)
+							else if (unit.mb)
+								setUnit (MemoryUnit::MB)
+							else if (unit.kb)
+								setUnit (MemoryUnit::KB)
+						]
+					}
+						
+					if (nt.getNodeTemplateInfo().filter(StorageProvision).size() > 0) {
+						setAvailableStorage [
+							val storage = nt.getNodeTemplateInfo().filter(StorageProvision).get(0).getStorage()
+							val unit = nt.getNodeTemplateInfo().filter(StorageProvision).get(0).getUnit()
+							setStorage (storage)
+							if (unit.gb)
+								setUnit (StorageUnit::GB)
+							else if (unit.mb)
+								setUnit (StorageUnit::MB)
+							else if (unit.kb)
+								setUnit (StorageUnit::KB)
+						]
+					}
+						
+					if (nt.getNodeTemplateInfo().filter(OSSupported).size() > 0) {
+						var os = nt.getNodeTemplateInfo().filter(OSSupported).get(0)
+						if (os.linux)
+							setOS (SupportedOS::LINUX)
+						if (os.android)
+							setOS (SupportedOS::ANDROID)
+					}
+						
+					if (nt.getNodeTemplateInfo().filter(Middleware).size() > 0) {
+						var middlewareList = nt.getNodeTemplateInfo().filter(Middleware).get(0)
+						for (m : middlewareList.getMiddleware()) {
+							if (m.rtidds)
+								setMiddleware (SupportedMiddleware::RTIDDS)
+							if (m.alljoyn)
+								setMiddleware (SupportedMiddleware::ALLJOYN)
+							if (m.lcm)
+								setMiddleware (SupportedMiddleware::LCM)
 						}
 					}
-				}
-				
-				// If node template is part of this category then generate and store
-				// related information.
-				if (generateNodeTemplate) {
-					nodeCategory.addNodeTemplate [
-						init()
-						setName (nt.getName())
-						if (nt.getNodeTemplateInfo().filter(MemoryProvision).size() > 0) {
-							val memory = nt.getNodeTemplateInfo().filter(MemoryProvision).get(0).getMemory()
-							val unit = nt.getNodeTemplateInfo().filter(MemoryProvision).get(0).getUnit()
-							setAvailableMemory [
-								setMemory (memory)
-								if (unit.gb)
-									setUnit (MemoryUnit::GB)
-								else if (unit.mb)
-									setUnit (MemoryUnit::MB)
-								else if (unit.kb)
-									setUnit (MemoryUnit::KB)
-							]
-						}
 						
-						if (nt.getNodeTemplateInfo().filter(StorageProvision).size() > 0) {
-							setAvailableStorage [
-								val storage = nt.getNodeTemplateInfo().filter(StorageProvision).get(0).getStorage()
-								val unit = nt.getNodeTemplateInfo().filter(StorageProvision).get(0).getUnit()
-								setStorage (storage)
-								if (unit.gb)
-									setUnit (StorageUnit::GB)
-								else if (unit.mb)
-									setUnit (StorageUnit::MB)
-								else if (unit.kb)
-									setUnit (StorageUnit::KB)
-							]
-						}
+					for (a : nt.getNodeTemplateInfo().filter(Artifact)) {
+						addArtifact [
+							init()
+							if (a.jar)
+								setName (a.getName() + ".jar")
+							if (a.sharedObject)
+								setName (a.getName() + ".so")
+							setLocation (a.getLocation())
+						]
+					}
 						
-						if (nt.getNodeTemplateInfo().filter(OSSupported).size() > 0) {
-							var os = nt.getNodeTemplateInfo().filter(OSSupported).get(0)
-							if (os.linux)
-								setOS (SupportedOS::LINUX)
-							if (os.android)
-								setOS (SupportedOS::ANDROID)
-						}
-						
-						if (nt.getNodeTemplateInfo().filter(Middleware).size() > 0) {
-							var middlewareList = nt.getNodeTemplateInfo().filter(Middleware).get(0)
-							for (m : middlewareList.getMiddleware()) {
-								if (m.rtidds)
-									setMiddleware (SupportedMiddleware::RTIDDS)
-								if (m.alljoyn)
-									setMiddleware (SupportedMiddleware::ALLJOYN)
-								if (m.lcm)
-									setMiddleware (SupportedMiddleware::LCM)
-							}
-						}
-						
-						for (a : nt.getNodeTemplateInfo().filter(Artifact)) {
-							addArtifact [
-								init()
-								if (a.jar)
-									setName (a.getName() + ".jar")
-								if (a.sharedObject)
-									setName (a.getName() + ".so")
-								setLocation (a.getLocation())
-							]
-						}
-						
-						for (d : nt.getNodeTemplateInfo().filter(DeviceSupported)) {
-							addDevice [
-								init()
-								setName (d.getName())
+					for (d : nt.getNodeTemplateInfo().filter(DeviceSupported)) {
+						addDevice [
+							init()
+							setName (d.getName())
 								
-								// Store mean time to failure.
-								setMeanTimeToFailure [
-									var time = d.getMeanTimeToFailure()
-									var unit = d.getUnit()
+							// Store mean time to failure.
+							setMeanTimeToFailure [
+								var time = d.getMeanTimeToFailure()
+								var unit = d.getUnit()
 									
-									setTime (time)
-									if (unit.months)
-										setUnit (TimeUnit.MONTHS)
-									else if (unit.days)
-										setUnit (TimeUnit.DAYS)
-									else if (unit.seconds)
-										setUnit (TimeUnit.SECONDS)
-									else if (unit.milliseconds)
-										setUnit (TimeUnit.MILLISECONDS)
-									else if (unit.microseconds)
-										setUnit (TimeUnit.MICROSECONDS)
-								]
-								
-								for (a : d.getArtifacts()) {
-									addArtifact [
-										init()
-										if (a.jar)
-											setName (a.getName() + ".jar")
-										else
-											setName (a.getName() + ".so")
-										setLocation (a.getLocation())
-									]
-								}
-								setStatus (Status::ACTIVE)
+								setTime (time)
+								if (unit.months)
+									setUnit (TimeUnit.MONTHS)
+								else if (unit.days)
+									setUnit (TimeUnit.DAYS)
+								else if (unit.seconds)
+									setUnit (TimeUnit.SECONDS)
+								else if (unit.milliseconds)
+									setUnit (TimeUnit.MILLISECONDS)
+								else if (unit.microseconds)
+									setUnit (TimeUnit.MICROSECONDS)
 							]
-						}
-					]
-				}
+								
+							for (a : d.getArtifacts()) {
+								addArtifact [
+									init()
+									if (a.jar)
+										setName (a.getName() + ".jar")
+									else
+										setName (a.getName() + ".so")
+									setLocation (a.getLocation())
+								]
+							}
+							setStatus (Status::ACTIVE)
+						]
+					}
+				]
 			}
-			
 			nodeCategory.insert (db)	
 		}
 	}

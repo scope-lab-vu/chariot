@@ -6,8 +6,8 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 		
 		node camera1 {
 			meanTimeToFailure 3 months
-			template wifi_cam
-			iface if1 address "10.1.1.1" network smartparking
+			template CameraNode.wifi_cam
+			iface if1 address "127.0.0.1:9000" network smartparking
 		}
 		/*node camera2 {
 			meanTimeToFailure 4 months
@@ -27,13 +27,13 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 		
 		node edison1 {
 			meanTimeToFailure 2 months
-			template edison
-			iface if1 address "10.1.1.5" network smartparking
+			template EdisonNode.edison
+			iface if1 address "127.0.0.1:9001" network smartparking
 		}
 		node edison2 {
 			meanTimeToFailure 4 months
-			template edison
-			iface if1 address "10.1.1.6" network smartparking
+			template EdisonNode.edison
+			iface if1 address "127.0.0.1:9002" network smartparking
 		}
 		/*node edison3 {
 			meanTimeToFailure 5 months
