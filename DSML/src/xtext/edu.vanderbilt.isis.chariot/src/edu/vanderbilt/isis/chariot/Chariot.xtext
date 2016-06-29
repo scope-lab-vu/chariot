@@ -43,7 +43,6 @@ AbstractElement:
 	| 	Composition
 	| 	Component
 	| 	NodesCategory
-	|	NodeTemplate
 	| 	SystemDescription;
 
 /*
@@ -397,7 +396,9 @@ ServiceComponentPart:
  * Rule to create a node category, which only has a name.
  */
 NodesCategory:
-	'nodeCategory' name = ID;
+	'nodeCategory' name = ID '{'
+		(nodeTemplates += NodeTemplate)+
+	'}';
 	
 /*
  * Rule to create a node template.
