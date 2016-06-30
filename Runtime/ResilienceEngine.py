@@ -1,18 +1,10 @@
 __author__ = "Subhav Pradhan"
 
-import sys, thread, time, getopt
+import sys, time, getopt
 import pymongo
-import socket, zmq
-
-MY_IP = "solver"
-MY_PORT = 7778
-ZMQ_PORT = 8889
-
-PING = "PING"
-PING_RESPONSE_READY = "READY"
-PING_RESPONSE_BUSY = "BUSY"
-SOLVE = "SOLVE"
-SOLVE_RESPONSE_OK = "OK"
+import socket, zmq, json
+import copy
+from SolverBackend import Serialize
 
 def solver_loop (db, zmq_socket):
     print "Solver loop started"
@@ -20,7 +12,7 @@ def solver_loop (db, zmq_socket):
     try:
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
-        sock.bind((MY_IP, MY_PORT))
+        sock.bind((socket.gethostname(), SOLVER_PORT))
         inComputation = False
         while True:
             print "Waiting for request..."
@@ -48,49 +40,27 @@ def solver_loop (db, zmq_socket):
     except:
         #print "Unexpected error:", sys.exc_info()[0]
         if sock != None:
-        #    sock.shutdown(socket.SHUT_RDWR)
+        #   sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
-def connect(serverName, replicaSetName):
+def mongo_connect(serverName):
     try:
-        from pymongo import ReadPreference
-        # Wait for write through for two secondaries (write concern =2)
-        # Form maximum consistency we might use read_preference=ReadPreference.PRIMARY
-        # But this setting has a better availability (PRIMARY setting bounces back if there is no primary
-        # or there is an election going on)
-        # MongoReplicaSetClient connects to all instance, monitors its health, and checks for new members
-        # See: http://emptysqua.re/blog/reading-from-mongodb-replica-sets-with-pymongo/
-        # client =pymongo.MongoReplicaSetClient (machineName,replicaset = replicasetName, w=2)
-        # w=2 hangs at insertion if there is one replica
-
-        client = None
-        if replicaSetName == "":
-            client = pymongo.MongoClient(serverName)
-        else:
-            client = pymongo.MongoClient(serverName, replicaset=replicaSetName)
-
-        print "Connected successfully."
-        print "Primary of the replica set is alive:", client.admin.command('ping')
-        print "The primary of the replica set is:", client.primary
-        print "The secondaries of the replica set are:", client.secondaries
-        print "The arbiters of the replica set are:", client.arbiters
-        print "Available databases:", ', '.join(client.database_names())
-        print
-
+        client = pymongo.MongoClient(serverName)
     except pymongo.errors.ConnectionFailure, e:
-        print "Could not connect to MongoDB: %s" % e
+        print "Could not connect to MongoDB server: %s" % e
         raise
     except pymongo.errors.ConfigurationError, e:
-        print "Could not connect to MongoDB: %s" % e
+        print "Could not connect to MongoDB server: %s" % e
         raise
+    print "Connected to MongoDB server"
     return client
 
 
 def find_solution(db, zmq_socket):
     if (LOOK_AHEAD):
         # Current implementation only does look ahead for node failures, so look for nodes that
-        # has failed, find corresponding solution in LookAhead collection, and send solution
-        # actions to related DM.
+        # has failed, find corresponding solution in LookAhead collection, send solution
+        # actions to related DM, and store solution actions in DeploymentActions collection.
         lsColl = db["LiveSystem"]
         lsResult = lsColl.find({"status":"FAULTY"})
 
@@ -99,10 +69,10 @@ def find_solution(db, zmq_socket):
             faultyNodes.append(r["name"])
 
         laColl = db["LookAhead"]
+        daColl = db["DeploymentActions"]
         deploymentActions = list()
         for node in faultyNodes:
             print "Searching pre-computed solution for failure of node:", node
-            laResult = None
             laResult = laColl.find({"failedEntity":node, "failureKind":"NODE"})
             # If solution found, store time.
             if laResult is not None:
@@ -112,11 +82,12 @@ def find_solution(db, zmq_socket):
                                    upsert = False)
             for r in laResult:
                 for action in r["recoveryActions"]:
-                    deploymentActions.append(action)
-                    actionNode = action["node"]
                     # Send action (which is a json document) with its target
                     # node as topic. 
-                    zmq_socket.send_json(actionNode, action)
+                    zmq_socket.json(action["node"], action)
+                    # Store action.
+                    daColl.insert(action)
+                    deploymentActions.append(action)
 
         # Look ahead again
         look_ahead(db, deploymentActions)
@@ -186,14 +157,25 @@ def invoke_solver(db, zmq_socket, initial):
                     solver.print_difference(componentsToShutDown, componentsToStart)
                     print "Populating LiveSystem with information about processes and component instances"
                     populate_live_system(db, backend, solver, componentsToStart, componentsToShutDown)
-                    print "Computing new deployment actions."
+                    print "Computing new deployment actions and populating DeploymentActions collection."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
                     # Send actions using zeromq if not lookahead.
                     if (not LOOK_AHEAD):
-                        # TODO: Send actions using zeromq.
                         for action in actions:
-                            # TODO: Convert action to json here.
-                            zmq_socket.send_json()
+                            print "Sending action to DeploymentManager in node: ", str(action["node"])
+                            # Get address of node to send action to.
+                            addr, port = get_node_address(db, action["node"])
+                            if (addr is not None and port is not None):
+                                zmq_socket.connect("tcp://%s:%d"%(str(addr), int(port)))
+                                zmq_socket.send(json.dumps(action))
+                                response = zmq_socket.recv()
+                                #zmq_socket.close()
+                            elif (addr is not None and port is None):
+                                # If port is none, use default ZMQ_PORT.
+                                zmq_socket.connect("tcp://%s:%d"%(str(addr),ZMQ_PORT))
+                                zmq_socket.send(json.dumps(action))
+                                response = zmq_socket.recv()
+                                #zmq_socket.close()
                     else:
                         # If lookahead then do initial lookahead for initial deployment.
                         if (initial):
@@ -205,13 +187,32 @@ def invoke_solver(db, zmq_socket, initial):
     
     return actions
 
+# Get node IP and port as a pair.
+def get_node_address(db, node):
+    lsColl = db["LiveSystem"]
+    result = lsColl.find_one({"name":node})
+    nodeSerialized = Serialize(**result)
+    if (len(nodeSerialized.interfaces) > 0):
+        interfaceSerialized = Serialize(**nodeSerialized.interfaces[0])
+        address = interfaceSerialized.address
+        seperatorIndex = address.find(":")
+        if (seperatorIndex is not None):
+            ip = address[:(seperatorIndex)]
+            port = address[(seperatorIndex+1):]
+        else:
+            ip = address
+            port = None
+        return ip, port
+    else:
+        return None, None
+
 def look_ahead(db, actions):
     startTime = time.time()
     # Empty all existing documents from LookAhead collection.
     laColl = db["LookAhead"]
     laColl.remove({})
 
-    # Get list of nodes that are currently available (and therefore can fail)
+    # Get list of nodes that are currently available (and therefore can fail).
     lsColl = db["LiveSystem"]
     result = lsColl.find({"status":"ACTIVE"})
     aliveNodes = list()
@@ -334,7 +335,7 @@ def populate_live_system(db, backend, solver, componentsToStart, componentsToShu
             liveComponentInstDocument["status"] = "TO_BE_DEPLOYED"
             liveComponentInstDocument["type"] = componentInstanceToAdd.type
             liveComponentInstDocument["mode"] = componentInstanceToAdd.mode
-            liveComponentInstDocument["functionalityInstance"] = componentInstanceToAdd.functionalityInstance
+            liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd.functionalityInstanceName
             liveComponentInstDocument["node"] = componentInstanceToAdd.node
 
             processDocument["components"].append(liveComponentInstDocument)
@@ -346,6 +347,14 @@ def populate_live_system(db, backend, solver, componentsToStart, componentsToShu
             print "WARNING: Component instance with name:", componentInstanceToAddName, "not found!"
 
 def compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
+    deplActionsColl = None
+    if "DeploymentActions" in db.collection_names():
+        print "DeploymentActions collection already exist, using existing collection"
+        deplActionsColl = db["DeploymentActions"]
+    else:
+        print "DeploymentActions collection doesn't exist, creating a new one."
+        deplActionsColl = db.create_collection("DeploymentActions")
+
     actions = list()
     import time
     actionsTimeStamp = time.time()
@@ -392,81 +401,100 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
         actions.append(action)
 
+    actionsToInsert = copy.deepcopy(actions) # Making a copy as db insert below will modify by adding _id.
+
+    for action in actionsToInsert:
+        deplActionsColl.insert(action)
+
     return actions
 
 def print_usage():
     print "USAGE:"
-    print "ResilienceEngine --serverName <mongo host name> [--replicaSetName <replica set name>] [--initialDeployment] [--lookAhead]"
+    print "ResilienceEngine --mongoServer <mongo server address> [--initialDeployment] [--lookAhead]"
 
 def main():
-    serverName = ""
-    replicaSetName = ""
-    initialDeployment = False
-
     global LOOK_AHEAD
+    global SOLVER_PORT
+    global ZMQ_PORT
+    global INITIAL_DEPLOYMENT
+
+    # Defining types of messages exchanged between failure monitor and solver.
+    global PING
+    global PING_RESPONSE_READY
+    global PING_RESPONSE_BUSY
+    global SOLVE
+    global SOLVE_RESPONSE_OK
+
     LOOK_AHEAD = False
+    SOLVER_PORT = 7000
+    ZMQ_PORT = 8000
+    INITIAL_DEPLOYMENT = False
+
+
+    PING = "PING"
+    PING_RESPONSE_READY = "READY"
+    PING_RESPONSE_BUSY = "BUSY"
+    SOLVE = "SOLVE"
+    SOLVE_RESPONSE_OK = "OK"
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hsril",
-                                   ["help", "serverName=", "replicaSetName=", "initialDeployment", "lookAhead"])
+        opts, args = getopt.getopt(sys.argv[1:], "hmil",
+                                   ["help", "mongoServer=", "initialDeployment", "lookAhead"])
     except getopt.GetoptError:
-        print 'Cannot retrieve passed parameters.'
+        print "Cannot retrieve passed parameters."
         print_usage()
         sys.exit()
+
+    mongoServer = None
+    initialDeployment = False
 
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             print_usage()
             sys.exit()
-        elif opt in ("-s", "--serverName"):
-            print "Server name:", arg
-            serverName = arg
-        elif opt in ("-r", "--replicaSetName"):
-            print "ReplicaSet name:", arg
-            replicaSetName = arg
+        elif opt in ("-m", "--mongoServer"):
+            print "Mongo server address:", arg
+            mongoServer = arg
         elif opt in ("-i", "--initialDeployment"):
             print "Initial deployment"
             initialDeployment = True
         elif opt in ("-l", "--lookAhead"):
             print "Lookahead enabled"
             LOOK_AHEAD = True
-
-    if (serverName == ""):
-        print_usage()
-        sys.exit()
-
-    # If valid server name, start solver loop, which will listen for solver request messages.
-    if serverName != "":
-        client = None
-        db = None
-
-        print "Connecting to:", serverName
-
-        if replicaSetName is not None:
-            print "Using replica set:", replicaSetName
-            client = connect(serverName, replicaSetName)
         else:
-            client = connect(serverName, "")
-
-        if client is not None:
-            if "ConfigSpace" in client.database_names():
-                db = client["ConfigSpace"]
-            else:
-                print "ConfigSpace collection does not exists in database"
-                sys.exit()
-        else:
-            print "MongoClient not constructed correctly"
+            print "Invalid command line argument."
+            print_usage()
             sys.exit()
 
-        # Creating ZeroMQ context and publisher socket.
-        zmq_context = zmq.Context()
-        zmq_socket = zmq_context.socket(zmq.PUB)
-        zmq_socket.bind("tcp://*:%d"%ZMQ_PORT)
+    # If no mongoServer given then use default.
+    if (mongoServer is None):
+        #mongoServer = "mongo"
+        mongoServer = "localhost"
+        print "Using mongo server: ", mongoServer
 
-        if initialDeployment:
-            invoke_solver(db, zmq_socket, True)
+    client = None
+    db = None
+
+    print "Connecting to mongo server:", mongoServer
+    client = mongo_connect(mongoServer)
+
+    if client is not None:
+        if "ConfigSpace" in client.database_names():
+            db = client["ConfigSpace"]
         else:
-            solver_loop(db, zmq_socket)
+            print "ConfigSpace collection does not exists in database"
+            sys.exit()
+    else:
+        print "MongoClient not constructed correctly"
+        sys.exit()
+
+    # Creating ZeroMQ context and client socket.
+    zmq_context = zmq.Context()
+    zmq_socket = zmq_context.socket(zmq.REQ)
+    if initialDeployment:
+        invoke_solver(db, zmq_socket, True)
+    else:
+        solver_loop(db, zmq_socket)
 
 if __name__ == "__main__":
     main()

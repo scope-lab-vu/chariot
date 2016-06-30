@@ -1,40 +1,30 @@
 __author__ = "Subhav Pradhan"
 
-from pymongo import MongoClient
-from time import sleep
-import pymongo
-import json
-import sys
-import getopt
-import socket
-import os
-from pymongo import CursorType
-from pymongo.errors import AutoReconnect
-import subprocess
-import time
-import signal
+import sys, os, signal, subprocess, getopt
+import socket, zmq, json
+import re
+from ResilienceEngine import mongo_connect
+from random import randint
+from SolverBackend import Serialize
+from ResilienceEngine import get_node_address
 
-class Serialize:
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
-
-def execute_start_action(actionNode, actionProcess, actionStartScript):
-    retval = -1
+def execute_start_action(actionProcess, actionStartScript):
+    retval = None
 
     env_str = os.getenv('APP_HOME','/home/vagrant/chariot_apps/')
     actionStartScript = str(actionStartScript)
-    
+
     cmd = actionStartScript.split(" ")
     cmd[1] = env_str + "/" + cmd[1]
-    
-    #print "Creating process:", actionProcess, "with START command:", actionStartScript
+
+    print "Creating process:", actionProcess, "with START command:", cmd
     proc = subprocess.Popen(cmd)
     print "Command executed, PID:", proc.pid
     retval = proc.pid
 
     return retval
 
-def execute_stop_action(actionNode, actionProcess, actionStopScript):
+def execute_stop_action(db, actionNode, actionProcess, actionStopScript):
     if (actionNode == NODE_NAME):
         # Find PID in the database.
         lsColl = db["LiveSystem"]
@@ -55,7 +45,6 @@ def execute_stop_action(actionNode, actionProcess, actionStopScript):
             print "PID not found in the database. STOP cannot be performed."
 
 def update_start_action(db, actionNode, actionProcess, startScript, stopScript, pid):
-    import re
     component = re.sub("process_", "", actionProcess)
 
     lsColl = db["LiveSystem"]
@@ -69,7 +58,6 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
                            upsert = False)
 
     # If above update matched, then update the component instance status too.
-    # TODO: Check if component instance status needs to be updated in the ComponentInstances collection too.
     if result is not None:
         if result["ok"] > 0:
             lsColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "components":{"$elemMatch":{"name":component}}}}},
@@ -120,14 +108,25 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
                                {"$set":{"status":"ACTIVE"}},
                                upsert = False)
 
+    # Mark action as taken.
+    daColl = db["DeploymentActions"]
+    daColl.update({"action":"START", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
+                  {"$set":{"status":"1_TAKEN"}},
+                  upsert = False)
+
 def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
-    import re
     component = re.sub("process_", "", actionProcess)
 
     lsColl = db["LiveSystem"]
 
     result = lsColl.update({"name":actionNode},
                            {"$pull":{"processes":{"name":actionProcess}}})
+
+    # Mark action as taken.
+    daColl = db["DeploymentActions"]
+    daColl.update({"action":"STOP", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
+                  {"$set":{"status":"1_TAKEN"}},
+                  upsert = False)
 
 def handle_action(db, actionDoc):
     actionNode = actionDoc["node"]
@@ -143,14 +142,12 @@ def handle_action(db, actionDoc):
         if action == "START" and actionStatus == "0_TAKEN":
             print "STARTING process:", actionProcess, "on node:", actionNode
             if not SIMULATE_DM_ACTIONS:
-                pid = execute_start_action(actionNode, actionProcess, actionStartScript)
+                pid = execute_start_action(actionProcess, actionStartScript)
             else:
-                from random import randint
                 pid = randint(1000, 2000)
 
             # Update deployment time in Failures collection. To do so, first figure out which node failed.
-            # NOTE: This only works for a single failure at a time as we only expect to find one failed node
-            #       when querying the database.
+            # NOTE: This only works for a single failure at a time.
             lsColl = db["LiveSystem"]
             result = lsColl.find({"status":"FAULTY"})
 
@@ -163,33 +160,35 @@ def handle_action(db, actionDoc):
             # Update database to reflect affect of above start action.
             update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, pid)
         elif action == "STOP" and actionStatus == "0_TAKEN":
-            #print "STOPPING process:", actionProcess, "on node:", actionNode
+            print "STOPPING process:", actionProcess, "on node:", actionNode
             if not SIMULATE_DM_ACTIONS:
-                execute_stop_action(actionNode, actionProcess, actionStopScript)
+                execute_stop_action(db, actionNode, actionProcess, actionStopScript)
 
             # Update database to reflect affect of above stop action.
             update_stop_action(db, actionNode, actionProcess, actionStartScript, actionStopScript)
 
 def print_usage():
     print "USAGE:"
-    print "DeploymentManager --nodeName <node name> [--simulateDM]"
+    print "DeploymentManager --nodeName <node name> --mongoServer <mongo server address> [--simulateDM]"
 
-if __name__ == '__main__':
+def main():
     global SIMULATE_DM_ACTIONS
     global NODE_NAME
-    global SLEEP
+    global ZMQ_PORT
 
     SIMULATE_DM_ACTIONS = False
     NODE_NAME = ""
-    SLEEP = 10
+    ZMQ_PORT = 8000
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hns",
-                                   ["help", "nodeName=", "simulateDM"])
+        opts, args = getopt.getopt(sys.argv[1:], "hnms",
+                                   ["help", "nodeName=", "mongoServer=", "simulateDM"])
     except getopt.GetoptError:
-        print 'Cannot retrieve passed parameters.'
+        print "Cannot retrieve passed parameters."
         print_usage()
-        sys.exit(2)
+        sys.exit()
+
+    mongoServer = None
 
     for opt, arg in opts:
         if opt in ("-h", "--help"):
@@ -198,63 +197,68 @@ if __name__ == '__main__':
         elif opt in ("-n", "--nodeName"):
             print "Node name:", arg
             NODE_NAME = arg
+        elif opt in ("-m", "--mongoServer"):
+            print "Mongo server address:", arg
+            mongoServer = arg
         elif opt in ("-s", "--simulateDM"):
             print "Simulating DM Actions"
             SIMULATE_DM_ACTIONS = True
+        else:
+            print "Invalid command line argument."
+            print_usage()
+            sys.exit()
 
+    # If no node name given then use hostname.
     if NODE_NAME == "":
         NODE_NAME = socket.gethostname()
         print "Using node name:", NODE_NAME
 
+    # If no mongoServer given then use default.
+    if (mongoServer is None):
+        #mongoServer = "mongo"
+        mongoServer = "localhost"
+        print "Using mongo server: ", mongoServer
+
     if SIMULATE_DM_ACTIONS:
         os.environ["SIMULATED_HOSTNAME"] = NODE_NAME
 
-    client = MongoClient("localhost", 27017)
-    oplog = client.local.oplog.rs
-    first = oplog.find().sort('$natural', pymongo.DESCENDING).limit(-1).next()
-    ts = first['ts']
+    client = None
+    db = None
+
+    print "Connecting to mongo server:", mongoServer
+    client = mongo_connect(mongoServer)
+
+    if client is not None:
+        if "ConfigSpace" in client.database_names():
+            db = client["ConfigSpace"]
+        else:
+            print "ConfigSpace collection does not exists in database"
+            sys.exit()
+    else:
+        print "MongoClient not constructed correctly"
+        sys.exit()
+
+    # Creating ZeroMQ context and server socket.
+    zmq_context = zmq.Context()
+    zmq_socket = zmq_context.socket(zmq.REP)
+
+    # Get IP and port of host.
+    addr, port = get_node_address(db, NODE_NAME)
+
+    # Connect to given (stored in database) or default port.
+    if (addr is not None and port is not None):
+        zmq_socket.bind("tcp://%s:%d"%(str(addr), int(port)))
+    elif (addr is not None and port is None):
+        # If port is none, use default ZMQ_PORT.
+        zmq_socket.bind("tcp://%s:%d"%(str(addr),ZMQ_PORT))
 
     while True:
-        # query = {'ts': {'$gt': some_timestamp}}  # Replace with your own query.
-        cursor = oplog.find({'ts': {'$gt': ts}}, cursor_type=CursorType.TAILABLE_AWAIT)
-        print 'created cursor'
-        cursor.add_option(8)
-        # cursor.add_option(_QUERY_OPTIONS['oplog_replay'])
+        # Receive action, which is a JSON document.
+        print "Waiting for deployment action"
+        action = zmq_socket.recv()
+        print "Received new deployment action"
+        zmq_socket.send("Received")
+        #handle_action (db, json.loads(action))
 
-        try:
-            while cursor.alive:
-                try:
-                    for doc in cursor:
-                        if doc['op'] == 'i':
-                            filename = 'nodeMonitoringDocuments/'+doc['ns']
-                            if not os.path.exists(os.path.dirname(filename)):
-                                os.makedirs(os.path.dirname(filename))
-                            with open(filename, "a") as f:
-                                fullname = doc['ns'].split('.')
-                                if len(fullname) < 2:
-                                    print 'invalid db/collection name'
-                                    continue
-                                if fullname[0] !="ConfigSpace" or fullname[1]!="DeploymentActions":
-                                    continue
-
-                                # Deployment action insert detected. Simulate if required.
-                                #master_client = MongoClient("master", 27017)
-                                master_client = MongoClient("localhost", 27017)
-                                db = master_client[fullname[0]]
-                                collection = db[fullname[1]]
-
-                                deploymentActionDoc = collection.find_one({'_id': doc['o']['_id']})
-                                handle_action (db, deploymentActionDoc)
-
-                                #tosave = mcollection.find_one({'_id': doc['o']['_id']})
-                                #print tosave
-                                #jsonstring = json.dumps(str(tosave))
-
-                                # print doc
-
-                except (AutoReconnect, StopIteration):
-                    print 'exception triggered'
-                    sleep(SLEEP)
-
-        finally:
-            cursor.close()
+if __name__ == '__main__':
+    main()
