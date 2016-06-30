@@ -26,6 +26,7 @@ def membership_watch(children,event):
                 if child not in CURRENT_MEMBERS:
                     CURRENT_MEMBERS[child] = "ALIVE"
                     print "Node: ", child, " has joined!"
+                    #TODO: Add node dynamically to database.
         else:
             # If new node(s) hasn't been added then it means
             # either node(s) have failed, or previously         
@@ -98,9 +99,9 @@ def handle_failure(node):
 
 def invoke_solver():
     SOLVER_IP = "solver"
-    SOLVER_PORT = 7778
+    SOLVER_PORT = 7000
     MY_IP = "zk"
-    MY_PORT = 8888
+    MY_PORT = 7001
     PING = "PING"
     PING_RESPONSE_READY = "READY"
     PING_RESPONSE_BUSY = "BUSY"
