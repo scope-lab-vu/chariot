@@ -2,7 +2,6 @@ __author__ = "Subhav Pradhan, Tihamer Levendovszky"
 # Base class file for all solvers. General encoding.
 
 from z3 import *
-from GraphvizTemplate import template
 
 class ConfigurationSolver(object):
 
@@ -97,6 +96,10 @@ class ConfigurationSolver(object):
                 for j in range(self.NO_OF_NODES)
                     for k in range (len(self.nodeResourceWeights))]
 
+        print self.componentResourceWeights
+        print self.nodeResourceWeights
+        print perf_c2n
+
         com_const = []
         if self.componentComparativeWeights is not None and self.nodeComparativeWeights is not None:
             com_const = [Implies(self.Assigned(i,j),self.nodeComparativeWeights[k][j] >= self.componentComparativeWeights[k][i]) for i in range(self.NO_OF_COMPONENTS)
@@ -111,26 +114,24 @@ class ConfigurationSolver(object):
         # print self.nodeComparativeWeights
         # print self.componentComparativeWeights
 
-        print "Node reliabilities: ", self.nodeReliability
-        print "Comparitive resource reliabilities: ", self.compResourceReliability
+        #print "Node reliabilities: ", self.nodeReliability
+        #print "Comparitive resource reliabilities: ", self.compResourceReliability
 
         #Reliability constraints.
-        rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
-                                    Product([ c2n[i][j] * self.componentComparativeWeights[k][i]*
-                                              self.nodeComparativeWeights[k][j]*
-                                              self.compResourceReliability[k][j]
-                                              for k in range (len(self.componentComparativeWeights))])
-                                    for j in range(self.NO_OF_NODES)])
-                                for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
+        #rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
+        #                            Product([ c2n[i][j] * self.componentComparativeWeights[k][i]*
+        #                                      self.nodeComparativeWeights[k][j]*
+        #                                      self.compResourceReliability[k][j]
+        #                                      for k in range (len(self.componentComparativeWeights))])
+        #                            for j in range(self.NO_OF_NODES)])
+        #                        for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
 
         #rel_const = [(1 * RealVal(0.2) > RealVal(0.6))]
-
-        print rel_const
+        #print rel_const
 
         # Adding constraints to the solver
-        #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const)
-        self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
-        #self.solver.add(val_c2n + assignment_c2n + rel_const)
+        self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const)
+        #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
         #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rms_c2n)
 
     # This method removes assignment constraint (assignment_c2n) for a given list of components (indexes).
@@ -409,74 +410,6 @@ class ConfigurationSolver(object):
                     for i in range(self.NO_OF_COMPONENTS) ]
         print_matrix(r)
         print"\n"
-
-    def draw_solution(self, nodeLabels, componentLabels):
-
-
-        if self.solver.check() == sat:
-                m = self.solver.model()
-                return self._draw_solution(m, 0, nodeLabels, componentLabels)
-
-        raise Exception("No solution")
-
-    def _draw_solution(self, model, ordinal, nodeLabels, componentLabels):
-
-        graph =template
-
-        if(componentLabels == None):
-            components = ['S_%dC%s [label = \"C%s\"]'%(ordinal,i,i) for i in range(self.NO_OF_COMPONENTS)]
-        else:
-            components = ['S_%dC%s [label = \"%s\"]'%(ordinal,i,componentLabels[i]) for i in range(self.NO_OF_COMPONENTS)]
-
-        graph = graph.replace("@COMPONENTLIST@", ' '.join(components))
-
-        if(nodeLabels == None):
-            nodes = ['S_%dN%s [label = \"N%s\"]'%(ordinal,i,i) for i in range(self.NO_OF_NODES)]
-        else:
-            nodes = ['S_%dN%s [label = \"%s\"]'%(ordinal,i,nodeLabels[i]) for i in range(self.NO_OF_NODES)]
-
-
-        graph = graph.replace("@NODELIST@", ' '.join(nodes))
-
-
-        # Connections
-
-        connections = []
-
-
-        for i in range(self.NO_OF_COMPONENTS):
-            for j in range(self.NO_OF_NODES):
-                element = str(model.evaluate(self.c2n[i][j]))
-                if( element == "1"):
-                    connections.append("S_%dC%d -> S_%dN%d"%(ordinal,i,ordinal,j))
-
-        graph = graph.replace("@CONNECTIONLIST@", ' '.join(connections))
-
-        return graph
-
-    def draw_solutions(self, nodeLabels, componentLabels):
-        graphs =[]
-        i=0;
-
-        solutionModels = self.get_models()
-        for m in solutionModels:
-            graphs.append(self._draw_solution(m, i, nodeLabels, componentLabels))
-            i=i+1
-
-        return  graphs
-
-
-    def draw_independent_solutions(self, nodeLabels, componentLabels):
-        graphs =[]
-        i=0;
-
-        solutionModels = self.get_independent_models()
-        for m in solutionModels:
-            graphs.append(self._draw_solution(m, i, nodeLabels, componentLabels))
-            i=i+1
-
-        return  graphs
-
 
     def get_maximal_model(self):
         s= self.solver

@@ -59,21 +59,6 @@ class SystemDescription:
     def get_constraints(self):
         return self.constraints
 
-    # This function returns replication of a functionality instance if it's functionality has any.
-    def get_replication(self, functionalityInstanceName):
-        functionalityName = None
-        for functionalityInst in self.functionalityInstances:
-            if functionalityInstanceName == functionalityInst.name:
-                functionalityName = functionalityInst.functionalityName
-
-        if functionalityName == None:
-            return None
-
-        for constraint in self.constraints:
-            for functionality in constraint.functionalities:
-                if functionalityName == functionality:
-                    return constraint.kind
-
     # This function computes dependencies for each component instance and returns a list of tuple <component instance
     # name, list of names of component instances it depends on>.
     def get_component_instances_dependencies(self):
@@ -84,7 +69,7 @@ class SystemDescription:
             # Get functionality instance object corresponding to componentInstance.
             functionalityInstance = None
             for funcInst in self.functionalityInstances:
-                if funcInst.name == compInst.functionalityInstance:
+                if funcInst.name == compInst.functionalityInstanceName:
                     functionalityInstance = funcInst
                     break
 
@@ -107,7 +92,7 @@ class SystemDescription:
                         if funcInst.functionalityName == funcDependency:
                             # Handle scenario where the functionality dependency is a voter. In this case the
                             # functionality instance should have dependency related to the voter and not funcInst.
-                            if self.get_replication(funcInst.name) == "VOTER_REPLICATION":
+                            if "VOTER_REPLICATION" in self.check_replication_constraint(funcInst.functionalityName):
                                 if not voterDependencyHandled:
                                     voterFuncInstName = self.find_voter_functionality_instance_name(funcInst.functionalityName)
                                     if voterFuncInstName is not None and \
@@ -140,6 +125,7 @@ class SystemDescription:
         return retVal
 
     # This function finds and returns name of all ACTIVE nodes of category nodeCategory.
+    @staticmethod
     def get_node_names(self, nodeCategory, nodes, nodeTemplates):
         retval = list()
 
@@ -163,7 +149,7 @@ class SystemDescription:
             del self.functionalityInstances[:]  # Emptying functionality instances list.
 
         for objective in self.objectives:
-            # Handle replication of functionalities of local and non-local objectives.
+            # Handle replication of functionalities.
             self.handle_functionality_instances_replication (objective, nodes, nodeTemplates)
 
             # Handle collocation constraints.
@@ -187,7 +173,7 @@ class SystemDescription:
                                               functionalityInstance.name.replace("func", "comp")
                 componentInstanceToAdd.type = functionalityInstance.componentType
                 componentInstanceToAdd.status = "TO_BE_DEPLOYED"
-                componentInstanceToAdd.functionalityInstance = functionalityInstance.name
+                componentInstanceToAdd.functionalityInstanceName = functionalityInstance.name
                 self.componentInstances.append(componentInstanceToAdd)
                 self.funcInstancesToCompInstances[functionalityInstance.name] = componentInstanceToAdd.name
             else:
@@ -208,7 +194,7 @@ class SystemDescription:
                 # Store mode (since we are generating new component instance, always use default node).
                 componentInstanceToAdd.mode = componentType.defaultMode
 
-                componentInstanceToAdd.functionalityInstance = functionalityInstance.name
+                componentInstanceToAdd.functionalityInstanceName = functionalityInstance.name
                 self.componentInstances.append(componentInstanceToAdd)
                 self.funcInstancesToCompInstances[functionalityInstance.name] = componentInstanceToAdd.name
 
@@ -220,31 +206,29 @@ class SystemDescription:
     def handle_functionality_instances_replication(self, objective, nodes, nodeTemplates):
         for functionality in objective.functionalities:
             if functionality.name not in self.computedFunctionalities:
-                if functionality.perNode:
-                    # If perNode replication requirement is true then use node categories
-                    # to get all nodes of interest.
-                    for nodeCategory in functionality.nodeCategories:
-                        for node in self.get_node_names(nodeCategory, nodes, nodeTemplates):
-                            # Only create functionality instance and associated constraint if node is ACTIVE.
-                            if node.status == "ACTIVE":
-                                functionalityInstanceToAdd = FunctionalityInstance()
-                                functionalityInstanceToAdd.name = functionality.name + "_func_instance_" + node.name
-                                functionalityInstanceToAdd.functionalityName = functionality.name
-                                functionalityInstanceToAdd.objectiveName = objective.name
-                                functionalityInstanceToAdd.node = node.name
-                                self.functionalityInstances.append(functionalityInstanceToAdd)
-                                self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
-                                self.functionalityConstraints.append(("assign",
-                                                                      functionalityInstanceToAdd.name,
-                                                                      node.name))
-                else:
-                    # Check if functionality has any associated replication constraint. If it does then
-                    # instantiate required number of instances. If not then instantiate single instance.
-                    replicationConstraints = self.check_replication_constraint(functionality)
-                    if len(replicationConstraints) > 0:
-                        # If there are replications constraint(s) then apply each one of the constraint.
-                        for constraint in replicationConstraints:
-                            constraintKind = None
+                # Check if functionality has any associated replication constraint. If it does then
+                # instantiate required number of instances. If not then instantiate single instance.
+                replicationConstraints = self.check_replication_constraint(functionality.name)
+                if len(replicationConstraints) > 0:
+                    # If there are replications constraint(s) then apply each one of the constraint.
+                    for constraint in replicationConstraints:
+                        if constraint.kind == "PER_NODE_REPLICATION":
+                            # If perNode replication constraint, then use node categories to get all nodes of interest.
+                            for nodeCategory in constraint.nodeCategories:
+                                for node in self.get_node_names(nodeCategory, nodes, nodeTemplates):
+                                    # Only create functionality instance and associated constraint if node is ACTIVE.
+                                    if node.status == "ACTIVE":
+                                        functionalityInstanceToAdd = FunctionalityInstance()
+                                        functionalityInstanceToAdd.name = functionality.name + "_func_instance_" + node.name
+                                        functionalityInstanceToAdd.functionalityName = functionality.name
+                                        functionalityInstanceToAdd.objectiveName = objective.name
+                                        functionalityInstanceToAdd.node = node.name
+                                        self.functionalityInstances.append(functionalityInstanceToAdd)
+                                        self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
+                                        self.functionalityConstraints.append(("assign",
+                                                                              functionalityInstanceToAdd.name,
+                                                                              node.name))
+                        else:
                             initialNumInstances = 0
 
                             # Set initial number of functionality instances that needs to be generated.
@@ -329,15 +313,15 @@ class SystemDescription:
                                                                       objective.name + "_obj_instance"))
 
                                 self.functionalityConstraints.append(("distribute", tmpFunctionalityInstancesList))
-                    else:
-                        # Functionality doesn't have perNode constraint or replication constraint, so generate
-                        # singleton functionality instance.
-                        functionalityInstanceToAdd = FunctionalityInstance()
-                        functionalityInstanceToAdd.name = functionality.name + "_func_instance"
-                        functionalityInstanceToAdd.functionalityName = functionality.name
-                        functionalityInstanceToAdd.objectiveName = objective.name
-                        self.functionalityInstances.append(functionalityInstanceToAdd)
-                        self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
+                else:
+                    # Functionality doesn't have perNode constraint or replication constraint, so generate
+                    # singleton functionality instance.
+                    functionalityInstanceToAdd = FunctionalityInstance()
+                    functionalityInstanceToAdd.name = functionality.name + "_func_instance"
+                    functionalityInstanceToAdd.functionalityName = functionality.name
+                    functionalityInstanceToAdd.objectiveName = objective.name
+                    self.functionalityInstances.append(functionalityInstanceToAdd)
+                    self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
 
     # This function handles collocation of functionality instances.
     def handle_functionality_instances_collocation(self, objective):
@@ -360,16 +344,17 @@ class SystemDescription:
                         constraintListToAdd.append(constraintToAdd)
                     self.functionalityConstraints.append(("collocate", constraintListToAdd))
 
-    # This function checks if the given functionality has any replication constraint. Returns a list of
+    # This function checks if the functionality with the given name has any replication constraint. Returns a list of
     # replication constraints.
-    def check_replication_constraint(self, functionality):
+    def check_replication_constraint(self, functionalityName):
         retval = list()
 
         for constraint in self.constraints:
-            if functionality.name in constraint.functionalities:
+            if functionalityName == constraint.functionality:
                 if constraint.kind == "VOTER_REPLICATION" or \
                    constraint.kind == "CONSENSUS_REPLICATION" or \
-                   constraint.kind == "CLUSTER_REPLICATION":
+                   constraint.kind == "CLUSTER_REPLICATION" or \
+                   constraint.kind == "PER_NODE_REPLICATION":
                     retval.append(constraint)
 
         return retval
@@ -380,7 +365,7 @@ class SystemDescription:
         retval = list()
 
         for constraint in self.constraints:
-            if functionality.name == constraint.functionalities[0] and constraint.kind == "NODE_COLLOCATION":
+            if functionality.name == constraint.functionality and constraint.kind == "NODE_COLLOCATION":
                 retval.append(constraint)
 
         return retval
@@ -449,7 +434,7 @@ class FunctionalityInstance:
     functionalityName = None        # This attribute will be empty for voter and consensus provider
                                     # functionality instances.
     node = None                     # This attribute is only valid if functionality instance is
-                                    # tied to a node as part of local objective.
+                                    # tied to a node as part of per node replication pattern.
     isVoter = None                  # This flag determines if a functionality instance is related
                                     # to a voter replication pattern.
     isConsensusProvider = None      # This flag determines if a functionality instance is related
@@ -589,17 +574,17 @@ class ComponentInstance:
     type = None
     status = None
     mode = None
-    functionalityInstance = None    # Functionality instance (i.e. functionality) provided by a component instance.
-                                    # We currently assume one functionality per component instance.
-    node = None                     # This attribute is only valid if functionality instance is
-                                    # tied to a node as part of local objective.
+    functionalityInstanceName = None    # Name of functionality instance (i.e. functionality) provided by a component
+                                        # instance. We currently assume one functionality per component instance.
+    node = None                         # This attribute is only valid if functionality instance is
+                                        # tied to a node as part of a per node replication pattern.
 
     def __init__(self):
         self.name = ""
         self.type = ""
         self.status = ""
         self.mode = ""
-        self.functionalityInstance = ""
+        self.functionalityInstanceName = ""
         self.node = ""
 
 class SolverBackend:
@@ -741,21 +726,6 @@ class SolverBackend:
             if type == componentType.name:
                 return [componentType.startScript, componentType.stopScript]
 
-    # This function returns replication of a functionality instance if it's functionality has any.
-    def get_replication(self, functionalityInstance):
-        functionalityName = None
-        for functionalityInst in self.functionalityInstances:
-            if functionalityInstance == functionalityInst.name:
-                functionalityName = functionalityInst.functionalityName
-
-        if functionalityName == None:
-            return None
-
-        for constraint in self.constraints:
-            for functionality in constraint.functionalities:
-                if functionalityName == functionality:
-                    return constraint.kind
-
     # This function loads different state related information.
     def load_state(self, db):
         self.load_node_templates(db)
@@ -806,7 +776,7 @@ class SolverBackend:
     # This function finds component instance that provides a given functionality instance.
     def find_component_instance(self, functionalityInstance):
         for componentInstance in self.componentInstances:
-            if componentInstance.functionalityInstance == functionalityInstance:
+            if componentInstance.functionalityInstanceName == functionalityInstance:
                 return componentInstance.name
 
         return None
@@ -876,7 +846,7 @@ class SolverBackend:
             #    objectiveIndex = self.objectiveName2Index[constraint[3]]
             #    constraintToAdd = solver.ForceExactly(objectiveIndex, compIndexes, constraint[1])
             if constraintToAdd is not None:
-                #print "****", constraint[0], ": ", constraintToAdd
+                print "****", constraint[0], ": ", constraintToAdd
                 solver.solver.add(constraintToAdd)
 
     # This function returns a list of pair (component index, node index) to represent failed components.
@@ -923,11 +893,6 @@ class SolverBackend:
         ciColl = db["ComponentInstances"]
 
         for componentInstance in self.componentInstances:
-            replication = self.get_replication(componentInstance.functionalityInstance)
-
-            if replication is None:
-                replication = ""
-
             componentInstanceDocument = dict()
             componentInstanceDocument["name"] = componentInstance.name
             componentInstanceDocument["type"] = componentInstance.type
@@ -939,8 +904,7 @@ class SolverBackend:
             #    componentInstanceDocument["status"] = componentInstance.status
             componentInstanceDocument["status"] = componentInstance.status
             componentInstanceDocument["mode"] = componentInstance.mode
-            componentInstanceDocument["functionalityInstance"] = componentInstance.functionalityInstance
-            componentInstanceDocument["replication"] = replication
+            componentInstanceDocument["functionalityInstanceName"] = componentInstance.functionalityInstanceName
             componentInstanceDocument["node"] = componentInstance.node
 
             ciColl.update({"name":componentInstance.name},
@@ -1453,7 +1417,7 @@ class SolverBackend:
                             componentInstanceToAdd.status = componentInstance.status
                             componentInstanceToAdd.type = componentInstance.type
                             componentInstanceToAdd.mode = componentInstance.mode
-                            componentInstanceToAdd.functionalityInstance = componentInstance.functionalityInstance
+                            componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
                             componentInstanceToAdd.node = componentInstance.node
 
                             processToAdd.componentInstances.append(componentInstanceToAdd)
@@ -1549,31 +1513,31 @@ class SolverBackend:
             # Add system description to collection.
             self.systemDescriptions.append(systemDescriptionToAdd)
 
-            # print
-            #
-            # print "=====OBJECTIVES====="
-            # for i in self.objectives:
-            #      print i.name
-            #
-            # print
-            #
-            # print "=====FUNCTIONALITY INSTANCES====="
-            # for i in self.functionalityInstances:
-            #      print i.name, "(", i.functionalityName, ",", i.objectiveName, ")"
-            #
-            # print
-            #
-            # print "=====FUNCTIONALITY CONSTRANTS====="
-            # for i in self.functionalityConstraints:
-            #     print i
-            #
-            # print
-            #
-            # print "=====COMPONENT INSTANCES====="
-            # for i in self.componentInstances:
-            #     print i.name, "(", i.type, ",", i.functionalityInstance, ")"
+            print
 
-            # print
+            print "=====OBJECTIVES====="
+            for i in self.objectives:
+                  print i.name
+
+            print
+
+            print "=====FUNCTIONALITY INSTANCES====="
+            for i in self.functionalityInstances:
+                 print i.name, "(", i.functionalityName, ",", i.objectiveName, ")"
+
+            print
+
+            print "=====FUNCTIONALITY CONSTRANTS====="
+            for i in self.functionalityConstraints:
+                print i
+
+            print
+
+            print "=====COMPONENT INSTANCES====="
+            for i in self.componentInstances:
+                print i.name, "(", i.type, ",", i.functionalityInstanceName, ")"
+
+            print
 
     # This function loads existing component instances from MongoDB.
     def load_component_instances(self, db):
@@ -1589,16 +1553,16 @@ class SolverBackend:
                                                                         # for display, so we do not read it as status
                                                                         # is only relevant if read from LiveSystem.
             componentInstanceToAdd.mode = componentInstance.mode
-            componentInstanceToAdd.functionalityInstance = componentInstance.functionalityInstance
+            componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
             componentInstanceToAdd.node = componentInstance.node
 
-            # Load local component instances (i.e. component instance that provides local functionality specific to
-            # a node) if and only if their corresponding node is active.
+            # Load node-specific component instances (i.e. component instance that are part of per node replication
+            # pattern) if and only if their corresponding node is active.
             if componentInstanceToAdd.node != "":
                 if(self.check_node_status(componentInstance.node) == "ACTIVE"):
                     self.add_component_instance(componentInstanceToAdd, False)
                 else:
-                    print "Skipping local ComponentInstance with name:", componentInstance.name, "as its assigned node:", \
+                    print "Skipping node specific ComponentInstance with name:", componentInstance.name, "as its assigned node:", \
                         componentInstance.node, "is not ACTIVE"
             else:
                 self.add_component_instance(componentInstanceToAdd, False)

@@ -75,7 +75,7 @@ class NewConfigurationSolver(ConfigurationSolver):
                 if element_old < element:
                     componentsToStart.append([i,j]) # Start ci on ni
                 if element_old > element:
-                    componentsToShutDown.append([i,j]) # Start ci on ni
+                    componentsToShutDown.append([i,j]) # Stop ci on ni
 
         return [componentsToShutDown, componentsToStart, model, dist]
 
