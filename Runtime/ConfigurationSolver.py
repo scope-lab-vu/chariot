@@ -96,10 +96,6 @@ class ConfigurationSolver(object):
                 for j in range(self.NO_OF_NODES)
                     for k in range (len(self.nodeResourceWeights))]
 
-        print self.componentResourceWeights
-        print self.nodeResourceWeights
-        print perf_c2n
-
         com_const = []
         if self.componentComparativeWeights is not None and self.nodeComparativeWeights is not None:
             com_const = [Implies(self.Assigned(i,j),self.nodeComparativeWeights[k][j] >= self.componentComparativeWeights[k][i]) for i in range(self.NO_OF_COMPONENTS)

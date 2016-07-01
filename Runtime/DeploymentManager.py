@@ -247,18 +247,21 @@ def main():
 
     # Connect to given (stored in database) or default port.
     if (addr is not None and port is not None):
+        print "Using address: ", str(addr), " and port: ", int(port)
         zmq_socket.bind("tcp://%s:%d"%(str(addr), int(port)))
     elif (addr is not None and port is None):
         # If port is none, use default ZMQ_PORT.
+        print "Using address: ", str(addr), " and port: ", int(port)
         zmq_socket.bind("tcp://%s:%d"%(str(addr),ZMQ_PORT))
 
     while True:
         # Receive action, which is a JSON document.
         print "Waiting for deployment action"
         action = zmq_socket.recv()
-        print "Received new deployment action"
         zmq_socket.send("Received")
-        #handle_action (db, json.loads(action))
+        action_json = json.loads(action)
+        print "Received new deployment action: ", action_json["action"], " for process: ", action_json["process"]
+        handle_action (db, json.loads(action))
 
 if __name__ == '__main__':
     main()

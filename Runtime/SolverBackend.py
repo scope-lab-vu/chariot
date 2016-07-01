@@ -126,7 +126,7 @@ class SystemDescription:
 
     # This function finds and returns name of all ACTIVE nodes of category nodeCategory.
     @staticmethod
-    def get_node_names(self, nodeCategory, nodes, nodeTemplates):
+    def get_node_names(nodeCategory, nodes, nodeTemplates):
         retval = list()
 
         for node in nodes:
@@ -846,7 +846,7 @@ class SolverBackend:
             #    objectiveIndex = self.objectiveName2Index[constraint[3]]
             #    constraintToAdd = solver.ForceExactly(objectiveIndex, compIndexes, constraint[1])
             if constraintToAdd is not None:
-                print "****", constraint[0], ": ", constraintToAdd
+                #print "****", constraint[0], ": ", constraintToAdd
                 solver.solver.add(constraintToAdd)
 
     # This function returns a list of pair (component index, node index) to represent failed components.

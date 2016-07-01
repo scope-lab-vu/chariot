@@ -82,17 +82,41 @@ def find_solution(db, zmq_socket):
                                    upsert = False)
             for r in laResult:
                 for action in r["recoveryActions"]:
-                    # Send action (which is a json document) with its target
-                    # node as topic. 
-                    zmq_socket.json(action["node"], action)
                     # Store action.
                     daColl.insert(action)
                     deploymentActions.append(action)
 
+                    # Send action.
+                    if send_action(db, action, zmq_socket) is False:
+                        return
         # Look ahead again
         look_ahead(db, deploymentActions)
     else:
         invoke_solver(db, zmq_socket, False)
+
+# Returns true if send succeeds, false otherwise.
+def send_action (db, action, zmq_socket):
+     # Get address of node to send action to.
+    addr, port = get_node_address(db, action["node"])
+
+    zmq_addr = None
+    if (addr is not None and port is not None):
+        zmq_addr = "tcp://%s:%d"%(str(addr), int(port))
+    elif (addr is not None and port is None):
+        zmq_addr = "tcp://%s:%d"%(str(addr), ZMQ_PORT)
+
+    print "Sending action to DeploymentManager in node: ", str(action["node"])
+
+    try:
+        zmq_socket.connect(zmq_addr)
+        zmq_socket.send(json.dumps(action))
+        response = zmq_socket.recv()
+        zmq_socket.disconnect(zmq_addr)
+    except zmq.error.Again as e:
+        print "Caught exception: ", e
+        print "Error: Cannot reach DeploymentManager in node: ", str(action["node"])
+        return False
+    return True
 
 # This function gets current configuration and invokes the solver. No looking ahead.
 # This function returns list of deployment actions if solution found.
@@ -162,20 +186,8 @@ def invoke_solver(db, zmq_socket, initial):
                     # Send actions using zeromq if not lookahead.
                     if (not LOOK_AHEAD):
                         for action in actions:
-                            print "Sending action to DeploymentManager in node: ", str(action["node"])
-                            # Get address of node to send action to.
-                            addr, port = get_node_address(db, action["node"])
-                            if (addr is not None and port is not None):
-                                zmq_socket.connect("tcp://%s:%d"%(str(addr), int(port)))
-                                zmq_socket.send(json.dumps(action))
-                                response = zmq_socket.recv()
-                                #zmq_socket.close()
-                            elif (addr is not None and port is None):
-                                # If port is none, use default ZMQ_PORT.
-                                zmq_socket.connect("tcp://%s:%d"%(str(addr),ZMQ_PORT))
-                                zmq_socket.send(json.dumps(action))
-                                response = zmq_socket.recv()
-                                #zmq_socket.close()
+                            if send_action(db, action, zmq_socket) is False:
+                                return
                     else:
                         # If lookahead then do initial lookahead for initial deployment.
                         if (initial):
@@ -491,10 +503,19 @@ def main():
     # Creating ZeroMQ context and client socket.
     zmq_context = zmq.Context()
     zmq_socket = zmq_context.socket(zmq.REQ)
+
+    # Set receive timeout of 3 seconds and set linger for clean termination.
+    zmq_socket.setsockopt(zmq.RCVTIMEO, 3000)
+    zmq_socket.setsockopt(zmq.LINGER, 0)
+
     if initialDeployment:
         invoke_solver(db, zmq_socket, True)
     else:
         solver_loop(db, zmq_socket)
+
+    # Close socket and terminate context.
+    zmq_socket.close()
+    zmq_context.term()
 
 if __name__ == "__main__":
     main()
