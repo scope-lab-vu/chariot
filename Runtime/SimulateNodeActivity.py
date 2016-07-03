@@ -89,7 +89,7 @@ def execute_action():
                                        upsert = False)
 
 SOLVER_IP = "127.0.0.1"
-SOLVER_PORT = 7778
+SOLVER_PORT = 7000
 MY_PORT = 8888
 
 PING = "PING"

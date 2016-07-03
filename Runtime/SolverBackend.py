@@ -305,12 +305,12 @@ class SystemDescription:
                                     self.functionalityConstraints.append(("atleast",
                                                                           constraint.minInstances,
                                                                           tmpConsensusServiceInstancesList,
-                                                                          objective.name + "_obj_instance"))
+                                                                          objective.name))
 
                                 self.functionalityConstraints.append(("atleast",
                                                                       constraint.minInstances,
                                                                       tmpFunctionalityInstancesList,
-                                                                      objective.name + "_obj_instance"))
+                                                                      objective.name))
 
                                 self.functionalityConstraints.append(("distribute", tmpFunctionalityInstancesList))
                 else:
@@ -830,6 +830,7 @@ class SolverBackend:
                     compIndexes.append(componentInstanceIndex)
                 solver.RemoveAssignmentConstraints (compIndexes)
                 objectiveIndex = self.objectiveName2Index[constraint[3]]
+                print "objective index: ", objectiveIndex
                 constraintToAdd = solver.ForceAtleast(objectiveIndex, compIndexes, constraint[1])
             #elif constraint[0] == "atmost":
             #    compIndexes = list()
@@ -1513,31 +1514,31 @@ class SolverBackend:
             # Add system description to collection.
             self.systemDescriptions.append(systemDescriptionToAdd)
 
-            print
-
-            print "=====OBJECTIVES====="
-            for i in self.objectives:
-                  print i.name
-
-            print
-
-            print "=====FUNCTIONALITY INSTANCES====="
-            for i in self.functionalityInstances:
-                 print i.name, "(", i.functionalityName, ",", i.objectiveName, ")"
-
-            print
-
-            print "=====FUNCTIONALITY CONSTRANTS====="
-            for i in self.functionalityConstraints:
-                print i
-
-            print
-
-            print "=====COMPONENT INSTANCES====="
-            for i in self.componentInstances:
-                print i.name, "(", i.type, ",", i.functionalityInstanceName, ")"
-
-            print
+            # print
+            #
+            # print "=====OBJECTIVES====="
+            # for i in self.objectives:
+            #       print i.name
+            #
+            # print
+            #
+            # print "=====FUNCTIONALITY INSTANCES====="
+            # for i in self.functionalityInstances:
+            #      print i.name, "(", i.functionalityName, ",", i.objectiveName, ")"
+            #
+            # print
+            #
+            # print "=====FUNCTIONALITY CONSTRANTS====="
+            # for i in self.functionalityConstraints:
+            #     print i
+            #
+            # print
+            #
+            # print "=====COMPONENT INSTANCES====="
+            # for i in self.componentInstances:
+            #     print i.name, "(", i.type, ",", i.functionalityInstanceName, ")"
+            #
+            # print
 
     # This function loads existing component instances from MongoDB.
     def load_component_instances(self, db):

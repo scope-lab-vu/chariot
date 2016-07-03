@@ -12,7 +12,9 @@ def solver_loop (db, zmq_socket):
     try:
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
-        sock.bind((socket.gethostname(), SOLVER_PORT))
+        #sock.bind((socket.gethostname(), SOLVER_PORT))
+        sock.bind(("127.0.0.1", SOLVER_PORT))
+        print socket.gethostname()
         inComputation = False
         while True:
             print "Waiting for request..."
