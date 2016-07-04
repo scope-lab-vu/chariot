@@ -83,7 +83,6 @@ class NewConfigurationSolver(ConfigurationSolver):
     def get_next_configuration(self):
         s= self.solver
         s.push() # Save solver state
-        #print "Assertions: ", s.assertions()
 
         # Here, c2n is a list of Z3 int variables that will be assigned values by the solver.
         # c2n_old is a CxN matrix of integers that represents CURRENT (will be 0's during initial deployment)

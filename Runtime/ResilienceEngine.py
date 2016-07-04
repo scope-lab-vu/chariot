@@ -150,7 +150,7 @@ def invoke_solver(db, zmq_socket, initial):
     backend.add_failure_constraints(solver)
 
     # Add replication constraints.
-    backend.add_replication_constraints(solver, initial)
+    backend.add_replication_constraints(solver)
 
     # TODO: Check if current deployment is valid. If valid, no need to invoke solver.
     #solver.check_valid()

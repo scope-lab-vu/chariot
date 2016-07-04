@@ -51,8 +51,9 @@ class ConfigurationSolver(object):
 
 
         # Initialization -- general
-        self.solver = Solver()
+        self.solver = Optimize()
         self.defineComponent2NodeMatrix()
+        self.defineResourceConstraints()
         self.defineFunctions()
         #self.addActorConstraints()
 
@@ -62,7 +63,7 @@ class ConfigurationSolver(object):
         self.addFunctionConstraints()
 
         # Must be last
-        self.solver.push()
+        #self.solver.push()
         #self.addInteractionConstraints()
 
     ############## Initializing data structures and setting up the initial constraint environment ##############
@@ -89,8 +90,18 @@ class ConfigurationSolver(object):
         assignment_c2n = [  Sum([c2n[i][j] for j in range(self.NO_OF_NODES)]) == 1
             for i in range(self.NO_OF_COMPONENTS)]
 
+        # Maximize assignment.
+        sum_c2n = Sum([c2n[i][j] for j in range(self.NO_OF_NODES)
+            for i in range(self.NO_OF_COMPONENTS)])
 
-        # Resource constraints
+        # Adding constraints to the solver
+        self.solver.add(val_c2n + assignment_c2n)
+        self.solver.maximize(sum_c2n)
+
+    # Resource constraints
+    def defineResourceConstraints(self):
+        c2n = self.c2n
+
         perf_c2n = [self.nodeResourceWeights[k][j] >= Sum([c2n[i][j]*self.componentResourceWeights[k][i]
             for i in range(self.NO_OF_COMPONENTS)])
                 for j in range(self.NO_OF_NODES)
@@ -107,12 +118,6 @@ class ConfigurationSolver(object):
         #    for i in range(self.NO_OF_COMPONENTS)])
         #        for j in range (self.NO_OF_NODES)]
 
-        # print self.nodeComparativeWeights
-        # print self.componentComparativeWeights
-
-        #print "Node reliabilities: ", self.nodeReliability
-        #print "Comparitive resource reliabilities: ", self.compResourceReliability
-
         #Reliability constraints.
         #rel_const = [ Product([ Sum([c2n[i][j]*self.nodeReliability[j]*
         #                            Product([ c2n[i][j] * self.componentComparativeWeights[k][i]*
@@ -125,41 +130,9 @@ class ConfigurationSolver(object):
         #rel_const = [(1 * RealVal(0.2) > RealVal(0.6))]
         #print rel_const
 
-        # Adding constraints to the solver
-        self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const)
+        self.solver.add(perf_c2n + com_const)
         #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
         #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rms_c2n)
-
-    # This method removes assignment constraint (assignment_c2n) for a given list of components (indexes).
-    def RemoveAssignmentConstraints(self, compIndexes):
-        # 1. Compute constraints to check for and store them in list.
-        constraintsToCheck = list()
-        for c in compIndexes:
-            string_to_add = ""
-            for n in range(self.NO_OF_NODES):
-                string_to_add += "c2n_" + str(c) + "_" + str(n) + " + "
-            string_to_add = string_to_add[:-3]      # Remove trailing " + " substring.
-            string_to_add += " == 1"                # Add " == 1" substring at the end.
-            constraintsToCheck.append(string_to_add)
-
-        # 2. Get current constraints and create a new list of constraints that excludes the constraints stored in
-        #    constraintsToCheck list created above.
-        currentConstraints = self.solver.assertions()
-        newConstraints = AstVector()
-        for constraint in currentConstraints:
-            constraint_str = str(constraint)
-            if constraint_str not in constraintsToCheck:
-                newConstraints.push(constraint)
-
-        # 3. Reset solver constraint and add newConstraints.
-        self.solver.reset()
-        self.solver.add(newConstraints)
-
-        # 3. Add =< 1 constraint for each component in the input compIndexes list so that a single component is not
-        #    deployed on multiple nodes.
-        new_assignment = [Sum([self.c2n[i][j] for j in range(self.NO_OF_NODES)]) <= 1
-                          for i in compIndexes]
-        self.solver.add(new_assignment)
 
     # Defines all the function variables. Additional user constraints are defined in addFunctionConstraints().
     def defineFunctions(self):
@@ -253,13 +226,11 @@ class ConfigurationSolver(object):
         distribution = [Sum([self.c2n[compIx][n] for compIx in components])<=1 for n in range(self.NO_OF_NODES)]
         return distribution
 
-
     # Input: the indices of two components in the component instance to node matrix
     # Output: a constraints that makes sure that there is a link between the nodes
     # the components are deployed on. If the  two components are on the same node
     # the constraint is still satisfied.
-
-    def Communicates(self, i,j):
+    def Communicates(self, i, j):
         c2n = self.c2n
         c2l = [ Implies(And(c2n[i][n1]*c2n[j][n2]!=0, n1!=n2), self.links[n1][n2] >=self.communicationWeights[i][j])
         for n1 in range(self.NO_OF_NODES) for n2 in range(self.NO_OF_NODES) ]

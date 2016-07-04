@@ -266,7 +266,6 @@ class SystemDescription:
                                 tmpConsensusServiceInstancesList = list()
                                 for i in range (0, initialNumInstances):
                                     # If consensus cluster then generate consensus provider functionality instance.
-                                    # TODO: Refactor the following code to make it more understandable.
                                     consensusInstanceToAdd = None
                                     if constraint.kind == "CONSENSUS_REPLICATION":
                                         constraintKind = "consensus"
@@ -433,12 +432,16 @@ class FunctionalityInstance:
     objectiveName = None
     functionalityName = None        # This attribute will be empty for voter and consensus provider
                                     # functionality instances.
+
     node = None                     # This attribute is only valid if functionality instance is
                                     # tied to a node as part of per node replication pattern.
+
     isVoter = None                  # This flag determines if a functionality instance is related
                                     # to a voter replication pattern.
+
     isConsensusProvider = None      # This flag determines if a functionality instance is related
                                     # to a consensus replication pattern.
+
     componentType = None            # This attribute is only valid if isVoter or isConsensusProvider
                                     # is true. This allows us to directly associate a functionality
                                     # instance with the specific component type in order to generate
@@ -782,22 +785,15 @@ class SolverBackend:
         return None
 
     # This function adds replication constraints to the given solver.
-    def add_replication_constraints(self, solver, initial):
+    def add_replication_constraints(self, solver):
         for constraint in self.functionalityConstraints:
+            print constraint
             constraintToAdd = None
             if constraint[0] == "distribute":
                 compIndexes = list()
-
-                # Get number of nodes alive.
-                count = 0
-                for node in self.nodes:
-                    if node.status == "ACTIVE":
-                        count += 1
-
                 for functionalityInstance in constraint[1]:
-                    if (len(compIndexes) < count):
-                        componentInstanceName = self.find_component_instance(functionalityInstance)
-                        compIndexes.append(self.componentInstName2Index[componentInstanceName])
+                    componentInstanceName = self.find_component_instance(functionalityInstance)
+                    compIndexes.append(self.componentInstName2Index[componentInstanceName])
                 constraintToAdd = solver.DistributeComponents(compIndexes)
             elif constraint[0] == "implies":
                 leftComponentInstanceName = self.find_component_instance(constraint[1])
@@ -815,37 +811,14 @@ class SolverBackend:
                 secondComponentInstanceName = self.find_component_instance(constraint[2])
                 constraintToAdd = solver.CollocateComponents(self.componentInstName2Index[firstComponentInstanceName],
                                                              self.componentInstName2Index[secondComponentInstanceName])
-            elif constraint[0] == "atleast" and not initial:    # NOTE: Avoid atleast constraint for initial deployment.
-                # If there is an "atleast" constraint and we are trying to reconfigure an existing system, we need to
-                # make sure that we do the following:
-                #   (a) All components instances corresponding to the constraint needs to be removed from the default
-                #       solver constraint that says "sum of all rows == 1".
-                #   (b) Add a constraint such that each row of associated component instances "sum <= 1". This is to
-                #       make sure that same component instance doesn't get instantiated more than once. This condition
-                #       was previously prevented by the constraint we previously removed in step (a).
+            elif constraint[0] == "atleast":
                 compIndexes = list()
                 for functionalityInstance in constraint[2]:
                     componentInstanceName = self.find_component_instance(functionalityInstance)
                     componentInstanceIndex = self.componentInstName2Index[componentInstanceName]
                     compIndexes.append(componentInstanceIndex)
-                solver.RemoveAssignmentConstraints (compIndexes)
                 objectiveIndex = self.objectiveName2Index[constraint[3]]
-                print "objective index: ", objectiveIndex
                 constraintToAdd = solver.ForceAtleast(objectiveIndex, compIndexes, constraint[1])
-            #elif constraint[0] == "atmost":
-            #    compIndexes = list()
-            #    for functionalityInstance in constraint[2]:
-            #        componentInstanceName = self.find_component_instance(functionalityInstance)
-            #        compIndexes.append(self.componentInstName2Index[componentInstanceName])
-            #    objectiveIndex = self.objectiveName2Index[constraint[3]]
-            #    constraintToAdd = solver.ForceAtmost(objectiveIndex, compIndexes, constraint[1])
-            #elif constraint[0] == "exactly":
-            #    compIndexes = list()
-            #    for functionalityInstance in constraint[2]:
-            #        componentInstanceName = self.find_component_instance(functionalityInstance)
-            #        compIndexes.append(self.componentInstName2Index[componentInstanceName])
-            #    objectiveIndex = self.objectiveName2Index[constraint[3]]
-            #    constraintToAdd = solver.ForceExactly(objectiveIndex, compIndexes, constraint[1])
             if constraintToAdd is not None:
                 #print "****", constraint[0], ": ", constraintToAdd
                 solver.solver.add(constraintToAdd)
