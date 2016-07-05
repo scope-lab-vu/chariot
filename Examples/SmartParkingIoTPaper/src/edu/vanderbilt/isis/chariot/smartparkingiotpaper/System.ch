@@ -35,12 +35,12 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 			template EdisonNode.edison
 			iface if1 address "127.0.0.1:9002" network smartparking
 		}
-		/*node edison3 {
+		node edison3 {
 			meanTimeToFailure 5 months
-			template edison
-			iface if1 address "10.1.1.7" network smartparking
+			template EdisonNode.edison
+			iface if1 address "127.0.0.1:9003" network smartparking
 		}
-		node edison4 {
+		/*node edison4 {
 			meanTimeToFailure 2 months
 			template edison
 			iface if1 address "10.1.1.8" network smartparking
@@ -51,6 +51,6 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 		occupancy_checking as objective OccupancyChecking
 		
 		replicate image_capture asPerNode for category CameraNode
-		replicate occupancy_detector asCluster with [2,4] instances
+		replicate occupancy_detector asCluster with [1,2] instances
 	}
 }
