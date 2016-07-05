@@ -195,6 +195,7 @@ class SystemDescription:
                 componentInstanceToAdd.mode = componentType.defaultMode
 
                 componentInstanceToAdd.functionalityInstanceName = functionalityInstance.name
+                componentInstanceToAdd.mustDeploy = functionalityInstance.mustDeploy
                 self.componentInstances.append(componentInstanceToAdd)
                 self.funcInstancesToCompInstances[functionalityInstance.name] = componentInstanceToAdd.name
 
@@ -223,6 +224,7 @@ class SystemDescription:
                                         functionalityInstanceToAdd.functionalityName = functionality.name
                                         functionalityInstanceToAdd.objectiveName = objective.name
                                         functionalityInstanceToAdd.node = node.name
+                                        functionalityInstanceToAdd.mustDeploy = True
                                         self.functionalityInstances.append(functionalityInstanceToAdd)
                                         self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
                                         self.functionalityConstraints.append(("assign",
@@ -230,13 +232,15 @@ class SystemDescription:
                                                                               node.name))
                         else:
                             initialNumInstances = 0
+                            rangeBased = False
 
                             # Set initial number of functionality instances that needs to be generated.
                             # If exact number given then we use that, otherwise if a range is given then
                             # we use the maximum of the range as our initial number.
                             if (constraint.numInstances != 0):
                                 initialNumInstances = constraint.numInstances
-                            elif (constraint.maxInstances != 0):
+                            else:
+                                rangeBased = True
                                 initialNumInstances = constraint.maxInstances
 
                             if initialNumInstances != 0:
@@ -264,7 +268,7 @@ class SystemDescription:
 
                                 tmpFunctionalityInstancesList = list()
                                 tmpConsensusServiceInstancesList = list()
-                                for i in range (0, initialNumInstances):
+                                for i in range(0, initialNumInstances):
                                     # If consensus cluster then generate consensus provider functionality instance.
                                     consensusInstanceToAdd = None
                                     if constraint.kind == "CONSENSUS_REPLICATION":
@@ -284,6 +288,8 @@ class SystemDescription:
                                         functionality.name + "_func_instance_" + constraintKind + "_" + str(i)
                                     functionalityInstanceToAdd.functionalityName = functionality.name
                                     functionalityInstanceToAdd.objectiveName = objective.name
+                                    if not rangeBased:
+                                        functionalityInstanceToAdd.mustDeploy = True
                                     self.functionalityInstances.append(functionalityInstanceToAdd)
                                     self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
                                     tmpFunctionalityInstancesList.append(functionalityInstanceToAdd.name)
@@ -299,17 +305,17 @@ class SystemDescription:
                                                                               functionalityInstanceToAdd.name,
                                                                               consensusInstanceToAdd.name))
 
-                                # TODO: The following two atleast constraints should probably be only applied for range constraint!
-                                if len(tmpConsensusServiceInstancesList) != 0:
+                                if rangeBased:
+                                    #if len(tmpConsensusServiceInstancesList) != 0:
+                                    #    self.functionalityConstraints.append(("atleast",
+                                    #                                          constraint.minInstances,
+                                    #                                          tmpConsensusServiceInstancesList,
+                                    #                                          objective.name))
+
                                     self.functionalityConstraints.append(("atleast",
                                                                           constraint.minInstances,
-                                                                          tmpConsensusServiceInstancesList,
+                                                                          tmpFunctionalityInstancesList,
                                                                           objective.name))
-
-                                self.functionalityConstraints.append(("atleast",
-                                                                      constraint.minInstances,
-                                                                      tmpFunctionalityInstancesList,
-                                                                      objective.name))
 
                                 self.functionalityConstraints.append(("distribute", tmpFunctionalityInstancesList))
                 else:
@@ -319,6 +325,7 @@ class SystemDescription:
                     functionalityInstanceToAdd.name = functionality.name + "_func_instance"
                     functionalityInstanceToAdd.functionalityName = functionality.name
                     functionalityInstanceToAdd.objectiveName = objective.name
+                    functionalityInstanceToAdd.mustDeploy = True
                     self.functionalityInstances.append(functionalityInstanceToAdd)
                     self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
 
@@ -437,16 +444,19 @@ class FunctionalityInstance:
                                     # tied to a node as part of per node replication pattern.
 
     isVoter = None                  # This flag determines if a functionality instance is related
-                                    # to a voter replication pattern.
+                                    # to a voter.
 
     isConsensusProvider = None      # This flag determines if a functionality instance is related
-                                    # to a consensus replication pattern.
+                                    # to a consensus provider.
 
     componentType = None            # This attribute is only valid if isVoter or isConsensusProvider
                                     # is true. This allows us to directly associate a functionality
                                     # instance with the specific component type in order to generate
                                     # required component instance.
 
+    mustDeploy = None               # This flag determines if a functionality instance should always be
+                                    # available and therefore deployed. This will be false only for
+                                    # functionality instances that are not part of atleast replication.
 
     def __init__(self):
         self.name = ""
@@ -456,6 +466,7 @@ class FunctionalityInstance:
         self.isVoter = False
         self.isConsensusProvider = False
         self.componentType = ""
+        self.mustDeploy = False
 
 class Process:
     name = None
@@ -579,8 +590,13 @@ class ComponentInstance:
     mode = None
     functionalityInstanceName = None    # Name of functionality instance (i.e. functionality) provided by a component
                                         # instance. We currently assume one functionality per component instance.
+
     node = None                         # This attribute is only valid if functionality instance is
                                         # tied to a node as part of a per node replication pattern.
+
+    mustDeploy = None                   # This flag determines if a component instance should always be
+                                        # available and therefore deployed. This will be false only for
+                                        # component instances that are not part of atleast replication.
 
     def __init__(self):
         self.name = ""
@@ -589,6 +605,7 @@ class ComponentInstance:
         self.mode = ""
         self.functionalityInstanceName = ""
         self.node = ""
+        self.mustDeploy = False
 
 class SolverBackend:
     # List of entities constructed from information in the database.
@@ -607,6 +624,9 @@ class SolverBackend:
 
     # Deployment representation as an adjacency matrix (NUM_OF_COMPONENTS X NUM_OF_NODES).
     c2n = None
+
+    # List of indexes of component instances that must always be deployed.
+    mustDeployComponentInstancesIndex = None
 
     # Caching names <-> indices.
     objectiveName2Index = None
@@ -657,6 +677,8 @@ class SolverBackend:
         self.componentInstances = list()
 
         self.c2n = list(list())
+
+        self.mustDeployComponentInstancesIndex = list()
 
         self.objectiveName2Index = dict()
         self.componentInstName2Index = dict()
@@ -738,8 +760,8 @@ class SolverBackend:
         self.load_system_descriptions(db)               # Any required component instances that are were not present
                                                         # in existing state (loaded as part of load_component_instances)
                                                         # will be generated here.
-
         self.load_component_to_node_assignment(db)
+        self.load_must_deploy_component_instances()
         self.load_cumulative_node_resources()
         self.load_comparative_node_resource()
         self.load_cumulative_component_requirements()
@@ -787,7 +809,6 @@ class SolverBackend:
     # This function adds replication constraints to the given solver.
     def add_replication_constraints(self, solver):
         for constraint in self.functionalityConstraints:
-            print constraint
             constraintToAdd = None
             if constraint[0] == "distribute":
                 compIndexes = list()
@@ -817,8 +838,27 @@ class SolverBackend:
                     componentInstanceName = self.find_component_instance(functionalityInstance)
                     componentInstanceIndex = self.componentInstName2Index[componentInstanceName]
                     compIndexes.append(componentInstanceIndex)
-                objectiveIndex = self.objectiveName2Index[constraint[3]]
-                constraintToAdd = solver.ForceAtleast(objectiveIndex, compIndexes, constraint[1])
+
+                # Check if the atleast group has been previously deployed or not. If it has then we will apply the
+                # atleast constraint, if not then this implies initial deployment of the group and therefore we apply
+                # maximum optimization.
+                prevDeployed = False
+                for compIndex in compIndexes:
+                    for node in self.nodes:
+                        nodeIndex = self.nodeName2Index[node.name]
+                        if self.c2n[compIndex][nodeIndex] == 1:
+                            prevDeployed = True
+                            break
+
+                if prevDeployed:
+                    print "** Previously deployed so using atleast"
+                    # This atleast group has been previously deployed so using atleast constraint.
+                    objectiveIndex = self.objectiveName2Index[constraint[3]]
+                    constraintToAdd = solver.ForceAtleast(objectiveIndex, compIndexes, constraint[1])
+                else:
+                    print "** No previous deployedment so using maximum"
+                    # This atleast group has not been deployed before so using maximum optimization.
+                    solver.Maximize(compIndexes)
             if constraintToAdd is not None:
                 #print "****", constraint[0], ": ", constraintToAdd
                 solver.solver.add(constraintToAdd)
@@ -880,6 +920,7 @@ class SolverBackend:
             componentInstanceDocument["mode"] = componentInstance.mode
             componentInstanceDocument["functionalityInstanceName"] = componentInstance.functionalityInstanceName
             componentInstanceDocument["node"] = componentInstance.node
+            componentInstanceDocument["mustDeploy"] = componentInstance.mustDeploy
 
             ciColl.update({"name":componentInstance.name},
                           componentInstanceDocument,
@@ -1254,6 +1295,11 @@ class SolverBackend:
                         self.componentInstIndex2ProcessIndex[componentInstIndex] = processIndex
                         self.processIndex2NodeIndex[processIndex] = nodeIndex
 
+    def load_must_deploy_component_instances(self):
+        for compInst in self.componentInstances:
+            if compInst.mustDeploy:
+                self.mustDeployComponentInstancesIndex.append(self.componentInstName2Index[compInst.name])
+
     def load_component_types(self, db):
         collection = db["ComponentTypes"]
 
@@ -1393,6 +1439,7 @@ class SolverBackend:
                             componentInstanceToAdd.mode = componentInstance.mode
                             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
                             componentInstanceToAdd.node = componentInstance.node
+                            componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
 
                             processToAdd.componentInstances.append(componentInstanceToAdd)
                             self.add_component_instance(componentInstanceToAdd, True)
@@ -1529,6 +1576,7 @@ class SolverBackend:
             componentInstanceToAdd.mode = componentInstance.mode
             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
             componentInstanceToAdd.node = componentInstance.node
+            componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
 
             # Load node-specific component instances (i.e. component instance that are part of per node replication
             # pattern) if and only if their corresponding node is active.
