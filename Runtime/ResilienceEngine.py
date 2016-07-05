@@ -156,7 +156,7 @@ def invoke_solver(db, zmq_socket, initial):
     #solver.check_valid()
 
     # Get new deployment.
-    result = solver.get_difference()
+    result = solver.get_difference(initial)
 
     # List of actions to return.
     actions = None
@@ -351,6 +351,7 @@ def populate_live_system(db, backend, solver, componentsToStart, componentsToShu
             liveComponentInstDocument["mode"] = componentInstanceToAdd.mode
             liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd.functionalityInstanceName
             liveComponentInstDocument["node"] = componentInstanceToAdd.node
+            liveComponentInstDocument["mustDeploy"] = componentInstanceToAdd.mustDeploy
 
             processDocument["components"].append(liveComponentInstDocument)
 
