@@ -10,6 +10,7 @@ class NewConfigurationSolver(ConfigurationSolver):
                  NO_OF_NODES,
                  NO_OF_COMPONENTS,
                  NO_OF_FUNCTIONS,
+                 mustDeployComponentInstancesIndex,
                  nodeResourceWeights,
                  componentResourceWeights,
                  nodeComparativeWeights,
@@ -24,6 +25,7 @@ class NewConfigurationSolver(ConfigurationSolver):
         super(NewConfigurationSolver, self).__init__(NO_OF_NODES,
                                                      NO_OF_COMPONENTS,
                                                      NO_OF_FUNCTIONS,
+                                                     mustDeployComponentInstancesIndex,
                                                      nodeResourceWeights,
                                                      componentResourceWeights,
                                                      nodeComparativeWeights,
@@ -57,11 +59,11 @@ class NewConfigurationSolver(ConfigurationSolver):
     # 1. Computes the new configuration
     # 2. Retrieves the difference between the initial and the new configuration along with the distance between the
     # old and new configuration
-    def get_difference(self):
+    def get_difference(self, initial):
         componentsToStart = []
         componentsToShutDown = []
 
-        [dist, model] = self.get_next_configuration()
+        [dist, model] = self.get_next_configuration(initial)
 
         if model is None: # No solution
             return [None, None, None, None]
@@ -80,7 +82,7 @@ class NewConfigurationSolver(ConfigurationSolver):
         return [componentsToShutDown, componentsToStart, model, dist]
 
     # Retrieves the closest valid configuration to the original configuration
-    def get_next_configuration(self):
+    def get_next_configuration(self, initial):
         s= self.solver
         s.push() # Save solver state
 
@@ -90,29 +92,24 @@ class NewConfigurationSolver(ConfigurationSolver):
         c2n = self.c2n
         c2n_old = self.c2n_old
 
-        absNorm = Int("absNorm")
+        if not initial:
+            config_distance = Sum([self.abs(c2n_old[i][j] - c2n[i][j]) for j in range(self.NO_OF_NODES)
+                for i in range(self.NO_OF_COMPONENTS)])
+            config_distance_val = Int("config_distance_val")
+            s.minimize(config_distance)
+            s.add(config_distance_val == config_distance)
 
-        absNormFormula = Sum([self.abs(c2n_old[i][j] - c2n[i][j]) for j in range(self.NO_OF_NODES)
-            for i in range(self.NO_OF_COMPONENTS)])
-
-        s.add(absNorm == absNormFormula)
-
-        last_model = None
-        while True:
-            r = s.check()
-            if r == unsat:
-                s.pop()
-                if last_model is None:
-                    return [None, None]
-                else:
-                    return [last_model[absNorm].as_long(), last_model]
-
-            elif r == unknown:
-                raise Z3Exception("Failed.")
-
+        r = s.check()
+        if r == unsat:
+            return [None, None]
+        elif r == sat:
+            if initial:
+                return [self.NO_OF_COMPONENTS, s.model()]
             else:
-                last_model = s.model()
-                s.add(absNorm < last_model[absNorm])
+                return [s.model()[config_distance_val].as_long(), s.model()]
+        else:
+            raise Z3Exception("Failed.")
+
 
     # Check if current state (represented by c2n_old) is valid.
     def check_valid(self):

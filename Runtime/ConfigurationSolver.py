@@ -10,6 +10,7 @@ class ConfigurationSolver(object):
                  NO_OF_NODES,
                  NO_OF_COMPONENTS,
                  NO_OF_FUNCTIONS,
+                 mustDeployComponentInstancesIndex,
                  nodeResourceWeights,
                  componentResourceWeights,
                  nodeComparativeWeights,
@@ -24,6 +25,8 @@ class ConfigurationSolver(object):
         self.NO_OF_NODES = NO_OF_NODES # No of hardware nodes
         self.NO_OF_COMPONENTS = NO_OF_COMPONENTS # No of component >>implementations<< ordered by their >>definitions<<
         self.NO_OF_FUNCTIONS = NO_OF_FUNCTIONS # No of function implementations (if the same service is offered more times, it counts as 2)
+
+        self.mustDeployComponentInstancesIndex = mustDeployComponentInstancesIndex
 
         # --- The following weights are integers ---
         self.nodeResourceWeights = nodeResourceWeights  # Performance weights for nodes (cumulative)
@@ -78,7 +81,7 @@ class ConfigurationSolver(object):
         # Component-Node matrix
         # If component i uses node j, c2n_i_j is true; false otherwise
         self.c2n = [ [ Int("c2n_%s_%s" % (i, j)) for j in range(self.NO_OF_NODES) ]
-        for i in range(self.NO_OF_COMPONENTS) ]
+            for i in range(self.NO_OF_COMPONENTS) ]
 
         c2n = self.c2n
 
@@ -86,23 +89,22 @@ class ConfigurationSolver(object):
         val_c2n = [ Or(c2n[i][j]==0,c2n[i][j]==1) for j in range(self.NO_OF_NODES)
           for i in range(self.NO_OF_COMPONENTS)]
 
-        # A component can be assigned at most one node
-        assignment_c2n = [  Sum([c2n[i][j] for j in range(self.NO_OF_NODES)]) == 1
+        # General assignment constraint to ensure each component is only deployed in a single
+        # node, or not deployed at all.
+        g_assignment_c2n = [  Sum([c2n[i][j] for j in range(self.NO_OF_NODES)]) <= 1
             for i in range(self.NO_OF_COMPONENTS)]
 
-        # Maximize assignment.
-        sum_c2n = Sum([c2n[i][j] for j in range(self.NO_OF_NODES)
-            for i in range(self.NO_OF_COMPONENTS)])
+        # Must deploy assignment constraint for mustDeploy component instances. This ensures that
+        # a single instance of these component instances are always present.
+        md_assignment_c2n = [  Sum([c2n[i][j] for j in range(self.NO_OF_NODES)]) == 1
+            for i in self.mustDeployComponentInstancesIndex]
 
         # Adding constraints to the solver
-        self.solver.add(val_c2n + assignment_c2n)
-        self.solver.maximize(sum_c2n)
+        self.solver.add(val_c2n + g_assignment_c2n + md_assignment_c2n)
 
     # Resource constraints
     def defineResourceConstraints(self):
-        c2n = self.c2n
-
-        perf_c2n = [self.nodeResourceWeights[k][j] >= Sum([c2n[i][j]*self.componentResourceWeights[k][i]
+        perf_c2n = [self.nodeResourceWeights[k][j] >= Sum([self.c2n[i][j]*self.componentResourceWeights[k][i]
             for i in range(self.NO_OF_COMPONENTS)])
                 for j in range(self.NO_OF_NODES)
                     for k in range (len(self.nodeResourceWeights))]
@@ -185,8 +187,6 @@ class ConfigurationSolver(object):
     # Input: an index of the component in the component instance node matrix.
     # an index of a node in the component instance node matrix.
     # Output: A constraint that assigns component i to node j
-
-
     def Assign(self, i, j):
         return Implies(self.Enabled(i), self.c2n[i][j] ==1)
 
@@ -203,8 +203,6 @@ class ConfigurationSolver(object):
 
     def TurnIntoBinaryResource(self, c, n, client_components):
         return And(self.Assign(c,n),And([self.CollocateComponents(c, cc) for cc in client_components ]))
-
-
 
     # Input: an index of the component in the component instance node matrix.
     # Output: a boolean expression that is true if the component is assigned to a node; false otherwise
@@ -264,6 +262,10 @@ class ConfigurationSolver(object):
     def ForceAtmost(self, function, componentList, n):
         return Implies(self.f[function],Sum([self.c2n[i][j] for i in componentList for j in range(self.NO_OF_NODES)]) <=n)
 
+    def Maximize(self, componentList):
+        component_sum = Sum([self.c2n[i][j] for i in componentList for j in range(self.NO_OF_NODES)])
+        self.solver.maximize(component_sum)
+
     ################# Manipulation interface: introducing constraints caused by faults ###################
 
     # Input: an index of a component in the component instance node matrix.
@@ -296,9 +298,6 @@ class ConfigurationSolver(object):
     def ComponentFailsWithActor(self, c, n):
         c2n = self.c2n
         self.solver.add(c2n[c][n]==0)
-
-
-
 
     # Input: an index of a node in the component instance node matrix.
     # Output: none

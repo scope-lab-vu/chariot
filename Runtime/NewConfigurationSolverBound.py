@@ -14,6 +14,7 @@ class NewConfigurationSolverBound(NewConfigurationSolver):
         super(NewConfigurationSolverBound, self).__init__(len(backend.nodes),
                                                           len(backend.componentInstances),
                                                           len(backend.objectives),
+                                                          backend.mustDeployComponentInstancesIndex,
                                                           backend.nodeCumProvidedResources,
                                                           backend.componentInstCumRequiredResources,
                                                           backend.nodeCompProvidedResources,
