@@ -9,7 +9,7 @@ import com.mongodb.DBCollection
 import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage
-import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time
+import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_Time
 
 package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 	DM_ComponentType {

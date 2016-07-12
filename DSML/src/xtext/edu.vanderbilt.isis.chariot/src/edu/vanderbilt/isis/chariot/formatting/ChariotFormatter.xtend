@@ -20,8 +20,6 @@ class ChariotFormatter extends AbstractDeclarativeFormatter {
 		setLinewrap(1).around(functionalityConnectionRule)
 		
 		setLinewrap(1).around(systemObjectiveRule)
-		setLinewrap(1).around(nodeRule)
-		setLinewrap(1).around(nodeInfoRule)
 
 		setAutoLinewrap(150)
 		

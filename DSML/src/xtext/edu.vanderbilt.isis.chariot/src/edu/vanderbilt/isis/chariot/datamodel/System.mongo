@@ -6,11 +6,22 @@ import java.util.ArrayList
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
-import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Time
 import java.util.Date
-//import java.text.DateFormat
+import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 
 package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
+	DM_Time {
+		double time
+		String unit
+			
+		/*
+		 * 
+		 */
+		void setUnit (TimeUnit unit) {
+			this.unit = unit.toString()
+		}
+	}
+	
 	DM_SystemDescription {
 		ObjectId _id
 		String name

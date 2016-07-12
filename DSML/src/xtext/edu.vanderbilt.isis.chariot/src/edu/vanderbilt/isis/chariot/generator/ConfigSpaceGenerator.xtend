@@ -24,11 +24,6 @@ import edu.vanderbilt.isis.chariot.chariot.MemoryProvision
 import edu.vanderbilt.isis.chariot.chariot.MemoryRequirement
 import edu.vanderbilt.isis.chariot.chariot.Middleware
 import edu.vanderbilt.isis.chariot.chariot.MiddlewareRequirement
-import edu.vanderbilt.isis.chariot.chariot.NetworkInterface
-import edu.vanderbilt.isis.chariot.chariot.Node
-import edu.vanderbilt.isis.chariot.chariot.NodeCategoryLabel
-import edu.vanderbilt.isis.chariot.chariot.NodeTemplate
-import edu.vanderbilt.isis.chariot.chariot.NodeTemplateLabel
 import edu.vanderbilt.isis.chariot.chariot.NodesCategory
 import edu.vanderbilt.isis.chariot.chariot.OSRequirement
 import edu.vanderbilt.isis.chariot.chariot.OSSupported
@@ -41,7 +36,6 @@ import edu.vanderbilt.isis.chariot.chariot.VoterReplicationConstraint
 import edu.vanderbilt.isis.chariot.chariot.VoterServiceComponent
 import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_ComponentType
 import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit
-import edu.vanderbilt.isis.chariot.datamodel.Node.DM_Node
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_NodeCategory
 import edu.vanderbilt.isis.chariot.datamodel.Status
 import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
@@ -522,24 +516,6 @@ class ConfigSpaceGenerator implements IGenerator {
 							init()
 							setName (d.getName())
 								
-							// Store mean time to failure.
-							setMeanTimeToFailure [
-								var time = d.getMeanTimeToFailure()
-								var unit = d.getUnit()
-									
-								setTime (time)
-								if (unit.months)
-									setUnit (TimeUnit.MONTHS)
-								else if (unit.days)
-									setUnit (TimeUnit.DAYS)
-								else if (unit.seconds)
-									setUnit (TimeUnit.SECONDS)
-								else if (unit.milliseconds)
-									setUnit (TimeUnit.MILLISECONDS)
-								else if (unit.microseconds)
-									setUnit (TimeUnit.MICROSECONDS)
-							]
-								
 							for (a : d.getArtifacts()) {
 								addArtifact [
 									init()
@@ -571,27 +547,6 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Store name.
 			system.setName (s.getName())
-			
-			// Store life time and maintenance period.
-			system.setLifeTime [
-				var time = s.getLifeTime()
-				var unit = s.getLifeTimeUnit()
-				
-				setTime (time)
-				if (unit.months)
-					setUnit (TimeUnit.MONTHS)
-				else if (unit.days)
-					setUnit (TimeUnit.DAYS)
-				else if (unit.seconds)
-					setUnit (TimeUnit.SECONDS)
-				else if (unit.milliseconds)
-					setUnit (TimeUnit.MILLISECONDS)
-				else if (unit.microseconds)
-					setUnit (TimeUnit.MICROSECONDS)
-			]
-			
-			// Store reliabilityThreshold.
-			system.setReliabilityThreshold(s.getReliabilityThreshold)
 			
 			// Store constraints.
 			for (c : s.getConstraints()) {
@@ -673,9 +628,6 @@ class ConfigSpaceGenerator implements IGenerator {
 				]
 			}
 			
-			// Generate nodes and deployment.
-			generateNodes (s.getNodes(), db)
-			
 			system.insert(db)
 		}
 	}
@@ -721,61 +673,6 @@ class ConfigSpaceGenerator implements IGenerator {
 						return f.getName()
 				}
 			}
-		}
-	}
-	
-	/*
-	 * 
-	 */
-	def generateNodes (Iterable<Node> nodes, DB db) {
-		// Loop through each node.
-		for (n : nodes) {
-			var DM_Node node = new DM_Node()
-			
-			node.init()
-			
-			// Store name.
-			node.setName (n.getName())
-			
-			// Store mean time to failure.
-			node.setMeanTimeToFailure [
-				var time = n.getMeanTimeToFailure()
-				var unit = n.getUnit()
-				
-				setTime (time)
-				if (unit.months)
-					setUnit (TimeUnit.MONTHS)
-				else if (unit.days)
-					setUnit (TimeUnit.DAYS)
-				else if (unit.seconds)
-					setUnit (TimeUnit.SECONDS)
-				else if (unit.milliseconds)
-					setUnit (TimeUnit.MILLISECONDS)
-				else if (unit.microseconds)
-					setUnit (TimeUnit.MICROSECONDS)
-			]
-			
-			// Filter and store node template label:
-			// NOTE: Only first should/will be stored.
-			var nodeTemplates = n.getNodeInfo().filter(NodeTemplateLabel)
-			if (nodeTemplates.size() > 0)
-				node.setNodeTemplate(nodeTemplates.get(0).getTemplate().getName())
-				
-			// Set status to be ACTIVE.
-			node.setStatus(Status::ACTIVE)
-			
-			// Filter and store interfaces.
-			// NOTE: Interfaces can be one or more.
-			for (i : n.getNodeInfo().filter(NetworkInterface)) {
-				node.addInterface [
-					init()
-					setName(i.getName())
-					setAddress(i.getAddress())
-					setNetwork(i.getNetwork())
-				]
-			}
-			
-			node.insert(db)
 		}
 	}
 }

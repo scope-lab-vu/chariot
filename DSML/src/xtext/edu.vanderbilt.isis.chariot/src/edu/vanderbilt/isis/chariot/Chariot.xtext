@@ -428,7 +428,6 @@ NodeTemplateInfo:
  */
 DeviceSupported:
 	'device' name = ID ('{'
-		('meanTimeToFailure' meanTimeToFailure = (FLOATING_PT_LITERAL) unit = TimeUnit)
 		(artifacts += DeviceArtifact)*
 	'}') ;
 
@@ -503,44 +502,9 @@ NodeCategoryLabel:
  */
 SystemDescription:
 	'system' name = ID '{'
-		('lifeTime' lifeTime = (FLOATING_PT_LITERAL) lifeTimeUnit = TimeUnit)
-		('maintenancePeriod' maintenancePeriod = (FLOATING_PT_LITERAL) maintenancePeriodUnit = TimeUnit)?
-		('reliabilityThreshold' reliabilityThreshold = (FLOATING_PT_LITERAL))
-		(nodes += Node)+
 	 	(requiredobjectives += SystemObjective)+
 		(constraints += SystemConstraint)* //(initialConfiguration = InitialConfiguration)? 
 	'}';
-
-/*
- * Rule to create a node.
- */
-Node:
-	'node' name = ID '{'
-		('meanTimeToFailure' meanTimeToFailure = (FLOATING_PT_LITERAL) unit = TimeUnit)
-		(nodeInfo += NodeInfo)*
-	'}'
-;
-
-/*
- * Rule to declare node information, i.e., node template and
- * network interface.
- */
-NodeInfo:
-		NodeTemplateLabel
-	|	NetworkInterface
-;
-
-/*
- * Rule to associate a node with existing node template.
- */
-NodeTemplateLabel:
-	'template' template = [NodeTemplate | QualifiedName];
-
-/*
- * Rule to specify network interface of a node.
- */
-NetworkInterface:
-	'iface' name = ID 'address' address = STRING 'network' network = ID;
 
 /*
  * Rule to specify required (system) objectives. An objective
