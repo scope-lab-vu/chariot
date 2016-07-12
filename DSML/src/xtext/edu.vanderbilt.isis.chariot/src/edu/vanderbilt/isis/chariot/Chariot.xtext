@@ -418,8 +418,7 @@ NodeTemplateInfo:
 	|	MemoryProvision
 	|	StorageProvision
 	|	OSSupported
-	|	Middleware
-	|	NodeCategoryLabel;
+	|	Middleware;
 
 /*
  * Rule to create a device supported by a node template.
