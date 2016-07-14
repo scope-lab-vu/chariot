@@ -177,11 +177,11 @@ class SystemDescription:
                 self.componentInstances.append(componentInstanceToAdd)
                 self.funcInstancesToCompInstances[functionalityInstance.name] = componentInstanceToAdd.name
             else:
-                # If not voter then find component types that provide functionality associated with
+                # If not voter or consensus service provider, then find component types that provide
+                # functionality associated with functionalityInstance.
                 for componentType in componentTypes:
-                    for functionality in componentType.providedFunctionalities:
-                        if functionality[0] == functionalityInstance.functionalityName:
-                            providingComponentTypes.append(componentType)
+                    if componentType.providedFunctionality == functionalityInstance.functionalityName:
+                        providingComponentTypes.append(componentType)
 
             for componentType in providingComponentTypes:
                 componentName = componentType.name + "_" + functionalityInstance.name.replace("func", "comp")
@@ -190,10 +190,6 @@ class SystemDescription:
                 componentInstanceToAdd.type = componentType.name
                 componentInstanceToAdd.status = "TO_BE_DEPLOYED"
                 componentInstanceToAdd.node = functionalityInstance.node
-
-                # Store mode (since we are generating new component instance, always use default node).
-                componentInstanceToAdd.mode = componentType.defaultMode
-
                 componentInstanceToAdd.functionalityInstanceName = functionalityInstance.name
                 componentInstanceToAdd.mustDeploy = functionalityInstance.mustDeploy
                 self.componentInstances.append(componentInstanceToAdd)
@@ -552,10 +548,7 @@ class Device:
 
 class ComponentType:
     name = None
-    hasModes = None
-    defaultMode = None
-    providedFunctionalities = None  # List of tuple (functionality, list of modes), where a functionality can be
-                                    # provided by a component type in more than one mode of execution.
+    providedFunctionality = None
     memoryRequirement = None        # Tuple (amount, unit).
     storageRequirement = None       # Tuple (amount, unit).
     osRequirement = None
@@ -569,9 +562,7 @@ class ComponentType:
 
     def __init__(self):
         self.name = ""
-        self.hasModes = False       # By default we consider component types to not have any modalities.
-        self.defaultMode = ""
-        self.providedFunctionalities = list()
+        self.providedFunctionality = ""
         self.memoryRequirement = (0, "")
         self.storageRequirement = (0, "")
         self.osRequirement = ""
@@ -587,7 +578,6 @@ class ComponentInstance:
     name = None
     type = None
     status = None
-    mode = None
     functionalityInstanceName = None    # Name of functionality instance (i.e. functionality) provided by a component
                                         # instance. We currently assume one functionality per component instance.
 
@@ -602,7 +592,6 @@ class ComponentInstance:
         self.name = ""
         self.type = ""
         self.status = ""
-        self.mode = ""
         self.functionalityInstanceName = ""
         self.node = ""
         self.mustDeploy = False
@@ -917,7 +906,6 @@ class SolverBackend:
             #else:
             #    componentInstanceDocument["status"] = componentInstance.status
             componentInstanceDocument["status"] = componentInstance.status
-            componentInstanceDocument["mode"] = componentInstance.mode
             componentInstanceDocument["functionalityInstanceName"] = componentInstance.functionalityInstanceName
             componentInstanceDocument["node"] = componentInstance.node
             componentInstanceDocument["mustDeploy"] = componentInstance.mustDeploy
@@ -1308,35 +1296,7 @@ class SolverBackend:
             print "Adding Component Type with name:", componentType.name
             componentTypeToAdd = ComponentType()
             componentTypeToAdd.name = componentType.name
-
-            # List to keep track of provided functionalities for a component type.
-            providedFunctionalitiesAdded = list()
-
-            # Extract provided functionality info with related modality info if component type
-            # has multiple modes.
-            if len(componentType.modes) > 0:
-                componentTypeToAdd.hasModes = True
-                for m in componentType.modes:
-                    mode = Serialize(**m)
-                    if mode.isDefault: componentTypeToAdd.defaultMode = mode.name
-                    for pf in mode.providedFunctionalities:
-                        # If new provided functionality then simply add.
-                        if (pf not in providedFunctionalitiesAdded):
-                            modeList = list()
-                            modeList.append(mode.name)
-                            componentTypeToAdd.providedFunctionalities.append((pf, modeList))
-                            providedFunctionalitiesAdded.append(pf)
-                        # If existing provided functioanlity, which will be the case if multiple
-                        # modes provide same functionality, then add to existing entry.
-                        else:
-                            for existingPf in componentTypeToAdd.providedFunctionalities:
-                                if existingPf[0] == pf:
-                                    existingPf[1].append(mode.name)
-            # Handle scenario without modalities. (Considered default scenario)
-            else:
-                for pf in componentType.providedFunctionalities:
-                    componentTypeToAdd.providedFunctionalities.append((pf, None))
-                    providedFunctionalitiesAdded.append(pf)
+            componentTypeToAdd.providedFunctionality = componentType.providedFunctionality
 
             memoryRequirement = Serialize(**componentType.memoryRequirement)
             componentTypeToAdd.memoryRequirement = (memoryRequirement.memory, memoryRequirement.unit)
@@ -1436,7 +1396,6 @@ class SolverBackend:
                             componentInstanceToAdd.name = componentInstance.name
                             componentInstanceToAdd.status = componentInstance.status
                             componentInstanceToAdd.type = componentInstance.type
-                            componentInstanceToAdd.mode = componentInstance.mode
                             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
                             componentInstanceToAdd.node = componentInstance.node
                             componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
@@ -1573,7 +1532,6 @@ class SolverBackend:
             componentInstanceToAdd.status = componentInstance.status    # Status is stored in this collection purely
                                                                         # for display, so we do not read it as status
                                                                         # is only relevant if read from LiveSystem.
-            componentInstanceToAdd.mode = componentInstance.mode
             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
             componentInstanceToAdd.node = componentInstance.node
             componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy

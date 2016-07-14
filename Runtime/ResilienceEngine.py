@@ -348,7 +348,6 @@ def populate_live_system(db, backend, solver, componentsToStart, componentsToShu
             liveComponentInstDocument["name"] = componentInstanceToAdd.name
             liveComponentInstDocument["status"] = "TO_BE_DEPLOYED"
             liveComponentInstDocument["type"] = componentInstanceToAdd.type
-            liveComponentInstDocument["mode"] = componentInstanceToAdd.mode
             liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd.functionalityInstanceName
             liveComponentInstDocument["node"] = componentInstanceToAdd.node
             liveComponentInstDocument["mustDeploy"] = componentInstanceToAdd.mustDeploy

@@ -91,7 +91,6 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
         componentDocument["name"] = component
         componentDocument["status"] = "ACTIVE"
         componentDocument["type"] = ciDoc["type"]
-        componentDocument["mode"] = ciDoc["mode"]
         componentDocument["functionalityInstance"] = ciDoc["functionalityInstance"]
         componentDocument["node"] = ciDoc["node"]
 
