@@ -11,9 +11,6 @@ class Serialize:
 
 class SystemDescription:
     name = None
-    LifeTime = None                     # Time for which the goal must be active. We assume the default unit to be months.
-    startTime = None                    # Time when the system was first introduced. NOTE: This is not deployment time.
-    reliabilityThreshold = None
     constraints = None                  # List of constraints read from the database.
     objectives = None
     functionalityInstances = None       # List of functionality instances.
@@ -32,9 +29,6 @@ class SystemDescription:
 
     def __init__(self):
         self.name = ""
-        self.lifeTime = (0.0, "")
-        self.startTime = datetime.time(0,0,0)
-        self.reliabilityThreshold = 0.0
         self.constraints = list()
         self.objectives = list()
         self.functionalityInstances = list()
@@ -756,8 +750,8 @@ class SolverBackend:
         self.load_cumulative_component_requirements()
         self.load_comparative_component_requirements()
         #self.load_component_utilization()              # Load C/T of each component instance for RMS constraint.
-        self.load_node_reliability()
-        self.load_comparative_resource_reliability()
+        #self.load_node_reliability()
+        #self.load_comparative_resource_reliability()
 
     # This function communicates constraint for each component instance using the component instance's dependencies.
     def add_component_instance_dependencies(self, solver):
@@ -1416,12 +1410,6 @@ class SolverBackend:
             print "Adding SystemDescription with name:", systemDescription.name
             systemDescriptionToAdd = SystemDescription()
             systemDescriptionToAdd.name = systemDescription.name
-
-            lifeTime = Serialize(**systemDescription.lifeTime)
-            systemDescriptionToAdd.lifeTime = (lifeTime.time, lifeTime.unit)
-
-            systemDescriptionToAdd.startTime = systemDescription.startTime
-            systemDescriptionToAdd.reliabilityThreshold = systemDescription.reliabilityThreshold
 
             # Add constraints.
             for c in systemDescription.constraints:
