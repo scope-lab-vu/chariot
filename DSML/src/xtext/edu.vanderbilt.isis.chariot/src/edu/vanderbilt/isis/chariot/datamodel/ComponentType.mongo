@@ -9,9 +9,21 @@ import com.mongodb.DBCollection
 import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage
-import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_Time
+import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 
 package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
+	DM_Time {
+		double time
+		String unit
+			
+		/*
+		 * 
+		 */
+		void setUnit (TimeUnit unit) {
+			this.unit = unit.toString()
+		}
+	}
+	
 	DM_ComponentType {
 		ObjectId _id
 		String name
@@ -31,7 +43,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		
 		// Period and deadline.
 		DM_Time period
-		DM_Time  deadline
+		DM_Time deadline
 		
 		/*
 		 * 
