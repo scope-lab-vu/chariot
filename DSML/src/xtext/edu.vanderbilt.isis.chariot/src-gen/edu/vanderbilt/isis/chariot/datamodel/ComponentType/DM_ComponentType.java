@@ -5,7 +5,6 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_Mode;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware;
@@ -18,7 +17,6 @@ import org.bson.types.ObjectId;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
-import org.xtext.mongobeans.lib.MongoBeanList;
 import org.xtext.mongobeans.lib.WrappingUtil;
 
 @SuppressWarnings("all")
@@ -66,14 +64,6 @@ public class DM_ComponentType implements IMongoBean {
   
   public void setProvidedFunctionality(final String providedFunctionality) {
     _dbObject.put("providedFunctionality", providedFunctionality);
-  }
-  
-  private MongoBeanList<DM_Mode> _modes;
-  
-  public List<DM_Mode> getModes() {
-    if(_modes==null)
-    	_modes = new MongoBeanList<DM_Mode>(_dbObject, "modes");
-    return _modes;
   }
   
   public DM_Memory getMemoryRequirement() {
@@ -161,7 +151,6 @@ public class DM_ComponentType implements IMongoBean {
     this.setName(_string);
     String _string_1 = new String();
     this.setProvidedFunctionality(_string_1);
-    this.getModes();
     DM_Memory _dM_Memory = new DM_Memory();
     final Procedure1<DM_Memory> _function = (DM_Memory it) -> {
       it.setMemory(0);
@@ -202,13 +191,6 @@ public class DM_ComponentType implements IMongoBean {
     };
     DM_Time _doubleArrow_3 = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time_1, _function_3);
     this.setDeadline(_doubleArrow_3);
-  }
-  
-  public void addMode(final Procedure1<? super DM_Mode> initializer) {
-    DM_Mode _dM_Mode = new DM_Mode();
-    final DM_Mode modeToAdd = ObjectExtensions.<DM_Mode>operator_doubleArrow(_dM_Mode, initializer);
-    List<DM_Mode> _modes = this.getModes();
-    _modes.add(modeToAdd);
   }
   
   public void setMemoryRequirement(final Procedure1<? super DM_Memory> initializer) {

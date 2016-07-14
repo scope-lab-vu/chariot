@@ -16,7 +16,6 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		ObjectId _id
 		String name
 		String providedFunctionality
-		DM_Mode* modes
 		DM_Memory memoryRequirement
 		DM_Storage storageRequirement
 
@@ -40,7 +39,6 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		void init () {
 			this.name = new String()
 			this.providedFunctionality = new String()
-			this.getModes()	// This initializes modes (MongoBeansList)
 			this.memoryRequirement = new DM_Memory => [
 				setMemory (0)
 				setUnit ("")
@@ -63,22 +61,6 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 				setTime (0.0)
 				setUnit ("")
 			]
-		}
-		
-		/*
-		 * 
-		 */
-		void addMode ((DM_Mode)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_ComponentType")
-			val DM_Mode modeToAdd = new DM_Mode => initializer
-			this.modes.add(modeToAdd) //@TODO: Add code to check for duplicate.
-			
-			//var List<String> tmp = this.modes.map[name]
-			//if (!tmp.contains (modeToAdd.name))
-			//	this.modes.add(modeToAdd)
-			/*else
-				LOGGER.info (modeToAdd.getName() + 
-					" mode already exists in component type " + this.name)*/
 		}
 		
 		/*
@@ -193,36 +175,5 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		 	LOGGER.info (this.name + 
 				" component type has been updated.")
 		 }
-	}
-	
-	DM_Mode {
-		String name
-		boolean isDefault
-		List<String> providedFunctionalities
-		
-		/*
-		 * 
-		 */
-		void init() {
-			this.name = new String()
-			this.isDefault = false
-			this.providedFunctionalities = new ArrayList<String>()
-		}
-		
-		/*
-		 * 
-		 */
-		void addProvidedFunctionality (String functionality) {
-			val LOGGER = Logger.getLogger("DM_Mode")
-			
-			if (this.providedFunctionalities == null)
-				this.providedFunctionalities = new ArrayList<String>()
-				
-			if (!this.providedFunctionalities.contains(functionality))
-				this.providedFunctionalities.add (functionality)
-			else
-				LOGGER.info (functionality + 
-					" functionality already exists in mode " + this.name)
-		}
 	}
 }
