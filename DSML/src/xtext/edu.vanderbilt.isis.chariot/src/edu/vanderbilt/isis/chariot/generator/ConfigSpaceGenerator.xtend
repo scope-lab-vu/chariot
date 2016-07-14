@@ -259,11 +259,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			// Store name.
 			componentType.setName (c.getName())
 			
-			// Filter for external functionality provisions and store them.
-			var externalFunctionalityProvisions = c.parts.filter(ExternalFunctionalityProvision)
-			for (f : externalFunctionalityProvisions) {
-				componentType.addProvidedFunctionality(f.getFunctionality().getName())
-			}
+			// Filter and store functionality provision.
+			componentType.setProvidedFunctionality (c.parts.filter(ExternalFunctionalityProvision).get(0).getFunctionality().getName())
 			
 			// Store component requirements.
 			generateComponentRequirements (c, componentType)

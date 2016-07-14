@@ -60,12 +60,12 @@ public class DM_ComponentType implements IMongoBean {
     _dbObject.put("name", name);
   }
   
-  public List<String> getProvidedFunctionalities() {
-    return (List<String>) _dbObject.get("providedFunctionalities");
+  public String getProvidedFunctionality() {
+    return (String) _dbObject.get("providedFunctionality");
   }
   
-  public void setProvidedFunctionalities(final List<String> providedFunctionalities) {
-    _dbObject.put("providedFunctionalities", providedFunctionalities);
+  public void setProvidedFunctionality(final String providedFunctionality) {
+    _dbObject.put("providedFunctionality", providedFunctionality);
   }
   
   private MongoBeanList<DM_Mode> _modes;
@@ -159,8 +159,8 @@ public class DM_ComponentType implements IMongoBean {
   public void init() {
     String _string = new String();
     this.setName(_string);
-    ArrayList<String> _arrayList = new ArrayList<String>();
-    this.setProvidedFunctionalities(_arrayList);
+    String _string_1 = new String();
+    this.setProvidedFunctionality(_string_1);
     this.getModes();
     DM_Memory _dM_Memory = new DM_Memory();
     final Procedure1<DM_Memory> _function = (DM_Memory it) -> {
@@ -176,18 +176,18 @@ public class DM_ComponentType implements IMongoBean {
     };
     DM_Storage _doubleArrow_1 = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, _function_1);
     this.setStorageRequirement(_doubleArrow_1);
-    String _string_1 = new String();
-    this.setOsRequirement(_string_1);
     String _string_2 = new String();
-    this.setMiddlewareRequirement(_string_2);
-    ArrayList<String> _arrayList_1 = new ArrayList<String>();
-    this.setArtifactRequirements(_arrayList_1);
-    ArrayList<String> _arrayList_2 = new ArrayList<String>();
-    this.setDeviceRequirements(_arrayList_2);
+    this.setOsRequirement(_string_2);
     String _string_3 = new String();
-    this.setStartScript(_string_3);
+    this.setMiddlewareRequirement(_string_3);
+    ArrayList<String> _arrayList = new ArrayList<String>();
+    this.setArtifactRequirements(_arrayList);
+    ArrayList<String> _arrayList_1 = new ArrayList<String>();
+    this.setDeviceRequirements(_arrayList_1);
     String _string_4 = new String();
-    this.setStopScript(_string_4);
+    this.setStartScript(_string_4);
+    String _string_5 = new String();
+    this.setStopScript(_string_5);
     DM_Time _dM_Time = new DM_Time();
     final Procedure1<DM_Time> _function_2 = (DM_Time it) -> {
       it.setTime(0.0);
@@ -202,28 +202,6 @@ public class DM_ComponentType implements IMongoBean {
     };
     DM_Time _doubleArrow_3 = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time_1, _function_3);
     this.setDeadline(_doubleArrow_3);
-  }
-  
-  public void addProvidedFunctionality(final String functionality) {
-    final Logger LOGGER = Logger.getLogger("DM_ComponentType");
-    List<String> _providedFunctionalities = this.getProvidedFunctionalities();
-    boolean _equals = Objects.equal(_providedFunctionalities, null);
-    if (_equals) {
-      ArrayList<String> _arrayList = new ArrayList<String>();
-      this.setProvidedFunctionalities(_arrayList);
-    }
-    List<String> _providedFunctionalities_1 = this.getProvidedFunctionalities();
-    boolean _contains = _providedFunctionalities_1.contains(functionality);
-    boolean _not = (!_contains);
-    if (_not) {
-      List<String> _providedFunctionalities_2 = this.getProvidedFunctionalities();
-      _providedFunctionalities_2.add(functionality);
-    } else {
-      String _name = this.getName();
-      String _plus = ((functionality + 
-        " functionality already exists in component ") + _name);
-      LOGGER.info(_plus);
-    }
   }
   
   public void addMode(final Procedure1<? super DM_Mode> initializer) {
