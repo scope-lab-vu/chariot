@@ -478,7 +478,6 @@ class Node:
 
     def __init__(self):
         self.name = ""
-        self.meanTimeToFailure = (0.0, "")
         self.nodeTemplate = ""
         self.status = ""
         self.processes = list()
@@ -534,7 +533,6 @@ class Device:
 
     def __init__(self):
         self.name = ""
-        self.meanTimeToFailure = (0.0, "")
         self.artifacts = list()
         self.status = ""
 
