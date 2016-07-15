@@ -40,7 +40,6 @@ import edu.vanderbilt.isis.chariot.datamodel.Status
 import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
 import edu.vanderbilt.isis.chariot.datamodel.SupportedOS
-import edu.vanderbilt.isis.chariot.datamodel.SystemConstraintKind
 import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 import java.util.ArrayList
 import org.eclipse.emf.ecore.resource.Resource
@@ -50,6 +49,7 @@ import org.slf4j.LoggerFactory
 import edu.vanderbilt.isis.chariot.chariot.PerNodeReplicationConstraint
 import edu.vanderbilt.isis.chariot.chariot.GoalDescription
 import edu.vanderbilt.isis.chariot.datamodel.GoalDescription.DM_GoalDescription
+import edu.vanderbilt.isis.chariot.datamodel.ReplicationConstraintKind
 
 class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
@@ -547,10 +547,10 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 			// Store constraints.
 			for (c : g.getConstraints()) {
-				goalDescription.addConstraint [
+				goalDescription.addReplicationConstraint [
 					init()
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ConsensusReplicationConstraintImpl")) {
-						setKind(SystemConstraintKind::CONSENSUS_REPLICATION)
+						setKind(ReplicationConstraintKind::CONSENSUS_REPLICATION)
 						setFunctionality((c as ConsensusReplicationConstraint).getFunctionality().getName())
 						setMinInstances((c as ConsensusReplicationConstraint).getRange().getLower())
 						setMaxInstances((c as ConsensusReplicationConstraint).getRange().getUpper())
@@ -559,7 +559,7 @@ class ConfigSpaceGenerator implements IGenerator {
 					}
 					
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ActiveReplicationConstraintImpl")) {
-						setKind(SystemConstraintKind::CLUSTER_REPLICATION)
+						setKind(ReplicationConstraintKind::CLUSTER_REPLICATION)
 						setFunctionality((c as ActiveReplicationConstraint).getFunctionality().getName())
 						setMinInstances((c as ActiveReplicationConstraint).getRange().getLower())
 						setMaxInstances((c as ActiveReplicationConstraint).getRange().getUpper())
@@ -567,7 +567,7 @@ class ConfigSpaceGenerator implements IGenerator {
 					}
 						
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.VoterReplicationConstraintImpl")) {
-						setKind(SystemConstraintKind::VOTER_REPLICATION)
+						setKind(ReplicationConstraintKind::VOTER_REPLICATION)
 						setFunctionality((c as VoterReplicationConstraint).getFunctionality().getName())
 						setMinInstances((c as VoterReplicationConstraint).getRange().getLower())
 						setMaxInstances((c as VoterReplicationConstraint).getRange().getUpper())
@@ -576,7 +576,7 @@ class ConfigSpaceGenerator implements IGenerator {
 					}
 					
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.PerNodeReplicationConstraintImpl")) {
-						setKind(SystemConstraintKind::PER_NODE_REPLICATION)
+						setKind(ReplicationConstraintKind::PER_NODE_REPLICATION)
 						setFunctionality((c as PerNodeReplicationConstraint).getFunctionality().getName())
 						for (nodeCategory : (c as PerNodeReplicationConstraint).getCategories())
 							addNodeCategory(nodeCategory.getName())

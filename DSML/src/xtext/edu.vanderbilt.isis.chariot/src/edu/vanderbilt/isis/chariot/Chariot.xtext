@@ -501,7 +501,7 @@ NodeCategoryLabel:
 GoalDescription:
 	'system' name = ID '{'
 	 	(requiredobjectives += SystemObjective)+
-		(constraints += SystemConstraint)* //(initialConfiguration = InitialConfiguration)? 
+		(replicationConstraints += ReplicationConstraint)* //(initialConfiguration = InitialConfiguration)? 
 	'}';
 
 /*
@@ -514,11 +514,9 @@ SystemObjective:
 		('objective') name = ID;
 
 /*
- * Rule to create system constraints. Currently these are
- * replication constraints. Could be expanded to cover other
- * constraints (e.g. node collocation).
+ * Rule to create replication constraints.
  */
-SystemConstraint:
+ReplicationConstraint:
 		PerNodeReplicationConstraint
 	|	ConsensusReplicationConstraint
 	|	ActiveReplicationConstraint

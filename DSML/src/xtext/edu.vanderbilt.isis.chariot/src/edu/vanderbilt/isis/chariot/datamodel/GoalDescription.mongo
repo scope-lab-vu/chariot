@@ -1,17 +1,17 @@
 import org.bson.types.ObjectId
-import edu.vanderbilt.isis.chariot.datamodel.SystemConstraintKind
 import java.util.List
 import com.mongodb.DB
 import java.util.ArrayList
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
+import edu.vanderbilt.isis.chariot.datamodel.ReplicationConstraintKind
 
 package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 	DM_GoalDescription {
 		ObjectId _id
 		String name
-		DM_SystemConstraint* constraints
+		DM_ReplicationConstraint* replicationConstraints
 		DM_Objective* objectives
 		
 		/*
@@ -19,16 +19,16 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 */
 		void init() {
 			this.name = new String()
-			this.getConstraints()	// This initializes constraints.
-			this.getObjectives()	// This initializes objectives.
+			this.getReplicationConstraints()	// This initializes constraints.
+			this.getObjectives()				// This initializes objectives.
 		}
 		
 		/*
 		 * 
 		 */
-		void addConstraint ((DM_SystemConstraint)=>void initializer) {
-			val DM_SystemConstraint constraintToAdd = new DM_SystemConstraint => initializer
-			this.constraints.add (constraintToAdd) // @TODO: Check for duplicates.
+		void addReplicationConstraint ((DM_ReplicationConstraint)=>void initializer) {
+			val DM_ReplicationConstraint constraintToAdd = new DM_ReplicationConstraint => initializer
+			this.replicationConstraints.add (constraintToAdd) // @TODO: Check for duplicates.
 		}
 		
 		/*
@@ -88,7 +88,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 }
 	} 
 	
-	DM_SystemConstraint {
+	DM_ReplicationConstraint {
 		String kind
 		String functionality
 		int maxInstances
@@ -113,7 +113,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		/*
 		 * 
 		 */
-		void setKind (SystemConstraintKind kind) {
+		void setKind (ReplicationConstraintKind kind) {
 			this.kind = kind.toString()
 		}
 		

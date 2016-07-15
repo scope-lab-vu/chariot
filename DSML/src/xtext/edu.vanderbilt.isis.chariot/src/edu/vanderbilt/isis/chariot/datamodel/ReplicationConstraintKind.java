@@ -1,6 +1,6 @@
 package edu.vanderbilt.isis.chariot.datamodel;
 
-public enum SystemConstraintKind {
+public enum ReplicationConstraintKind {
 	VOTER_REPLICATION,
 	CONSENSUS_REPLICATION,
 	CLUSTER_REPLICATION,
