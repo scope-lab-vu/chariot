@@ -472,7 +472,6 @@ class Process:
 
 class Node:
     name = None
-    meanTimeToFailure = None    # Tuple (amount, unit)
     nodeTemplate = None
     status = None
     processes = None            # List of processes instances.
@@ -530,7 +529,6 @@ class NodeTemplate:
 
 class Device:
     name = None
-    meanTimeToFailure = None    # Tuple (amount, unit)
     artifacts = None            # List of device related artifacts as tuple (name, location).
     status = None
 
