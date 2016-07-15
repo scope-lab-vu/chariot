@@ -66,52 +66,52 @@ public class DM_ComponentType implements IMongoBean {
     _dbObject.put("providedFunctionality", providedFunctionality);
   }
   
-  public DM_Memory getMemoryRequirement() {
-    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("memoryRequirement"));
+  public DM_Memory getRequiredMemory() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("requiredMemory"));
   }
   
-  public void setMemoryRequirement(final DM_Memory memoryRequirement) {
-    _dbObject.put("memoryRequirement", WrappingUtil.unwrap(memoryRequirement));
+  public void setRequiredMemory(final DM_Memory requiredMemory) {
+    _dbObject.put("requiredMemory", WrappingUtil.unwrap(requiredMemory));
   }
   
-  public DM_Storage getStorageRequirement() {
-    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("storageRequirement"));
+  public DM_Storage getRequiredStorage() {
+    return WrappingUtil.wrapAndCast((DBObject) _dbObject.get("requiredStorage"));
   }
   
-  public void setStorageRequirement(final DM_Storage storageRequirement) {
-    _dbObject.put("storageRequirement", WrappingUtil.unwrap(storageRequirement));
+  public void setRequiredStorage(final DM_Storage requiredStorage) {
+    _dbObject.put("requiredStorage", WrappingUtil.unwrap(requiredStorage));
   }
   
-  public String getOsRequirement() {
-    return (String) _dbObject.get("osRequirement");
+  public String getRequiredOS() {
+    return (String) _dbObject.get("requiredOS");
   }
   
-  public void setOsRequirement(final String osRequirement) {
-    _dbObject.put("osRequirement", osRequirement);
+  public void setRequiredOS(final String requiredOS) {
+    _dbObject.put("requiredOS", requiredOS);
   }
   
-  public String getMiddlewareRequirement() {
-    return (String) _dbObject.get("middlewareRequirement");
+  public String getRequiredMiddleware() {
+    return (String) _dbObject.get("requiredMiddleware");
   }
   
-  public void setMiddlewareRequirement(final String middlewareRequirement) {
-    _dbObject.put("middlewareRequirement", middlewareRequirement);
+  public void setRequiredMiddleware(final String requiredMiddleware) {
+    _dbObject.put("requiredMiddleware", requiredMiddleware);
   }
   
-  public List<String> getArtifactRequirements() {
-    return (List<String>) _dbObject.get("artifactRequirements");
+  public List<String> getRequiredArtifacts() {
+    return (List<String>) _dbObject.get("requiredArtifacts");
   }
   
-  public void setArtifactRequirements(final List<String> artifactRequirements) {
-    _dbObject.put("artifactRequirements", artifactRequirements);
+  public void setRequiredArtifacts(final List<String> requiredArtifacts) {
+    _dbObject.put("requiredArtifacts", requiredArtifacts);
   }
   
-  public List<String> getDeviceRequirements() {
-    return (List<String>) _dbObject.get("deviceRequirements");
+  public List<String> getRequiredDevices() {
+    return (List<String>) _dbObject.get("requiredDevices");
   }
   
-  public void setDeviceRequirements(final List<String> deviceRequirements) {
-    _dbObject.put("deviceRequirements", deviceRequirements);
+  public void setRequiredDevices(final List<String> requiredDevices) {
+    _dbObject.put("requiredDevices", requiredDevices);
   }
   
   public String getStartScript() {
@@ -157,22 +157,22 @@ public class DM_ComponentType implements IMongoBean {
       it.setUnit("");
     };
     DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, _function);
-    this.setMemoryRequirement(_doubleArrow);
+    this.setRequiredMemory(_doubleArrow);
     DM_Storage _dM_Storage = new DM_Storage();
     final Procedure1<DM_Storage> _function_1 = (DM_Storage it) -> {
       it.setStorage(0);
       it.setUnit("");
     };
     DM_Storage _doubleArrow_1 = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, _function_1);
-    this.setStorageRequirement(_doubleArrow_1);
+    this.setRequiredStorage(_doubleArrow_1);
     String _string_2 = new String();
-    this.setOsRequirement(_string_2);
+    this.setRequiredOS(_string_2);
     String _string_3 = new String();
-    this.setMiddlewareRequirement(_string_3);
+    this.setRequiredMiddleware(_string_3);
     ArrayList<String> _arrayList = new ArrayList<String>();
-    this.setArtifactRequirements(_arrayList);
+    this.setRequiredArtifacts(_arrayList);
     ArrayList<String> _arrayList_1 = new ArrayList<String>();
-    this.setDeviceRequirements(_arrayList_1);
+    this.setRequiredDevices(_arrayList_1);
     String _string_4 = new String();
     this.setStartScript(_string_4);
     String _string_5 = new String();
@@ -193,42 +193,42 @@ public class DM_ComponentType implements IMongoBean {
     this.setDeadline(_doubleArrow_3);
   }
   
-  public void setMemoryRequirement(final Procedure1<? super DM_Memory> initializer) {
+  public void setRequiredMemory(final Procedure1<? super DM_Memory> initializer) {
     DM_Memory _dM_Memory = new DM_Memory();
     DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, initializer);
-    this.setMemoryRequirement(_doubleArrow);
+    this.setRequiredMemory(_doubleArrow);
   }
   
-  public void setStorageRequirement(final Procedure1<? super DM_Storage> initializer) {
+  public void setRequiredStorage(final Procedure1<? super DM_Storage> initializer) {
     DM_Storage _dM_Storage = new DM_Storage();
     DM_Storage _doubleArrow = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, initializer);
-    this.setStorageRequirement(_doubleArrow);
+    this.setRequiredStorage(_doubleArrow);
   }
   
-  public void setOSRequirement(final SupportedOS os) {
+  public void setRequiredOS(final SupportedOS os) {
     String _string = os.toString();
-    this.setOsRequirement(_string);
+    this.setRequiredOS(_string);
   }
   
-  public void setMiddlewareRequirement(final SupportedMiddleware middleware) {
+  public void setRequiredMiddleware(final SupportedMiddleware middleware) {
     String _string = middleware.toString();
-    this.setMiddlewareRequirement(_string);
+    this.setRequiredMiddleware(_string);
   }
   
-  public void addArtifactRequirement(final String artifact) {
+  public void addRequiredArtifact(final String artifact) {
     final Logger LOGGER = Logger.getLogger("DM_ComponentType");
-    List<String> _artifactRequirements = this.getArtifactRequirements();
-    boolean _equals = Objects.equal(_artifactRequirements, null);
+    List<String> _requiredArtifacts = this.getRequiredArtifacts();
+    boolean _equals = Objects.equal(_requiredArtifacts, null);
     if (_equals) {
       ArrayList<String> _arrayList = new ArrayList<String>();
-      this.setArtifactRequirements(_arrayList);
+      this.setRequiredArtifacts(_arrayList);
     }
-    List<String> _artifactRequirements_1 = this.getArtifactRequirements();
-    boolean _contains = _artifactRequirements_1.contains(artifact);
+    List<String> _requiredArtifacts_1 = this.getRequiredArtifacts();
+    boolean _contains = _requiredArtifacts_1.contains(artifact);
     boolean _not = (!_contains);
     if (_not) {
-      List<String> _artifactRequirements_2 = this.getArtifactRequirements();
-      _artifactRequirements_2.add(artifact);
+      List<String> _requiredArtifacts_2 = this.getRequiredArtifacts();
+      _requiredArtifacts_2.add(artifact);
     } else {
       String _name = this.getName();
       String _plus = ((artifact + 
@@ -237,20 +237,20 @@ public class DM_ComponentType implements IMongoBean {
     }
   }
   
-  public void addDeviceRequirement(final String device) {
+  public void addRequiredDevice(final String device) {
     final Logger LOGGER = Logger.getLogger("DM_ComponentType");
-    List<String> _deviceRequirements = this.getDeviceRequirements();
-    boolean _equals = Objects.equal(_deviceRequirements, null);
+    List<String> _requiredDevices = this.getRequiredDevices();
+    boolean _equals = Objects.equal(_requiredDevices, null);
     if (_equals) {
       ArrayList<String> _arrayList = new ArrayList<String>();
-      this.setDeviceRequirements(_arrayList);
+      this.setRequiredDevices(_arrayList);
     }
-    List<String> _deviceRequirements_1 = this.getDeviceRequirements();
-    boolean _contains = _deviceRequirements_1.contains(device);
+    List<String> _requiredDevices_1 = this.getRequiredDevices();
+    boolean _contains = _requiredDevices_1.contains(device);
     boolean _not = (!_contains);
     if (_not) {
-      List<String> _deviceRequirements_2 = this.getDeviceRequirements();
-      _deviceRequirements_2.add(device);
+      List<String> _requiredDevices_2 = this.getRequiredDevices();
+      _requiredDevices_2.add(device);
     } else {
       String _name = this.getName();
       String _plus = ((device + 

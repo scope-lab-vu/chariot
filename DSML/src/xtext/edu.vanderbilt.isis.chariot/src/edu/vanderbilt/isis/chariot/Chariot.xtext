@@ -43,7 +43,7 @@ AbstractElement:
 	| 	Composition
 	| 	Component
 	| 	NodesCategory
-	| 	SystemDescription;
+	| 	GoalDescription;
 
 /*
  * Rule that allows creation of a functionality, which can have
@@ -493,13 +493,12 @@ NodeCategoryLabel:
 		(',' label += [NodesCategory|QualifiedName])*;
 	
 /*
- * Rule to create a system description, which comprises nodes and
- * required objectives. It can also contain a reliability threshold
- * and one or more constraints. Explicit initial configuration not 
+ * Rule to create a goal description, which comprises objectives and
+ * replication constraints. Explicit initial configuration not 
  * supported currently, but will be supported in later versions of 
  * CHARIOT.
  */
-SystemDescription:
+GoalDescription:
 	'system' name = ID '{'
 	 	(requiredobjectives += SystemObjective)+
 		(constraints += SystemConstraint)* //(initialConfiguration = InitialConfiguration)? 

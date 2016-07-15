@@ -28,13 +28,13 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		ObjectId _id
 		String name
 		String providedFunctionality
-		DM_Memory memoryRequirement
-		DM_Storage storageRequirement
+		DM_Memory requiredMemory
+		DM_Storage requiredStorage
 
-		String osRequirement
-		String middlewareRequirement
-		List<String> artifactRequirements
-		List<String> deviceRequirements
+		String requiredOS
+		String requiredMiddleware
+		List<String> requiredArtifacts
+		List<String> requiredDevices
 		
 		// Start and stop scripts are only relevant for external 
 		// components.
@@ -51,18 +51,18 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		void init () {
 			this.name = new String()
 			this.providedFunctionality = new String()
-			this.memoryRequirement = new DM_Memory => [
+			this.requiredMemory = new DM_Memory => [
 				setMemory (0)
 				setUnit ("")
 			]
-			this.storageRequirement = new DM_Storage => [
+			this.requiredStorage = new DM_Storage => [
 				setStorage (0)
 				setUnit ("")
 			]			
-			this.osRequirement = new String()
-			this.middlewareRequirement = new String()
-			this.artifactRequirements = new ArrayList<String>()
-			this.deviceRequirements = new ArrayList<String>()
+			this.requiredOS = new String()
+			this.requiredMiddleware = new String()
+			this.requiredArtifacts = new ArrayList<String>()
+			this.requiredDevices = new ArrayList<String>()
 			this.startScript = new String()
 			this.stopScript = new String()
 			this.period = new DM_Time () => [
@@ -78,41 +78,41 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		/*
 		 * 
 		 */
-		void setMemoryRequirement ((DM_Memory)=>void initializer) {
-			this.memoryRequirement = new DM_Memory => initializer
+		void setRequiredMemory ((DM_Memory)=>void initializer) {
+			this.requiredMemory = new DM_Memory => initializer
 		}
 		
 		/*
 		 * 
 		 */
-		void setStorageRequirement ((DM_Storage)=>void initializer) {
-			this.storageRequirement = new DM_Storage => initializer
+		void setRequiredStorage ((DM_Storage)=>void initializer) {
+			this.requiredStorage = new DM_Storage => initializer
 		}
 		
 		/*
 		 * 
 		 */
-		void setOSRequirement (SupportedOS os) {
-			this.setOsRequirement (os.toString())
+		void setRequiredOS (SupportedOS os) {
+			this.setRequiredOS (os.toString())
 		}
 		
 		/*
 		 * 
 		 */
-		void setMiddlewareRequirement (SupportedMiddleware  middleware) {
-			this.setMiddlewareRequirement (middleware.toString())
+		void setRequiredMiddleware (SupportedMiddleware  middleware) {
+			this.setRequiredMiddleware (middleware.toString())
 		}
 		
 		/*
 		 * 
 		 */
-		void addArtifactRequirement (String artifact) {
+		void addRequiredArtifact (String artifact) {
 			val LOGGER = Logger.getLogger("DM_ComponentType")
-			if (this.artifactRequirements == null)
-				this.artifactRequirements = new ArrayList<String>()
+			if (this.requiredArtifacts == null)
+				this.requiredArtifacts = new ArrayList<String>()
 				
-			if (!this.artifactRequirements.contains(artifact))
-				this.artifactRequirements.add (artifact)
+			if (!this.requiredArtifacts.contains(artifact))
+				this.requiredArtifacts.add (artifact)
 			else
 				LOGGER.info (artifact + 
 					" artifact already exists in component " + this.name)
@@ -121,13 +121,13 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		/*
 		 * 
 		 */
-		void addDeviceRequirement (String device) {
+		void addRequiredDevice (String device) {
 			val LOGGER = Logger.getLogger("DM_ComponentType")
-			if (this.deviceRequirements == null)
-				this.deviceRequirements = new ArrayList<String>()
+			if (this.requiredDevices == null)
+				this.requiredDevices = new ArrayList<String>()
 				
-			if (!this.deviceRequirements.contains(device))
-				this.deviceRequirements.add (device)
+			if (!this.requiredDevices.contains(device))
+				this.requiredDevices.add (device)
 			else
 				LOGGER.info (device + 
 					" device already exists in component " + this.name)

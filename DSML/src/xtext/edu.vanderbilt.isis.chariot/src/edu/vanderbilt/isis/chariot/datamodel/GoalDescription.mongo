@@ -7,8 +7,8 @@ import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import java.util.logging.Logger
 
-package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
-	DM_SystemDescription {
+package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
+	DM_GoalDescription {
 		ObjectId _id
 		String name
 		DM_SystemConstraint* constraints
@@ -56,7 +56,7 @@ package edu.vanderbilt.isis.chariot.datamodel.SystemDescription {
 
 			// Check if already exists. Store only if no existing
 			// system has the same name.
-			val result = dbCollection.findOne((new DM_SystemDescription => [
+			val result = dbCollection.findOne((new DM_GoalDescription => [
 				name = this.name
 			]).getDbObject())
 				

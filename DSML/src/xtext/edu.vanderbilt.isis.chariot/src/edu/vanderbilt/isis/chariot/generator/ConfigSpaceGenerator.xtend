@@ -31,7 +31,6 @@ import edu.vanderbilt.isis.chariot.chariot.StartScript
 import edu.vanderbilt.isis.chariot.chariot.StopScript
 import edu.vanderbilt.isis.chariot.chariot.StorageProvision
 import edu.vanderbilt.isis.chariot.chariot.StorageRequirement
-import edu.vanderbilt.isis.chariot.chariot.SystemDescription
 import edu.vanderbilt.isis.chariot.chariot.VoterReplicationConstraint
 import edu.vanderbilt.isis.chariot.chariot.VoterServiceComponent
 import edu.vanderbilt.isis.chariot.datamodel.ComponentType.DM_ComponentType
@@ -42,7 +41,6 @@ import edu.vanderbilt.isis.chariot.datamodel.StorageUnit
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
 import edu.vanderbilt.isis.chariot.datamodel.SupportedOS
 import edu.vanderbilt.isis.chariot.datamodel.SystemConstraintKind
-import edu.vanderbilt.isis.chariot.datamodel.SystemDescription.DM_SystemDescription
 import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 import java.util.ArrayList
 import org.eclipse.emf.ecore.resource.Resource
@@ -50,6 +48,8 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import org.slf4j.LoggerFactory
 import edu.vanderbilt.isis.chariot.chariot.PerNodeReplicationConstraint
+import edu.vanderbilt.isis.chariot.chariot.GoalDescription
+import edu.vanderbilt.isis.chariot.datamodel.GoalDescription.DM_GoalDescription
 
 class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
@@ -91,8 +91,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			if ((input.allContents.toIterable.filter(NodesCategory)).size() > 0) {
 				generateNodeCategories (input.allContents.toIterable.filter(NodesCategory), db)
 			}
-			if ((input.allContents.toIterable.filter(SystemDescription).size() > 0)) {
-				generateSystems (input.allContents.toIterable.filter(SystemDescription), db)
+			if ((input.allContents.toIterable.filter(GoalDescription).size() > 0)) {
+				generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription), db)
 				
 				// Call generate component instances in the solver. This call is placed here for now
 				// assuming everything else will be generated before system descriptions.
@@ -371,7 +371,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (memoryRequirements.size() > 0) {
 			val memory = memoryRequirements.get(0).getMemory()
 			val memUnit = memoryRequirements.get(0).getUnit()
-			ct.setMemoryRequirement [
+			ct.setRequiredMemory [
 				setMemory (memory)
 				if (memUnit.gb)
 					setUnit (MemoryUnit::GB)
@@ -387,7 +387,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (storageRequirements.size() > 0) {
 			val storage = storageRequirements.get(0).getStorage()
 			val storageUnit = storageRequirements.get(0).getUnit()
-			ct.setStorageRequirement [
+			ct.setRequiredStorage [
 				setStorage (storage)
 				if (storageUnit.gb)
 					setUnit (StorageUnit::GB)
@@ -403,9 +403,9 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (osRequirements.size() > 0) {
 			var osRequirement = osRequirements.get(0)
 			if (osRequirement.linux)
-				ct.setOSRequirement (SupportedOS.LINUX)
+				ct.setRequiredOS (SupportedOS.LINUX)
 			else if (osRequirement.android)
-				ct.setOSRequirement (SupportedOS.ANDROID)
+				ct.setRequiredOS (SupportedOS.ANDROID)
 		}
 				
 		// Store middleware requirement.
@@ -413,22 +413,22 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (middlewareRequirements.size() > 0) {
 			var middlewareRequirement = middlewareRequirements.get(0)
 			if (middlewareRequirement.rtidds)
-				ct.setMiddlewareRequirement (SupportedMiddleware.RTIDDS)
+				ct.setRequiredMiddleware (SupportedMiddleware.RTIDDS)
 			else if (middlewareRequirement.alljoyn)
-				ct.setMiddlewareRequirement (SupportedMiddleware.ALLJOYN)
+				ct.setRequiredMiddleware (SupportedMiddleware.ALLJOYN)
 			else if (middlewareRequirement.lcm)
-				ct.setMiddlewareRequirement (SupportedMiddleware.LCM)
+				ct.setRequiredMiddleware (SupportedMiddleware.LCM)
 		}
 		
 		// Store artifact requirements.
 		// NOTE: Artifacts could be more than one.
 		for (a : artifactRequirements)
-			ct.addArtifactRequirement (a.getArtifact().getName())
+			ct.addRequiredArtifact (a.getArtifact().getName())
 			
 		// Store device requirements.
 		// NOTE: Devices could be more than one.
 		for (d: deviceRequirements)
-			ct.addDeviceRequirement (d.getDevice().getName())
+			ct.addRequiredDevice (d.getDevice().getName())
 	}
 	
 	/*
@@ -535,19 +535,19 @@ class ConfigSpaceGenerator implements IGenerator {
 	/*
 	 * 
 	 */
-	def generateSystems (Iterable<SystemDescription> systems, DB db) {
-		// Loop through each system.
-		for (s : systems) {
-			var DM_SystemDescription system = new DM_SystemDescription()
+	def generateGoalDescriptions (Iterable<GoalDescription> goalDescriptions, DB db) {
+		// Loop through each goal description.
+		for (g : goalDescriptions) {
+			var DM_GoalDescription goalDescription = new DM_GoalDescription()
 			
-			system.init()
+			goalDescription.init()
 			
 			// Store name.
-			system.setName (s.getName())
+			goalDescription.setName (g.getName())
 			
 			// Store constraints.
-			for (c : s.getConstraints()) {
-				system.addConstraint [
+			for (c : g.getConstraints()) {
+				goalDescription.addConstraint [
 					init()
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ConsensusReplicationConstraintImpl")) {
 						setKind(SystemConstraintKind::CONSENSUS_REPLICATION)
@@ -585,8 +585,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			}
 			
 			// Store objectives.
-			for (o : s.getRequiredobjectives()) {
-				system.addObjective [
+			for (o : g.getRequiredobjectives()) {
+				goalDescription.addObjective [
 					init()
 					setName(o.getName())
 					
@@ -625,7 +625,7 @@ class ConfigSpaceGenerator implements IGenerator {
 				]
 			}
 			
-			system.insert(db)
+			goalDescription.insert(db)
 		}
 	}
 	

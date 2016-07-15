@@ -5,7 +5,7 @@
     modelPluginID="edu.vanderbilt.isis.chariot.datatypes" forceOverwrite="true" modelName="Datatypes"
     updateClasspath="false" rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container"
     complianceLevel="6.0" copyrightFields="false" editPluginID="edu.vanderbilt.isis.chariot.datatypes.edit"
-    editorPluginID="edu.vanderbilt.isis.chariot.datatypes.editor" runtimeVersion="2.11"
+    editorPluginID="edu.vanderbilt.isis.chariot.datatypes.editor" runtimeVersion="2.10"
     usedGenPackages="platform:/resource/org.eclipse.xtext.common.types/model/JavaVMTypes.genmodel#//types platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel#//xbase platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel#//xtype">
   <genPackages prefix="Datatypes" basePackage="edu.vanderbilt.isis.chariot" disposableProviderFactory="true"
       fileExtensions="dt" ecorePackage="Datatypes.ecore#/">
