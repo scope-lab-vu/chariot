@@ -499,7 +499,7 @@ NodeCategoryLabel:
  * CHARIOT.
  */
 GoalDescription:
-	'system' name = ID '{'
+	'goalDescription' name = ID '{'
 	 	(requiredobjectives += SystemObjective)+
 		(replicationConstraints += ReplicationConstraint)* //(initialConfiguration = InitialConfiguration)? 
 	'}';

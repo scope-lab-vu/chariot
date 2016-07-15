@@ -1,6 +1,6 @@
 import edu.vanderbilt.isis.chariot.smartparkingiotpaper.*
 package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
-	system SmartParking {
+	goalDescription SmartParking {
 		// Objectives.
 		client_interaction as objective ClientInteraction
 		occupancy_checking as objective OccupancyChecking
