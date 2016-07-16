@@ -106,7 +106,7 @@ Component:
  * Rule to create an external component.
  */
 ExternalComponent:
-	(hardwareComponent ?= 'hardware')? 'externalComponent' name = ID '{'
+	(hardwareComponent ?= 'hardware')? 'component' name = ID '{'
 		(parts += ExternalComponentPart)*
 	'}';
 	
@@ -152,9 +152,9 @@ ExternalComponentPart:
  * functionality parameters.
  */
 ExternalFunctionalityProvision:
-	'provides' functionality = [Functionality|QualifiedName] '{'
+	'provides' functionality = [Functionality|QualifiedName] ('{'
 		(messageAssignments += MessageAssignment)+
-	'}';
+	'}')?;
 
 /*
  * Rule to assign a message type to a functionality parameter.
