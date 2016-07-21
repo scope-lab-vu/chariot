@@ -1,6 +1,7 @@
 __author__="Subhav Pradhan, Shweta Khare"
 
 from kazoo.client import KazooClient
+from kazoo.client import KazooState
 from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.protocol.states import EventType
 import logging,time
@@ -24,7 +25,7 @@ def membership_watch(children,event):
         if len(children) > len(CURRENT_MEMBERS):
             for child in children:
                 if child not in CURRENT_MEMBERS:
-                    CURRENT_MEMBERS[child] = "ALIVE"
+                    CURRENT_MEMBERS[child] = "ACTIVE"
                     print "Node: ", child, " has joined!"
                     #TODO: Add node dynamically to database.
         else:
@@ -33,18 +34,17 @@ def membership_watch(children,event):
             # failed nodes have come alive.
             for member in CURRENT_MEMBERS:
                 # Check failure scenario.
-                if member not in children and 
-                   CURRENT_MEMBERS.get(member) == "ACTIVE":
+                if member not in children and CURRENT_MEMBERS.get(member) == "ACTIVE":
                     CURRENT_MEMBERS[member] = "FAULTY"
                     print "Node: ", member, " has failed!"
-                    handle_failure(member)
+                    #handle_failure(member)
                 else:
                     # This is the scenario where previously
                     # failed node has come alive.
                     if CURRENT_MEMBERS.get(member) == "FAULTY":
                         CURRENT_MEMBERS[member] = "ACTIVE"
                         print "Node: ", member, " has re-joined!"
-                        handle_rejoin(member)
+                        #handle_rejoin(member)
                         
 def handle_rejoin(node):
     db = MONGO_CLIENT["ConfigSpace"]
@@ -137,13 +137,13 @@ if __name__=='__main__':
     global MONGO_CLIENT
 
     CURRENT_MEMBERS = dict()
-    MONGO_CLIENT = MongoClient("mongo", 27017)
+    #MONGO_CLIENT = MongoClient("mongo", 27017)
 
     # Setting default logging required to use Kazoo.
     logging.basicConfig()
 
     # Connect to ZooKeeper server residing at a known IP.
-    zkClient = KazooClient(hosts='10.2.65.52:2181')
+    zkClient = KazooClient(hosts='127.0.0.1:2181')
     
     # Add connection state listener to know the state
     # of connection between this client and ZooKeeper
@@ -153,6 +153,10 @@ if __name__=='__main__':
     # Start ZooKeeper client/server connection.
     zkClient.start()
     
+    # Create root group membership znode if it doesn't
+    # already exist. 
+    zkClient.ensure_path("/group-membership")
+    
     # Use watchers recipe to watch for changes in
     # children of group membership znode. Each 
     # child of this node is an ephemeral node that
@@ -160,11 +164,11 @@ if __name__=='__main__':
     # to true and set membership_watch as the
     # corresponding callback function.
     ChildrenWatch(client = zkClient,
-                  path = "/test/group-membership",
+                  path = "/group-membership",
                   func = membership_watch,
                   send_event = True)
     
     # Endless loop to ensure this detector process
     # doesn't die.    
     while True:
-        time.sleep(30)
+        time.sleep(1)

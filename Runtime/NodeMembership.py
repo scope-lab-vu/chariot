@@ -20,7 +20,9 @@ if __name__=='__main__':
     logging.basicConfig()
     
     # Connect to ZooKeeper server residing at a known IP.
-    zkClient = KazooClient(hosts='127.0.0.1:2181')
+    # Set session timeout to 5 seconds; so a failure will
+    # be detected in <= 5 seconds.
+    zkClient = KazooClient(hosts='127.0.0.1:2181', timeout=5.0)
 
     # Add connection state listener to know the state
     # of connection between this client and ZooKeeper
@@ -50,4 +52,4 @@ if __name__=='__main__':
     # Endless loop to ensure client is alive in order
     # to keep associated (ephemeral) znode alive.
     while True:
-        time.sleep(5)
+        time.sleep(1)
