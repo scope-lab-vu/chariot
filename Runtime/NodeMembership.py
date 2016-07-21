@@ -1,6 +1,8 @@
 __author__="Shweta Khare, Subhav Pradhan"
 
 from kazoo.client import KazooClient
+from kazoo.client import KazooState
+from kazoo.exceptions import NodeExistsError
 import logging, uuid, socket, time, datetime
 import sys
 
@@ -18,7 +20,7 @@ if __name__=='__main__':
     logging.basicConfig()
     
     # Connect to ZooKeeper server residing at a known IP.
-    zkClient = KazooClient(hosts='10.2.65.52:2181')
+    zkClient = KazooClient(hosts='127.0.0.1:2181')
 
     # Add connection state listener to know the state
     # of connection between this client and ZooKeeper
@@ -28,19 +30,24 @@ if __name__=='__main__':
     # Start ZooKeeper client/server connection.
     zkClient.start()
         
-    # Set a unique name that will be used to create
-    # ephemeral znode.
-    name = "child_"+socket.getfqdn()+"_"+uuid.uuid4().hex
+    # Store node name (has to be unique) that will be used 
+    # to create ephemeral znode.
+    name = socket.getfqdn()
     
     # Create root group membership znode if it doesn't
     # already exist. 
-    zkClient.ensure_path("/test/group-membership")
+    zkClient.ensure_path("/group-membership")
     
     # Create node specific ephemeral znode under above
     # created root node.
-    zk.create("/test/group-membership/"+name,ephemeral=True)
+    try:
+        zkClient.create("/group-membership/"+name,ephemeral=True)
+    except NodeExistsError:
+        print "ERROR: Node with name: ", name, " already exists!"
+        sys.exit()
+        
 
     # Endless loop to ensure client is alive in order
     # to keep associated (ephemeral) znode alive.
     while True:
-        time.sleep(30)
+        time.sleep(5)
