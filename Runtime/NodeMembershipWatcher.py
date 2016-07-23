@@ -171,4 +171,4 @@ if __name__=='__main__':
     # Endless loop to ensure this detector process
     # doesn't die.    
     while True:
-        time.sleep(1)
+        time.sleep(5)

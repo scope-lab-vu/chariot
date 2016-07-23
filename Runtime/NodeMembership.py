@@ -94,6 +94,7 @@ def main():
     node_info["nodeTemplate"] = templateName
     node_info["address"] = ipaddress
     node_info_json = json.dumps(node_info)
+    
     try:
         zkClient.create("/group-membership/"+name, node_info_json, ephemeral=True)
     except NodeExistsError:
@@ -103,7 +104,7 @@ def main():
     # Endless loop to ensure client is alive in order
     # to keep associated (ephemeral) znode alive.
     while True:
-        time.sleep(1)
+        time.sleep(5)
 
 if __name__=='__main__':
     main()
