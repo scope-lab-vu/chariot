@@ -207,6 +207,7 @@ def get_node_address(db, node):
     result = lsColl.find_one({"name":node})
     nodeSerialized = Serialize(**result)
     if (len(nodeSerialized.interfaces) > 0):
+        # NOTE: We currently expect a node to have one interface.
         interfaceSerialized = Serialize(**nodeSerialized.interfaces[0])
         address = interfaceSerialized.address
         seperatorIndex = address.find(":")
