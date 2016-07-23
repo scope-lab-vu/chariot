@@ -17,19 +17,20 @@ def connection_state_listener(state):
 
 def print_usage():
     print "USAGE:"
-    print "NodeMembership --interface <network interface name> --templateName <node template name> --monitoringServer"
+    print "NodeMembership --interface <network interface name> --network <network name> --nodeTemplate <node template name> --monitoringServer <monitoring server address>"
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hitm",
-                                    ["help", "interface=", "templateName=", "monitoringServer="])
+        opts, args = getopt.getopt(sys.argv[1:], "hintm",
+                                    ["help", "interface=", "network=", "nodeTemplate=", "monitoringServer="])
     except getopt.GetoptError:
         print "Cannot retrieve passed parameters."
         print_usage()
         sys.exit()
 
     interface = None
-    templateName = None
+    network = None
+    nodeTemplate = None
     monitoringServer = None
 
     for opt, arg in opts:
@@ -39,9 +40,12 @@ def main():
         elif opt in ("-i", "--interface"):
             print "Interface name:", arg
             interface = arg
-        elif opt in ("-t", "--templateName"):
+        elif opt in ("-n", "--network"):
+            print "Network name:", arg
+            network = arg
+        elif opt in ("-t", "--nodeTemplate"):
             print "Node template name:", arg
-            templateName = arg
+            nodeTemplate = arg
         elif opt in ("-m", "--monitoringServer"):
             print "Monitoring server address:", arg
             monitoringServer = arg
@@ -50,12 +54,12 @@ def main():
             print_usage()
             sys.exit()
 
-    if interface is None or templateName is None:
-        print "Network interface or node template name not provided!"
+    if interface is None or nodeTemplate is None or network is None:
+        print "Network interface, network name, or node template name not provided!"
         sys.exit()
 
-    if monitoringServer is None or monitoringServer == "localhost":
-        monitoringServer = "127.0.0.1"
+    if monitoringServer is None:
+        monitoringServer = "localhost"
         print "Using monitoring server: ", monitoringServer
 
     # Get IP address associated with given interface name.
@@ -91,7 +95,9 @@ def main():
     # root node.
     node_info = {}
     node_info["name"] = name
-    node_info["nodeTemplate"] = templateName
+    node_info["nodeTemplate"] = nodeTemplate
+    node_info["interface"] = interface
+    node_info["network"] = network
     node_info["address"] = ipaddress
     node_info_json = json.dumps(node_info)
     

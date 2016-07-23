@@ -4,9 +4,10 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooState
 from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.protocol.states import EventType
-import logging,time
-import sys
 from pymongo import MongoClient
+import json
+import logging,time
+import sys, getopt
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
@@ -27,7 +28,32 @@ def membership_watch(children,event):
                 if child not in CURRENT_MEMBERS:
                     CURRENT_MEMBERS[child] = "ACTIVE"
                     print "Node: ", child, " has joined!"
-                    #TODO: Add node dynamically to database.
+                    
+                    # Get node information from zookeeper.
+                    # NOTE: This returns tuple. First element has data.
+                    node_info = ZK_CLIENT.get("/group-membership/"+child)
+                    node_info_json = json.loads(node_info[0])
+                    
+                    # Create object to store in database.
+                    node_to_add = dict()
+                    node_to_add["name"] = node_info_json["name"]
+                    node_to_add["nodeTemplate"] = node_info_json["nodeTemplate"]
+                    node_to_add["status"] = "ACTIVE"
+
+                    interface_to_add = dict()
+                    interface_to_add["name"] = node_info_json["interface"]
+                    interface_to_add["address"] = node_info_json["address"]
+                    interface_to_add["network"] = node_info_json["network"]
+
+                    node_to_add["interfaces"] = list()
+                    node_to_add["interfaces"].append(interface_to_add)
+                    
+                    node_to_add["processes"] = list()
+
+                    # Add node to database.
+                    db = MONGO_CLIENT["ConfigSpace"]
+                    lsColl = db["LiveSystem"]
+                    lsColl.insert(node_to_add) 
         else:
             # If new node(s) hasn't been added then it means
             # either node(s) have failed, or previously         
@@ -131,31 +157,68 @@ def invoke_solver():
         data, addr = sock.recvfrom(1024)
 
         print "Solver response message:", data
-            
-if __name__=='__main__':
-    global CURRENT_MEMBERS
-    global MONGO_CLIENT
 
-    CURRENT_MEMBERS = dict()
-    #MONGO_CLIENT = MongoClient("mongo", 27017)
+def print_usage():
+    print "USAGE:"
+    print "NodeMembershipWatcher --monitoringServer <monitoring server address> --mongoServer <mongo server address>"
+            
+def main():
+    global CURRENT_MEMBERS
+    global MONGO_CLIENT # Global mongo client object.
+    global ZK_CLIENT    # Global zookeeper client object.
+    
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hmd",
+                                    ["help", "monitoringServer=", "mongoServer="])
+    except getopt.GetoptError:
+        print "Cannot retrieve passed parameters."
+        print_usage()
+        sys.exit()
+    
+    monitoringServer = None
+    mongoServer = None
+    
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print_usage()
+            sys.exit()
+        elif opt in ("-m", "--monitoringserver"):
+            print "Monitoring server address:", arg
+            monitoringServer = arg
+        elif opt in ("-d", "--mongoServer"):
+            print "Mongo server address :", arg
+            mongoServer = arg
+        else:
+            print "Invalid command line argument."
+            print_usage()
+            sys.exit()
+
+    if monitoringServer is None:
+        monitoringServer = "localhost"
+        print "Using monitoring server: ", monitoringServer
+
+    if mongoServer is None:
+        mongoServer = "localhost"
+        print "Using mongo server: ", mongoServer
 
     # Setting default logging required to use Kazoo.
     logging.basicConfig()
-
-    # Connect to ZooKeeper server residing at a known IP.
-    zkClient = KazooClient(hosts='127.0.0.1:2181')
+    
+    CURRENT_MEMBERS = dict()
+    MONGO_CLIENT = MongoClient(mongoServer, 27017)
+    ZK_CLIENT = KazooClient(hosts=(monitoringServer+":2181"))
     
     # Add connection state listener to know the state
     # of connection between this client and ZooKeeper
     # server. 
-    zkClient.add_listener(connection_state_listener)
+    ZK_CLIENT.add_listener(connection_state_listener)
         
     # Start ZooKeeper client/server connection.
-    zkClient.start()
+    ZK_CLIENT.start()
     
     # Create root group membership znode if it doesn't
     # already exist. 
-    zkClient.ensure_path("/group-membership")
+    ZK_CLIENT.ensure_path("/group-membership")
     
     # Use watchers recipe to watch for changes in
     # children of group membership znode. Each 
@@ -163,7 +226,7 @@ if __name__=='__main__':
     # represents a group member. We set send_event
     # to true and set membership_watch as the
     # corresponding callback function.
-    ChildrenWatch(client = zkClient,
+    ChildrenWatch(client = ZK_CLIENT,
                   path = "/group-membership",
                   func = membership_watch,
                   send_event = True)
@@ -172,3 +235,6 @@ if __name__=='__main__':
     # doesn't die.    
     while True:
         time.sleep(5)
+
+if __name__=='__main__':
+    main()
