@@ -1,6 +1,6 @@
 import edu.vanderbilt.isis.chariot.smartparkingiotpaper.*
 package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
-	system SmartParking {
+	goalDescription SmartParking {
 		// Objectives.
 		client_interaction as objective ClientInteraction
 		occupancy_checking as objective OccupancyChecking
@@ -11,6 +11,6 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 		replicate parking_client asPerNode 
 			for category TerminalNode
 		replicate occupancy_detector asCluster 
-			with [1,4] instances
+			with [2,4] instances
 	}
 }

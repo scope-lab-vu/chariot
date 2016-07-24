@@ -545,7 +545,7 @@ class ConfigSpaceGenerator implements IGenerator {
 			goalDescription.setName (g.getName())
 			
 			// Store constraints.
-			for (c : g.getConstraints()) {
+			for (c : g.getReplicationConstraints()) {
 				goalDescription.addReplicationConstraint [
 					init()
 					if(c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ConsensusReplicationConstraintImpl")) {

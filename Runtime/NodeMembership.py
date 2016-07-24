@@ -1,8 +1,11 @@
-__author__="Shweta Khare, Subhav Pradhan"
+__author__="Subhav Pradhan, Shweta Khare"
 
 from kazoo.client import KazooClient
-import logging, uuid, socket, time, datetime
-import sys
+from kazoo.client import KazooState
+from kazoo.exceptions import NodeExistsError
+import json
+import logging, netifaces, socket, time, datetime
+import sys, getopt
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
@@ -11,14 +14,66 @@ def connection_state_listener(state):
     elif state == KazooState.SUSPENDED:
         print "Connection to server has been suspended!"
         sys.exit()
-        
 
-if __name__=='__main__':
+def print_usage():
+    print "USAGE:"
+    print "NodeMembership --interface <network interface name> --network <network name> --nodeTemplate <node template name> --monitoringServer <monitoring server address>"
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hintm",
+                                    ["help", "interface=", "network=", "nodeTemplate=", "monitoringServer="])
+    except getopt.GetoptError:
+        print "Cannot retrieve passed parameters."
+        print_usage()
+        sys.exit()
+
+    interface = None
+    network = None
+    nodeTemplate = None
+    monitoringServer = None
+
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print_usage()
+            sys.exit()
+        elif opt in ("-i", "--interface"):
+            print "Interface name:", arg
+            interface = arg
+        elif opt in ("-n", "--network"):
+            print "Network name:", arg
+            network = arg
+        elif opt in ("-t", "--nodeTemplate"):
+            print "Node template name:", arg
+            nodeTemplate = arg
+        elif opt in ("-m", "--monitoringServer"):
+            print "Monitoring server address:", arg
+            monitoringServer = arg
+        else:
+            print "Invalid command line argument."
+            print_usage()
+            sys.exit()
+
+    if interface is None or nodeTemplate is None or network is None:
+        print "Network interface, network name, or node template name not provided!"
+        sys.exit()
+
+    if monitoringServer is None:
+        monitoringServer = "localhost"
+        print "Using monitoring server: ", monitoringServer
+
+    # Get IP address associated with given interface name.
+    addrs = netifaces.ifaddresses(interface)
+    afinet = addrs[netifaces.AF_INET]
+    ipaddress = afinet[0]['addr']
+
     # Setting default logging required to use Kazoo.
     logging.basicConfig()
     
     # Connect to ZooKeeper server residing at a known IP.
-    zkClient = KazooClient(hosts='10.2.65.52:2181')
+    # Set session timeout to 5 seconds; so a failure will
+    # be detected in <= 5 seconds.
+    zkClient = KazooClient(hosts=(monitoringServer+":2181"), timeout=5.0)
 
     # Add connection state listener to know the state
     # of connection between this client and ZooKeeper
@@ -28,19 +83,34 @@ if __name__=='__main__':
     # Start ZooKeeper client/server connection.
     zkClient.start()
         
-    # Set a unique name that will be used to create
-    # ephemeral znode.
-    name = "child_"+socket.getfqdn()+"_"+uuid.uuid4().hex
+    # Store node name (has to be unique) that will be used 
+    # to create ephemeral znode.
+    name = socket.getfqdn()
     
     # Create root group membership znode if it doesn't
     # already exist. 
-    zkClient.ensure_path("/test/group-membership")
+    zkClient.ensure_path("/group-membership")
     
-    # Create node specific ephemeral znode under above
-    # created root node.
-    zk.create("/test/group-membership/"+name,ephemeral=True)
+    # Create node-specific ephemeral znode under above created 
+    # root node.
+    node_info = {}
+    node_info["name"] = name
+    node_info["nodeTemplate"] = nodeTemplate
+    node_info["interface"] = interface
+    node_info["network"] = network
+    node_info["address"] = ipaddress
+    node_info_json = json.dumps(node_info)
+    
+    try:
+        zkClient.create("/group-membership/"+name, node_info_json, ephemeral=True)
+    except NodeExistsError:
+        print "ERROR: Node with name: ", name, " already exists!"
+        sys.exit()
 
     # Endless loop to ensure client is alive in order
     # to keep associated (ephemeral) znode alive.
     while True:
-        time.sleep(30)
+        time.sleep(5)
+
+if __name__=='__main__':
+    main()

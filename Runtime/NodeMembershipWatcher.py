@@ -1,11 +1,13 @@
 __author__="Subhav Pradhan, Shweta Khare"
 
 from kazoo.client import KazooClient
+from kazoo.client import KazooState
 from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.protocol.states import EventType
-import logging,time
-import sys
 from pymongo import MongoClient
+import json
+import logging,time
+import sys, getopt
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
@@ -19,70 +21,114 @@ def membership_watch(children,event):
     global CURRENT_MEMBERS
 
     if event and event.type==EventType.CHILD:
-        # Check if new node(s) added. If so, add the new 
-        # node(s) to CURRENT_MEMBERS.
+        # Handle node join.
         if len(children) > len(CURRENT_MEMBERS):
             for child in children:
                 if child not in CURRENT_MEMBERS:
-                    CURRENT_MEMBERS[child] = "ALIVE"
+                    CURRENT_MEMBERS.append(child)
                     print "Node: ", child, " has joined!"
-                    #TODO: Add node dynamically to database.
+                    
+                    # Get node information from zookeeper.
+                    # NOTE: This returns tuple. First element has data.
+                    nodeInfo = ZK_CLIENT.get("/group-membership/"+child)
+                    nodeInfoJson = json.loads(nodeInfo[0])
+
+                    handle_join(nodeInfoJson)            
+        # Handle node failure.
         else:
-            # If new node(s) hasn't been added then it means
-            # either node(s) have failed, or previously         
-            # failed nodes have come alive.
             for member in CURRENT_MEMBERS:
-                # Check failure scenario.
-                if member not in children and 
-                   CURRENT_MEMBERS.get(member) == "ACTIVE":
-                    CURRENT_MEMBERS[member] = "FAULTY"
+                if member not in children:
                     print "Node: ", member, " has failed!"
+                    CURRENT_MEMBERS.remove(member)
                     handle_failure(member)
-                else:
-                    # This is the scenario where previously
-                    # failed node has come alive.
-                    if CURRENT_MEMBERS.get(member) == "FAULTY":
-                        CURRENT_MEMBERS[member] = "ACTIVE"
-                        print "Node: ", member, " has re-joined!"
-                        handle_rejoin(member)
                         
-def handle_rejoin(node):
+def handle_join(nodeInfo):
+    # Create object to store in database.
+    nodeToAdd = dict()
+    nodeToAdd["name"] = nodeInfo["name"]
+    nodeToAdd["nodeTemplate"] = nodeInfo["nodeTemplate"]
+    nodeToAdd["status"] = "ACTIVE"
+
+    interfaceToAdd = dict()
+    interfaceToAdd["name"] = nodeInfo["interface"]
+    interfaceToAdd["address"] = nodeInfo["address"]
+    interfaceToAdd["network"] = nodeInfo["network"]
+
+    nodeToAdd["interfaces"] = list()
+    nodeToAdd["interfaces"].append(interfaceToAdd)
+
+    nodeToAdd["processes"] = list()
+
+    # Add node to database.
     db = MONGO_CLIENT["ConfigSpace"]
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
+    # NOTE: Update used with upsert instead of insert because
+    # we might be adding node that had previously failed or
+    # been removed.
+    nColl.update({"name":nodeInfo["name"]}, nodeToAdd, upsert = True)
+
+    # Check if any application already exists. If there are
+    # applications then it means that the node join has to
+    # be treated as hardware update and therefore the solver
+    # should be invoked. If there are no applications then
+    # this node is addition is happening at system initialization
+    # time so do not invoke the solver.
+    systemInitialization = True
     
-    lsColl.update({"name":str(key), "status":"FAULTY"},
-                  {"$set":{"status": "ACTIVE"}},
-                  upsert = False)
+    if "GoalDescriptions" in db.collection_names():
+        gdColl = db["GoalDescriptions"]
+        if gdColl.count() != 0:
+            systemInitialization = False
+    
+    if not systemInitialization:
+        # Create and store hardware update reconfiguration event 
+        # before invoking the solver.
+        reColl = db["ReconfigurationEvents"]
+       
+        # NOTE: Using update as we need to use currentDate which
+        # is an update operator. 
+        reColl.update({"entity":nodeInfo["name"], "completed":False},
+                      {"$currentDate":{"detectionTime":{"$type":"date"}},
+                       "$set": {"kind":"UPDATE",
+                                "solutionFoundTime":0,
+                                "reconfiguredTime":0,
+                                "actionCount":0}},
+                      upsert = True)
+
+        invoke_solver()
 
 def handle_failure(node):
     db = MONGO_CLIENT["ConfigSpace"]
-    lsColl = db["LiveSystem"]
-    failureColl = db["Failures"]
+    nColl = db["Nodes"]
     ciColl = db["ComponentInstances"]
     
-    # Add failure detection information in Failures collection.
-    failureColl.update({"failedEntity": NODE_NAME}, 
-                       {"$currentDate": {"detectionTime": {"$type": "date"}}, 
-                        "$set": {"solutionFoundTime": 0, "reconfiguredTime": 0}}, 
-                       upsert=True)
-                
-    # Mark node faulty and pull related processes in LiveSystem collection.
-    lsColl.update({"name": NODE_NAME, "status": "ACTIVE"}, 
-                  {"$set": {"status": "FAULTY"}}, 
-                  upsert=False)
+    # Create and store failure reconfiguration event.
+    reColl = db["ReconfigurationEvents"]
     
-    lsColl.update({"name": NODE_NAME, "status": "FAULTY"}, 
-                  {"$pull": {"processes": {"name": {"$ne": "null"}}}})
+    # NOTE: Using update as we need to use currentDate which
+    # is an update operator. 
+    reColl.update({"entity":node, "completed":False},
+                  {"$currentDate":{"detectionTime":{"$type":"date"}},
+                   "$set": {"kind":"UPDATE",
+                            "solutionFoundTime":0,
+                            "reconfiguredTime":0,
+                            "actionCount":0}},
+                  upsert = True)
+                
+    # Mark node faulty in Nodes collection.
+    nColl.update({"name": node, "status": "ACTIVE"}, 
+                 {"$set": {"status": "FAULTY"}}, 
+                 upsert=False)
 
     # Store names of affected component instances.
-    findResults = lsColl.find({"name": NODE_NAME, "status": "FAULTY"})
+    findResults = nColl.find({"name": node, "status": "FAULTY"})
     failedComponentInstances = list()
     
     from SolverBackend import Serialize
     
     for findResult in findResults:
-        node = Serialize(**findResult)
-        for p in node.processes:
+        failedNode = Serialize(**findResult)
+        for p in failedNode.processes:
             process = Serialize(**p)
             for c in process.components:
                 component = Serialize(**c)
@@ -93,9 +139,12 @@ def handle_failure(node):
         ciColl.update({"name": compInst}, 
                       {"$set": {"status": "FAULTY"}})
 
-    # Invoke solver for reconfiguration.
-    invoke_solver()
+    # Pull related processes in Nodes collection.
+    nColl.update({"name": node, "status": "FAULTY"}, 
+                 {"$pull": {"processes": {"name": {"$ne": "null"}}}})
 
+    # Invoke solver for reconfiguration.
+    # invoke_solver()
 
 def invoke_solver():
     SOLVER_IP = "solver"
@@ -131,27 +180,68 @@ def invoke_solver():
         data, addr = sock.recvfrom(1024)
 
         print "Solver response message:", data
-            
-if __name__=='__main__':
-    global CURRENT_MEMBERS
-    global MONGO_CLIENT
 
-    CURRENT_MEMBERS = dict()
-    MONGO_CLIENT = MongoClient("mongo", 27017)
+def print_usage():
+    print "USAGE:"
+    print "NodeMembershipWatcher --monitoringServer <monitoring server address> --mongoServer <mongo server address>"
+            
+def main():
+    global CURRENT_MEMBERS
+    global MONGO_CLIENT # Global mongo client object.
+    global ZK_CLIENT    # Global zookeeper client object.
+    
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hmd",
+                                    ["help", "monitoringServer=", "mongoServer="])
+    except getopt.GetoptError:
+        print "Cannot retrieve passed parameters."
+        print_usage()
+        sys.exit()
+    
+    monitoringServer = None
+    mongoServer = None
+    
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print_usage()
+            sys.exit()
+        elif opt in ("-m", "--monitoringserver"):
+            print "Monitoring server address:", arg
+            monitoringServer = arg
+        elif opt in ("-d", "--mongoServer"):
+            print "Mongo server address :", arg
+            mongoServer = arg
+        else:
+            print "Invalid command line argument."
+            print_usage()
+            sys.exit()
+
+    if monitoringServer is None:
+        monitoringServer = "localhost"
+        print "Using monitoring server: ", monitoringServer
+
+    if mongoServer is None:
+        mongoServer = "localhost"
+        print "Using mongo server: ", mongoServer
 
     # Setting default logging required to use Kazoo.
     logging.basicConfig()
-
-    # Connect to ZooKeeper server residing at a known IP.
-    zkClient = KazooClient(hosts='10.2.65.52:2181')
+    
+    CURRENT_MEMBERS = list()
+    MONGO_CLIENT = MongoClient(mongoServer, 27017)
+    ZK_CLIENT = KazooClient(hosts=(monitoringServer+":2181"))
     
     # Add connection state listener to know the state
     # of connection between this client and ZooKeeper
     # server. 
-    zkClient.add_listener(connection_state_listener)
+    ZK_CLIENT.add_listener(connection_state_listener)
         
     # Start ZooKeeper client/server connection.
-    zkClient.start()
+    ZK_CLIENT.start()
+    
+    # Create root group membership znode if it doesn't
+    # already exist. 
+    ZK_CLIENT.ensure_path("/group-membership")
     
     # Use watchers recipe to watch for changes in
     # children of group membership znode. Each 
@@ -159,12 +249,15 @@ if __name__=='__main__':
     # represents a group member. We set send_event
     # to true and set membership_watch as the
     # corresponding callback function.
-    ChildrenWatch(client = zkClient,
-                  path = "/test/group-membership",
+    ChildrenWatch(client = ZK_CLIENT,
+                  path = "/group-membership",
                   func = membership_watch,
                   send_event = True)
     
     # Endless loop to ensure this detector process
     # doesn't die.    
     while True:
-        time.sleep(30)
+        time.sleep(5)
+
+if __name__=='__main__':
+    main()
