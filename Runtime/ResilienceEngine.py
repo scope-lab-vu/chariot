@@ -63,11 +63,11 @@ def find_solution(db, zmq_socket):
         # Current implementation only does look ahead for node failures, so look for nodes that
         # has failed, find corresponding solution in LookAhead collection, send solution
         # actions to related DM, and store solution actions in DeploymentActions collection.
-        lsColl = db["LiveSystem"]
-        lsResult = lsColl.find({"status":"FAULTY"})
+        nColl = db["Nodes"]
+        nResult = nColl.find({"status":"FAULTY"})
 
         faultyNodes = list()
-        for r in lsResult:
+        for r in nResult:
             faultyNodes.append(r["name"])
 
         laColl = db["LookAhead"]
@@ -75,7 +75,7 @@ def find_solution(db, zmq_socket):
         deploymentActions = list()
         for node in faultyNodes:
             print "Searching pre-computed solution for failure of node:", node
-            laResult = laColl.find({"failedEntity":node, "failureKind":"NODE"})
+            laResult = laColl.find({"failedEntity":node})
             # If solution found, store time.
             if laResult is not None:
                 failureColl = db["Failures"]
@@ -181,8 +181,8 @@ def invoke_solver(db, zmq_socket, initial):
                                            upsert = False)
 
                     solver.print_difference(componentsToShutDown, componentsToStart)
-                    print "Populating LiveSystem with information about processes and component instances"
-                    populate_live_system(db, backend, solver, componentsToStart, componentsToShutDown)
+                    print "Populating Nodes collection with information with processes and component instances"
+                    populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown)
                     print "Computing new deployment actions and populating DeploymentActions collection."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
                     # Send actions using zeromq if not lookahead.
@@ -203,8 +203,8 @@ def invoke_solver(db, zmq_socket, initial):
 
 # Get node IP and port as a pair.
 def get_node_address(db, node):
-    lsColl = db["LiveSystem"]
-    result = lsColl.find_one({"name":node})
+    nColl = db["Nodes"]
+    result = nColl.find_one({"name":node})
     nodeSerialized = Serialize(**result)
     if (len(nodeSerialized.interfaces) > 0):
         # NOTE: We currently expect a node to have one interface.
@@ -228,8 +228,8 @@ def look_ahead(db, actions):
     laColl.remove({})
 
     # Get list of nodes that are currently available (and therefore can fail).
-    lsColl = db["LiveSystem"]
-    result = lsColl.find({"status":"ACTIVE"})
+    nColl = db["Nodes"]
+    result = nColl.find({"status":"ACTIVE"})
     aliveNodes = list()
     for r in result:
         nodeName = r["name"]
@@ -259,7 +259,6 @@ def look_ahead(db, actions):
             # Store solution in main (ConfigSpace) db.
             entry = dict()
             entry["failedEntity"] = node
-            entry["failureKind"] = "NODE"
             entry["recoveryActions"] = list()
 
             for action in recoveryActions:
@@ -273,14 +272,14 @@ def look_ahead(db, actions):
     print "** TIME TAKEN TO LOOK AHEAD: ", elapsedTime
 
 def mark_node_failure(db, nodeName):
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
 
-    result = lsColl.update({"name":nodeName, "status":"ACTIVE"},
-                           {"$set": {"status":"FAULTY"}},
-                           upsert = False)
+    result = nColl.update({"name":nodeName, "status":"ACTIVE"},
+                          {"$set": {"status":"FAULTY"}},
+                          upsert = False)
 
     # Store names of affected component instances.
-    findResults = lsColl.find({"name":nodeName, "status":"FAULTY"})
+    findResults = nColl.find({"name":nodeName, "status":"FAULTY"})
     failedComponentInstances = list()
     from SolverBackend import Serialize
     for findResult in findResults:
@@ -298,8 +297,8 @@ def mark_node_failure(db, nodeName):
                                {"$set":{"status":"FAULTY"}})
 
     # Pull all processes.
-    result = lsColl.update({"name":nodeName, "status":"FAULTY"},
-                           {"$pull":{"processes":{"name":{"$ne":"null"}}}})
+    result = nColl.update({"name":nodeName, "status":"FAULTY"},
+                          {"$pull":{"processes":{"name":{"$ne":"null"}}}})
 
 def handle_action(db, actionDoc):
     action = actionDoc["action"]
@@ -319,8 +318,8 @@ def handle_action(db, actionDoc):
         # Update database to reflect affect of above stop action.
         update_stop_action(db, actionNode, actionProcess, actionStartScript, actionStopScript)
 
-def populate_live_system(db, backend, solver, componentsToStart, componentsToShutDown):
-    lsColl = db["LiveSystem"]
+def populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown):
+    nColl = db["Nodes"]
 
     for info in componentsToStart:
         componentInstanceToAddName = solver.componentNames[info[0]]
@@ -355,21 +354,13 @@ def populate_live_system(db, backend, solver, componentsToStart, componentsToShu
 
             processDocument["components"].append(liveComponentInstDocument)
 
-            lsColl.update({"name":solver.nodeNames[info[1]], "status":"ACTIVE"},
-                          {"$push":{"processes":processDocument}},
-                          upsert = False)
+            nColl.update({"name":solver.nodeNames[info[1]], "status":"ACTIVE"},
+                         {"$push":{"processes":processDocument}},
+                         upsert = False)
         else:
             print "WARNING: Component instance with name:", componentInstanceToAddName, "not found!"
 
 def compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
-    deplActionsColl = None
-    if "DeploymentActions" in db.collection_names():
-        print "DeploymentActions collection already exist, using existing collection"
-        deplActionsColl = db["DeploymentActions"]
-    else:
-        print "DeploymentActions collection doesn't exist, creating a new one."
-        deplActionsColl = db.create_collection("DeploymentActions")
-
     actions = list()
     import time
     actionsTimeStamp = time.time()
@@ -418,6 +409,7 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
     actionsToInsert = copy.deepcopy(actions) # Making a copy as db insert below will modify by adding _id.
 
+    deplActionsColl = db["DeploymentActions"]
     for action in actionsToInsert:
         deplActionsColl.insert(action)
 

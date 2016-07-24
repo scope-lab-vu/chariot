@@ -7,7 +7,7 @@ from kazoo.protocol.states import EventType
 from pymongo import MongoClient
 import json
 import logging,time
-import sys, getopt
+import sys, socket, getopt
 
 def connection_state_listener(state):
     if state == KazooState.LOST:

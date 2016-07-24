@@ -27,9 +27,9 @@ def execute_start_action(actionProcess, actionStartScript):
 def execute_stop_action(db, actionNode, actionProcess, actionStopScript):
     if (actionNode == NODE_NAME):
         # Find PID in the database.
-        lsColl = db["LiveSystem"]
+        nColl = db["Nodes"]
 
-        nodeDoc = lsColl.find_one({"name":actionNode})
+        nodeDoc = nColl.find_one({"name":actionNode})
         nodeSerialized = Serialize(**nodeDoc)
         pid = None
 
@@ -47,22 +47,22 @@ def execute_stop_action(db, actionNode, actionProcess, actionStopScript):
 def update_start_action(db, actionNode, actionProcess, startScript, stopScript, pid):
     component = re.sub("process_", "", actionProcess)
 
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
 
-    # Handle scenario where process to start is already in the right place in LiveSystem collection. This
+    # Handle scenario where process to start is already in the right place in Nodes collection. This
     # will be true for all cases (initial deployment as well as reconfiguration, via ResilienceEngineMain.py
     # populate_live_system function). So, before updating, make sure status is TO_BE_DEPLOYED. If so, update
     # status to ACTIVE.
-    result = lsColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}},
-                           {"$set": {"processes.$.status": "ACTIVE", "processes.$.pid":pid}},
-                           upsert = False)
+    result = nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}},
+                          {"$set": {"processes.$.status": "ACTIVE", "processes.$.pid":pid}},
+                          upsert = False)
 
     # If above update matched, then update the component instance status too.
     if result is not None:
         if result["ok"] > 0:
-            lsColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "components":{"$elemMatch":{"name":component}}}}},
-                          {"$set": {"processes.$.components.0.status": "ACTIVE"}},  #WARNING: This assumens, one component/process.
-                          upsert = False)
+            nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "components":{"$elemMatch":{"name":component}}}}},
+                         {"$set": {"processes.$.components.0.status": "ACTIVE"}},  #WARNING: This assumens, one component/process.
+                         upsert = False)
 
             # Update information in ComponentInstances collection as well.
             ciColl = db["ComponentInstances"]
@@ -72,7 +72,7 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
                                    upsert = False)
     else:
         # If not, it means we need to handle the scenario where process to start is not in the right place in
-        # LiveSystem collection. So, a new process document must be created and inserted.
+        # Nodes collection. So, a new process document must be created and inserted.
         # NOTE: This (TO_BE_DEPLOYED processes not in right place) should never happen but we keep the code below
         # to handle scenario if it ever does happens.
         processDocument = dict()
@@ -96,9 +96,9 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
 
         processDocument["components"].append(componentDocument)
 
-        result = lsColl.update({"name":actionNode},
-                               {"$push":{"processes":processDocument}},
-                               upsert = False)
+        result = nColl.update({"name":actionNode},
+                              {"$push":{"processes":processDocument}},
+                              upsert = False)
 
         # Update information in ComponentInstances collection as well.
         ciColl = db["ComponentInstances"]
@@ -116,9 +116,9 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
 def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
     component = re.sub("process_", "", actionProcess)
 
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
 
-    result = lsColl.update({"name":actionNode},
+    result = nColl.update({"name":actionNode},
                            {"$pull":{"processes":{"name":actionProcess}}})
 
     # Mark action as taken.
@@ -147,8 +147,8 @@ def handle_action(db, actionDoc):
 
             # Update deployment time in Failures collection. To do so, first figure out which node failed.
             # NOTE: This only works for a single failure at a time.
-            lsColl = db["LiveSystem"]
-            result = lsColl.find({"status":"FAULTY"})
+            nColl = db["Nodes"]
+            result = nColl.find({"status":"FAULTY"})
 
             for r in result:
                 failureColl = db["Failures"]

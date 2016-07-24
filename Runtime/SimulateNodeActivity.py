@@ -4,20 +4,19 @@ import getopt
 import sys
 import pymongo
 import socket
-import time
 
 def execute_action():
     client = pymongo.MongoClient("localhost")
     db = client["ConfigSpace"]
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
 
     if (NODE_NAME != "" and (START_ACTION or STOP_ACTION)):
         if PROCESS_NAME == "":
             if START_ACTION:
                 print "STARTING node:", NODE_NAME
-                result = lsColl.update({"name":NODE_NAME, "status":"FAULTY"},
-                                       {"$set": {"status":"ACTIVE"}},
-                                       upsert = False)
+                result = nColl.update({"name":NODE_NAME, "status":"FAULTY"},
+                                      {"$set": {"status":"ACTIVE"}},
+                                      upsert = False)
             elif STOP_ACTION:
                 print "STOPPING node:", NODE_NAME
 
@@ -29,12 +28,12 @@ def execute_action():
                                    upsert = True)
 
                 # Mark node faulty.
-                result = lsColl.update({"name":NODE_NAME, "status":"ACTIVE"},
-                                       {"$set": {"status":"FAULTY"}},
-                                       upsert = False)
+                result = nColl.update({"name":NODE_NAME, "status":"ACTIVE"},
+                                      {"$set": {"status":"FAULTY"}},
+                                      upsert = False)
 
                 # Store names of affected component instances.
-                findResults = lsColl.find({"name":NODE_NAME, "status":"FAULTY"})
+                findResults = nColl.find({"name":NODE_NAME, "status":"FAULTY"})
                 failedComponentInstances = list()
                 from SolverBackend import Serialize
                 for findResult in findResults:
@@ -52,20 +51,20 @@ def execute_action():
                                            {"$set":{"status":"FAULTY"}})
 
                 # Pull all processes.
-                result = lsColl.update({"name":NODE_NAME, "status":"FAULTY"},
-                                       {"$pull":{"processes":{"name":{"$ne":"null"}}}})
+                result = nColl.update({"name":NODE_NAME, "status":"FAULTY"},
+                                      {"$pull":{"processes":{"name":{"$ne":"null"}}}})
 
         else:
             if START_ACTION:
                 print "Processes can only be STARTED by DM"
             elif STOP_ACTION:
                 print "STOPPING process:", PROCESS_NAME, "on node:", NODE_NAME
-                result = lsColl.update({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"ACTIVE"}}},
-                                       {"$set":{"processes.$.status":"FAULTY"}},
-                                       upsert = False)
+                result = nColl.update({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"ACTIVE"}}},
+                                      {"$set":{"processes.$.status":"FAULTY"}},
+                                      upsert = False)
 
                 # Store names of affected component instances.
-                findResults = lsColl.find({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"FAULTY"}}})
+                findResults = nColl.find({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"FAULTY"}}})
                 failedComponentInstances = list()
                 from SolverBackend import Serialize
                 for findResult in findResults:
@@ -83,10 +82,10 @@ def execute_action():
                     result = ciColl.update({"name":compInst},
                                            {"$set":{"status":"FAULTY"}})
 
-                # Mark component instances as failed in LiveSystem collection as well.
-                result = lsColl.update({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"FAULTY"}}},
-                                       {"$set":{"processes.$.components.0.status":"FAULTY"}},   # NOTE: This assumes one component per process.
-                                       upsert = False)
+                # Mark component instances as failed in Nodes collection as well.
+                result = nColl.update({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"FAULTY"}}},
+                                      {"$set":{"processes.$.components.0.status":"FAULTY"}},   # NOTE: This assumes one component per process.
+                                      upsert = False)
 
 SOLVER_IP = "127.0.0.1"
 SOLVER_PORT = 7000

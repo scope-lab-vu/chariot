@@ -1,6 +1,5 @@
 __author__ = "Subhav Pradhan"
 
-import json
 import operator
 from operator import attrgetter
 import datetime
@@ -1353,7 +1352,7 @@ class SolverBackend:
 
     # This function loads nodes, processes and component instances.
     def load_nodes_info(self, db):
-        collection = db["LiveSystem"]
+        collection = db["Nodes"]
 
         for n in collection.find():
             node = Serialize(**n)
@@ -1515,7 +1514,7 @@ class SolverBackend:
             componentInstanceToAdd.type = componentInstance.type
             componentInstanceToAdd.status = componentInstance.status    # Status is stored in this collection purely
                                                                         # for display, so we do not read it as status
-                                                                        # is only relevant if read from LiveSystem.
+                                                                        # is only relevant if read from Nodes.
             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
             componentInstanceToAdd.node = componentInstance.node
             componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
