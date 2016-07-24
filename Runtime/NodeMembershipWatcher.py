@@ -33,27 +33,8 @@ def membership_watch(children,event):
                     # NOTE: This returns tuple. First element has data.
                     node_info = ZK_CLIENT.get("/group-membership/"+child)
                     node_info_json = json.loads(node_info[0])
-                    
-                    # Create object to store in database.
-                    node_to_add = dict()
-                    node_to_add["name"] = node_info_json["name"]
-                    node_to_add["nodeTemplate"] = node_info_json["nodeTemplate"]
-                    node_to_add["status"] = "ACTIVE"
-
-                    interface_to_add = dict()
-                    interface_to_add["name"] = node_info_json["interface"]
-                    interface_to_add["address"] = node_info_json["address"]
-                    interface_to_add["network"] = node_info_json["network"]
-
-                    node_to_add["interfaces"] = list()
-                    node_to_add["interfaces"].append(interface_to_add)
-                    
-                    node_to_add["processes"] = list()
-
-                    # Add node to database.
-                    db = MONGO_CLIENT["ConfigSpace"]
-                    lsColl = db["LiveSystem"]
-                    lsColl.insert(node_to_add) 
+        
+                    handle_join(node_info_json)            
         else:
             # If new node(s) hasn't been added then it means
             # either node(s) have failed, or previously         
@@ -63,7 +44,7 @@ def membership_watch(children,event):
                 if member not in children and CURRENT_MEMBERS.get(member) == "ACTIVE":
                     CURRENT_MEMBERS[member] = "FAULTY"
                     print "Node: ", member, " has failed!"
-                    #handle_failure(member)
+                    handle_failure(member)
                 else:
                     # This is the scenario where previously
                     # failed node has come alive.
@@ -72,13 +53,45 @@ def membership_watch(children,event):
                         print "Node: ", member, " has re-joined!"
                         #handle_rejoin(member)
                         
-def handle_rejoin(node):
+def handle_join(node_info):
+    # Create object to store in database.
+    node_to_add = dict()
+    node_to_add["name"] = node_info["name"]
+    node_to_add["nodeTemplate"] = node_info["nodeTemplate"]
+    node_to_add["status"] = "ACTIVE"
+
+    interface_to_add = dict()
+    interface_to_add["name"] = node_info["interface"]
+    interface_to_add["address"] = node_info["address"]
+    interface_to_add["network"] = node_info["network"]
+
+    node_to_add["interfaces"] = list()
+    node_to_add["interfaces"].append(interface_to_add)
+
+    node_to_add["processes"] = list()
+
+    # Add node to database.
     db = MONGO_CLIENT["ConfigSpace"]
-    lsColl = db["LiveSystem"]
+    lsColl = db["Nodes"]
+    lsColl.insert(node_to_add)
+
+    # Check if any application already exists. If there are
+    # applications then it means that the node join has to
+    # be treated as hardware update and therefore the solver
+    # should be invoked. If there are no applications then
+    # this node is addition is happening at system initialization
+    # time so do not invoke the solver.
+    bool systemInitialization = True
     
-    lsColl.update({"name":str(key), "status":"FAULTY"},
-                  {"$set":{"status": "ACTIVE"}},
-                  upsert = False)
+    if "GoalDescriptions" in db.collection_names():
+        gdColl = db["GoalDescriptions"]
+        if gdColl.count() != 0:
+            systemInitialization = False
+    
+    if not systemInitialization:
+        # TODO: Create reconfiguration event before invoking
+        # the solver.
+        invoke_solver()
 
 def handle_failure(node):
     db = MONGO_CLIENT["ConfigSpace"]
@@ -87,7 +100,7 @@ def handle_failure(node):
     ciColl = db["ComponentInstances"]
     
     # Add failure detection information in Failures collection.
-    failureColl.update({"failedEntity": NODE_NAME}, 
+    failureColl.update({"failedEntity": node}, 
                        {"$currentDate": {"detectionTime": {"$type": "date"}}, 
                         "$set": {"solutionFoundTime": 0, "reconfiguredTime": 0}}, 
                        upsert=True)
@@ -121,6 +134,14 @@ def handle_failure(node):
 
     # Invoke solver for reconfiguration.
     invoke_solver()
+
+def handle_rejoin(node):
+    db = MONGO_CLIENT["ConfigSpace"]
+    lsColl = db["LiveSystem"]
+    
+    lsColl.update({"name":str(key), "status":"FAULTY"},
+                  {"$set":{"status": "ACTIVE"}},
+                  upsert = False)
 
 
 def invoke_solver():
