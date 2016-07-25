@@ -186,24 +186,27 @@ def invoke_solver(db, zmq_socket, initial):
             print "No deployment found!"
             return None
         else:
-            if(dist!=0):
+            # Get failed node.
+            # NOTE: Important to get failed nodes from backend solver and not from the database as
+            # the latter could have changed from the time solver initiated its computation. We only
+            # want nodes for which the solver computed the solution.
+            failedNodeIndexes = backend.get_failed_nodes()
+
+            reColl = db["ReconfigurationEvents"]
+
+            if dist !=0:
                 print "Deployment computation done"
                 if (model is not None):
                     print "Computing new deployment actions and populating DeploymentActions collection."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
 
-                    # Get failed node.
-                    # NOTE: Important to get failed nodes from backend solver and not from the database as
-                    # the latter could have changed from the time solver initiated its computation. We only
-                    # want nodes for which the solver computed the solution.
-                    failedNodeIndexes = backend.get_failed_nodes()
-
-                    # Store solution found time.
-                    for nodeIndex in failedNodeIndexes:
-                        reColl = db["ReconfigurationEvents"]
-                        reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":False},
-                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
-                                       "$set":{"actionCount":len(actions)}})
+                    # If distance != 0, there has to be some actions. So, update reconfiguration event
+                    # appropriately.
+                    if not LOOK_AHEAD:
+                        for nodeIndex in failedNodeIndexes:
+                            reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":False},
+                                          {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
+                                           "$set":{"actionCount":len(actions)}})
 
                     solver.print_difference(componentsToShutDown, componentsToStart)
 
@@ -211,19 +214,27 @@ def invoke_solver(db, zmq_socket, initial):
                     populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown)
 
                     # Send actions using zeromq if not lookahead.
-                    if (not LOOK_AHEAD):
+                    if not LOOK_AHEAD:
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
                                 return
                     else:
                         # If lookahead then do initial lookahead for initial deployment.
-                        if (initial):
+                        if initial:
                             print "Initial lookahead mechanism"
                             look_ahead(db, actions)
-            elif (dist == 0):
+            elif dist == 0:
                 print "Same deployment as before. No need for any changes."
+
+                # No action so update reconfiguration event.
+                if not LOOK_AHEAD:
+                    for nodeIndex in failedNodeIndexes:
+                        reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":True},
+                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
+                                       "$currentDate":{"reconfiguredTime": {"$type": "date"}},
+                                       "$set":{"actionCount":0}})
+
                 return None
-    
     return actions
 
 # Get node IP and port as a pair.

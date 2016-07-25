@@ -34,6 +34,36 @@ def execute_action():
         # we might be adding node that had previously failed or
         # been removed.
         nColl.update({"name":NODE_NAME}, nodeToAdd, upsert = True)
+
+        # Check if any application already exists. If there are
+        # applications then it means that the node join has to
+        # be treated as hardware update and therefore the solver
+        # should be invoked. If there are no applications then
+        # this node is addition is happening at system initialization
+        # time so do not invoke the solver.
+        systemInitialization = True
+
+        if "GoalDescriptions" in db.collection_names():
+            gdColl = db["GoalDescriptions"]
+            if gdColl.count() != 0:
+                systemInitialization = False
+
+        if not systemInitialization:
+            # Create and store hardware update reconfiguration event
+            # before invoking the solver.
+            reColl = db["ReconfigurationEvents"]
+
+            # NOTE: Using update as we need to use currentDate which
+            # is an update operator.
+            reColl.update({"entity":NODE_NAME, "completed":False},
+                          {"$currentDate":{"detectionTime":{"$type":"date"}},
+                           "$set": {"kind":"UPDATE",
+                                    "solutionFoundTime":0,
+                                    "reconfiguredTime":0,
+                                    "actionCount":0}},
+                          upsert = True)
+
+            invoke_solver()
     elif STOP_ACTION:
         print "STOPPING node:", NODE_NAME
 
@@ -44,7 +74,7 @@ def execute_action():
         # is an update operator.
         reColl.update({"entity":NODE_NAME, "completed":False},
                       {"$currentDate":{"detectionTime":{"$type":"date"}},
-                       "$set": {"kind":"UPDATE",
+                       "$set": {"kind":"FAILURE",
                                 "solutionFoundTime":0,
                                 "reconfiguredTime":0,
                                 "actionCount":0}},

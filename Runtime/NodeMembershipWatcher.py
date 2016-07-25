@@ -109,7 +109,7 @@ def handle_failure(node):
     # is an update operator. 
     reColl.update({"entity":node, "completed":False},
                   {"$currentDate":{"detectionTime":{"$type":"date"}},
-                   "$set": {"kind":"UPDATE",
+                   "$set": {"kind":"FAILURE",
                             "solutionFoundTime":0,
                             "reconfiguredTime":0,
                             "actionCount":0}},
