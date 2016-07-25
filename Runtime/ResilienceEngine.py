@@ -229,11 +229,10 @@ def invoke_solver(db, zmq_socket, initial):
                 # No action so update reconfiguration event.
                 if not LOOK_AHEAD:
                     for nodeIndex in failedNodeIndexes:
-                        reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":True},
-                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
-                                       "$currentDate":{"reconfiguredTime": {"$type": "date"}},
-                                       "$set":{"actionCount":0}})
-
+                        reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":False},
+                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
+                                       "$set":{"completed":True,
+                                               "actionCount":0}})
                 return None
     return actions
 
