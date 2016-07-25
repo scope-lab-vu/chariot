@@ -8,9 +8,9 @@ class Serialize:
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
-class SystemDescription:
+class GoalDescription:
     name = None
-    constraints = None                  # List of constraints read from the database.
+    replicationConstraints = None       # List of constraints read from the database.
     objectives = None
     functionalityInstances = None       # List of functionality instances.
     computedFunctionalities = None      # List of functionalities for which instances have been computed.
@@ -28,7 +28,7 @@ class SystemDescription:
 
     def __init__(self):
         self.name = ""
-        self.constraints = list()
+        self.replicationConstraints = list()
         self.objectives = list()
         self.functionalityInstances = list()
         self.computedFunctionalities = list()
@@ -49,8 +49,8 @@ class SystemDescription:
     def get_component_instances(self):
         return self.componentInstances
 
-    def get_constraints(self):
-        return self.constraints
+    def get_replication_constraints(self):
+        return self.replicationConstraints
 
     # This function computes dependencies for each component instance and returns a list of tuple <component instance
     # name, list of names of component instances it depends on>.
@@ -344,13 +344,13 @@ class SystemDescription:
     def check_replication_constraint(self, functionalityName):
         retval = list()
 
-        for constraint in self.constraints:
-            if functionalityName == constraint.functionality:
-                if constraint.kind == "VOTER_REPLICATION" or \
-                   constraint.kind == "CONSENSUS_REPLICATION" or \
-                   constraint.kind == "CLUSTER_REPLICATION" or \
-                   constraint.kind == "PER_NODE_REPLICATION":
-                    retval.append(constraint)
+        for replConstraint in self.replicationConstraints:
+            if functionalityName == replConstraint.functionality:
+                if replConstraint.kind == "VOTER_REPLICATION" or \
+                   replConstraint.kind == "CONSENSUS_REPLICATION" or \
+                   replConstraint.kind == "CLUSTER_REPLICATION" or \
+                   replConstraint.kind == "PER_NODE_REPLICATION":
+                    retval.append(replConstraint)
 
         return retval
 
@@ -359,9 +359,9 @@ class SystemDescription:
     def check_collocation_constraint(self, functionality):
         retval = list()
 
-        for constraint in self.constraints:
-            if functionality.name == constraint.functionality and constraint.kind == "NODE_COLLOCATION":
-                retval.append(constraint)
+        for replConstraint in self.replicationConstraints:
+            if functionality.name == replConstraint.functionality and replConstraint.kind == "NODE_COLLOCATION":
+                retval.append(replConstraint)
 
         return retval
 
@@ -375,7 +375,7 @@ class SystemDescription:
 
         return retval
 
-class SystemConstraint:
+class ReplicationConstraint:
     kind = None
     functionality = None        # Functionality name
     minInstances = None
@@ -587,14 +587,13 @@ class ComponentInstance:
 
 class SolverBackend:
     # List of entities constructed from information in the database.
-    systemDescriptions = None
+    goalDescriptions = None
     nodes = None
     nodeTemplates = None
     objectives = None
     componentTypes = None
-    constraints = None
 
-    # Generated lists. These lists store cross system description instances.
+    # Generated lists. These lists store cross goal description instances.
     functionalityInstances = None
     functionalityConstraints = None
     componentInstances = None
@@ -643,12 +642,11 @@ class SolverBackend:
     compResource2componentInstIndex = None
 
     def __init__(self):
-        self.systemDescriptions = list()
+        self.goalDescriptions = list()
         self.nodes = list()
         self.nodeTemplates = list()
         self.objectives = list()
         self.componentTypes = list()
-        self.constraints = list()
 
         self.functionalityInstances = list()
         self.functionalityConstraints = list()
@@ -735,7 +733,7 @@ class SolverBackend:
         self.load_nodes_info(db)                        # IMPORTANT: This ordering between template and nodes matter.
         self.load_component_instances(db)               # Load any existing component instances
         self.load_component_types(db)
-        self.load_system_descriptions(db)               # Any required component instances that are were not present
+        self.load_goal_descriptions(db)               # Any required component instances that are were not present
                                                         # in existing state (loaded as part of load_component_instances)
                                                         # will be generated here.
         self.load_component_to_node_assignment(db)
@@ -750,8 +748,8 @@ class SolverBackend:
 
     # This function communicates constraint for each component instance using the component instance's dependencies.
     def add_component_instance_dependencies(self, solver):
-        for systemDesc in self.systemDescriptions:
-            dependencies = systemDesc.get_component_instances_dependencies()
+        for goalDesc in self.goalDescriptions:
+            dependencies = goalDesc.get_component_instances_dependencies()
             for dependency in dependencies:
                 if len(dependency[1]) > 0:
                     for dependencySource in dependency[1]:
@@ -999,22 +997,22 @@ class SolverBackend:
 
     # This function computes and stores list of node reliability (exp(-TCritical/MTTF)).
     #
-    # NOTE: Currently we only consider a single system. We assume that the default unit of all time is months.
+    # NOTE: Currently we only consider a single goal. We assume that the default unit of all time is months.
     def load_node_reliability(self):
         reliability2nodeIndex = list()
 
-        systemTimeElapsed = datetime.datetime.now() - self.systemDescriptions[0].startTime
+        goalTimeElapsed = datetime.datetime.now() - self.goalDescriptions[0].startTime
         avgDaysPerMonth = 30.42
-        systemTimeElapsedInMonths = float(systemTimeElapsed.days)/avgDaysPerMonth
+        goalTimeElapsedInMonths = float(goalTimeElapsed.days)/avgDaysPerMonth
 
-        # Compute reliability of each node if elapsed system time hasn't surpassed expected system lifetime.
-        if systemTimeElapsedInMonths < self.systemDescriptions[0].lifeTime[0]:
-            tCritical = self.systemDescriptions[0].lifeTime[0] - systemTimeElapsedInMonths
+        # Compute reliability of each node if elapsed goal time hasn't surpassed expected goal lifetime.
+        if goalTimeElapsedInMonths < self.goalDescriptions[0].lifeTime[0]:
+            tCritical = self.goalDescriptions[0].lifeTime[0] - goalTimeElapsedInMonths
             from math import exp
             for node in self.nodes:
                 reliability = exp(-tCritical/node.meanTimeToFailure[0])
                 reliability2nodeIndex.append((self.nodeName2Index[node.name], reliability))
-        # If elapsed system time has surpassed expected system lifetime, set reliability to maximum (i.e., 1).
+        # If elapsed goal time has surpassed expected goal lifetime, set reliability to maximum (i.e., 1).
         else:
             for node in self.nodes:
                 reliability2nodeIndex.append((self.nodeName2Index[node.name], 1))
@@ -1039,14 +1037,14 @@ class SolverBackend:
     def load_comparative_resource_reliability(self):
         reliability2compResourceIndex = dict()
 
-        systemTimeElapsed = datetime.datetime.now() - self.systemDescriptions[0].startTime
+        goalTimeElapsed = datetime.datetime.now() - self.goalDescriptions[0].startTime
         avgDaysPerMonth = 30.42
-        systemTimeElapsedInMonths = float(systemTimeElapsed.days) / avgDaysPerMonth
+        goalTimeElapsedInMonths = float(goalTimeElapsed.days) / avgDaysPerMonth
 
-        # Compute reliability of each comparative resource if elapsed system time hasn't surpassed expected
-        # system lifetime.
-        if systemTimeElapsedInMonths < self.systemDescriptions[0].lifeTime[0]:
-            tCritical = self.systemDescriptions[0].lifeTime[0] - systemTimeElapsedInMonths
+        # Compute reliability of each comparative resource if elapsed goal time hasn't surpassed expected
+        # goal lifetime.
+        if goalTimeElapsedInMonths < self.goalDescriptions[0].lifeTime[0]:
+            tCritical = self.goalDescriptions[0].lifeTime[0] - goalTimeElapsedInMonths
             from math import exp
             for node in self.nodes:
                 # Store ALL devices.
@@ -1060,7 +1058,7 @@ class SolverBackend:
                     reliability2compResourceIndex[deviceResource.name].append((self.nodeName2Index[node.name],
                                                                                reliability))
         else:
-            # If elapsed system time has surpassed expected system lifetime, set reliability to maximum (i.e., 1).
+            # If elapsed goal time has surpassed expected goal lifetime, set reliability to maximum (i.e., 1).
             for node in self.nodes:
                 nodeDeviceResources = node.compute_device_provisions(self.nodeTemplates)
                 for deviceResource in nodeDeviceResources:
@@ -1397,33 +1395,33 @@ class SolverBackend:
         # Sort nodes by names so that node indexes are consistent.
         self.nodes = sorted(self.nodes, key = attrgetter("name"))
 
-    def load_system_descriptions(self, db):
-        collection = db["SystemDescriptions"]
+    def load_goal_descriptions(self, db):
+        collection = db["GoalDescriptions"]
 
-        for sd in collection.find():
-            systemDescription = Serialize(**sd)
-            print "Adding SystemDescription with name:", systemDescription.name
-            systemDescriptionToAdd = SystemDescription()
-            systemDescriptionToAdd.name = systemDescription.name
+        for gd in collection.find():
+            goalDescription = Serialize(**gd)
+            print "Adding GoalDescription with name:", goalDescription.name
+            goalDescriptionToAdd = GoalDescription()
+            goalDescriptionToAdd.name = goalDescription.name
 
             # Add constraints.
-            for c in systemDescription.constraints:
-                constraint = Serialize(**c)
-                constraintToAdd = SystemConstraint()
-                constraintToAdd.kind = constraint.kind
-                constraintToAdd.functionality = constraint.functionality
-                constraintToAdd.minInstances = constraint.minInstances
-                constraintToAdd.maxInstances = constraint.maxInstances
-                constraintToAdd.numInstances = constraint.numInstances
-                constraintToAdd.serviceComponentType = constraint.serviceComponentType
+            for rc in goalDescription.replicationConstraints:
+                replConstraint = Serialize(**rc)
+                replConstraintToAdd = ReplicationConstraint()
+                replConstraintToAdd.kind = replConstraint.kind
+                replConstraintToAdd.functionality = replConstraint.functionality
+                replConstraintToAdd.minInstances = replConstraint.minInstances
+                replConstraintToAdd.maxInstances = replConstraint.maxInstances
+                replConstraintToAdd.numInstances = replConstraint.numInstances
+                replConstraintToAdd.serviceComponentType = replConstraint.serviceComponentType
 
-                for nc in constraint.nodeCategories:
-                    constraintToAdd.nodeCategories.append(nc)
+                for nc in replConstraint.nodeCategories:
+                    replConstraintToAdd.nodeCategories.append(nc)
 
-                systemDescriptionToAdd.constraints.append(constraintToAdd)
+                goalDescriptionToAdd.replicationConstraints.append(replConstraintToAdd)
 
             # Add objectives.
-            for o in systemDescription.objectives:
+            for o in GoalDescription.objectives:
                 objective = Serialize(**o)
                 objectiveToAdd = Objective()
                 objectiveToAdd.name = objective.name
@@ -1439,14 +1437,14 @@ class SolverBackend:
 
                     objectiveToAdd.functionalities.append(functionalityToAdd)
 
-                systemDescriptionToAdd.objectives.append(objectiveToAdd)
+                goalDescriptionToAdd.objectives.append(objectiveToAdd)
 
             # Compute/generate different entities.
-            systemDescriptionToAdd.compute_functionality_instances(self.nodes, self.nodeTemplates)
-            systemDescriptionToAdd.compute_component_instances(self.componentTypes)
+            goalDescriptionToAdd.compute_functionality_instances(self.nodes, self.nodeTemplates)
+            goalDescriptionToAdd.compute_component_instances(self.componentTypes)
 
             # Retrieve and store objectives.
-            for objective in systemDescriptionToAdd.get_objectives():
+            for objective in goalDescriptionToAdd.get_objectives():
                 self.objectives.append(objective)
 
             # Sort above objectives and store name to ID mapping.
@@ -1455,26 +1453,22 @@ class SolverBackend:
                 self.objectiveName2Index[self.objectives[i].name] = i
 
             # Retrieve and store functionality instances.
-            for functionalityInstance in systemDescriptionToAdd.get_functionality_instances():
+            for functionalityInstance in goalDescriptionToAdd.get_functionality_instances():
                 self.functionalityInstances.append(functionalityInstance)
 
             # Get functionality constraints. These will be used to construct constraints for the solver.
-            for functionalityConstraint in systemDescriptionToAdd.get_functionality_constraints():
+            for functionalityConstraint in goalDescriptionToAdd.get_functionality_constraints():
                 self.functionalityConstraints.append(functionalityConstraint)
 
             # Retrieve and store component instances.
-            for componentInstance in systemDescriptionToAdd.get_component_instances():
+            for componentInstance in goalDescriptionToAdd.get_component_instances():
                 self.add_component_instance(componentInstance, False)
 
             # Sort above component instances using name.
             self.componentInstances = sorted(self.componentInstances, key = attrgetter("name"))
 
-            # Get constraints as represented in the database.
-            for constraint in systemDescriptionToAdd.get_constraints():
-                self.constraints.append(constraint)
-
-            # Add system description to collection.
-            self.systemDescriptions.append(systemDescriptionToAdd)
+            # Add goal description to collection.
+            self.goalDescriptions.append(goalDescriptionToAdd)
 
             # print
             #

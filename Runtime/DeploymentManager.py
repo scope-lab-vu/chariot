@@ -51,7 +51,7 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
 
     # Handle scenario where process to start is already in the right place in Nodes collection. This
     # will be true for all cases (initial deployment as well as reconfiguration, via ResilienceEngineMain.py
-    # populate_live_system function). So, before updating, make sure status is TO_BE_DEPLOYED. If so, update
+    # populate_nodes function). So, before updating, make sure status is TO_BE_DEPLOYED. If so, update
     # status to ACTIVE.
     result = nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}},
                           {"$set": {"processes.$.status": "ACTIVE", "processes.$.pid":pid}},

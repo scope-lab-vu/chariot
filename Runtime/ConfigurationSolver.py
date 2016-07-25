@@ -76,7 +76,7 @@ class ConfigurationSolver(object):
     # (i) The matrix elements are zero or one; (ii) A component instance can belong to only one node.
     # (iii) The sum of resource weights of the components deployed on a node cannot exceed the resource weight of the
     # node; (iv) Total resilience of a configuration (product of each component's resilience) should be greater
-    # that the system's resilience threshold.
+    # that the goal's resilience threshold.
     def defineComponent2NodeMatrix(self):
         # Component-Node matrix
         # If component i uses node j, c2n_i_j is true; false otherwise
