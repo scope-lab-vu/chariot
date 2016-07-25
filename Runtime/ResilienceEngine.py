@@ -57,7 +57,6 @@ def mongo_connect(serverName):
     print "Connected to MongoDB server"
     return client
 
-
 def find_solution(db, zmq_socket):
     if (LOOK_AHEAD):
         # Current implementation only does look ahead for node failures, so look for nodes that
@@ -75,23 +74,43 @@ def find_solution(db, zmq_socket):
         deploymentActions = list()
         for node in faultyNodes:
             print "Searching pre-computed solution for failure of node:", node
-            laResult = laColl.find({"failedEntity":node})
-            # If solution found, store time.
-            if laResult is not None:
-                failureColl = db["Failures"]
-                failureColl.update({"failedEntity":node, "solutionFoundTime":0},
-                                   {"$currentDate": {"solutionFoundTime": {"$type": "date"}}},
-                                   upsert = False)
-            for r in laResult:
-                for action in r["recoveryActions"]:
-                    # Store action.
-                    daColl.insert(action)
-                    deploymentActions.append(action)
+            laResult = laColl.find_one({"failedEntity":node})
 
-                    # Send action.
-                    if send_action(db, action, zmq_socket) is False:
-                        return
-        # Look ahead again
+            # If solution found, store time, get deployment actions and send them out.
+            if laResult is not None:
+                print "Pre-computed solution found."
+                reColl = db["ReconfigurationEvents"]
+
+                # Check number of recovery actions to set actionCount.
+                numOfActions = len(laResult["recoveryActions"])
+
+                # If number of recovery actions is 0 then no actions required, mark
+                # reconfiguration event as completed.
+                if numOfActions == 0:
+                    reColl.update({"entity":node, "completed":False},
+                                  {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
+                                   "$currentDate":{"reconfiguredTime":{"$type":"date"}},
+                                   "$set": {"completed":True,
+                                            "actionCount":0}})
+                else:
+                    reColl.update({"entity":node, "completed":False},
+                                  {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
+                                   "$set": {"actionCount":numOfActions}})
+
+                    for action in laResult["recoveryActions"]:
+                        # Store action.
+                        daColl.insert(action)
+                        deploymentActions.append(action)
+
+                        # Send action.
+                        if send_action(db, action, zmq_socket) is False:
+                            return
+            else:
+                print "Pre-computed solution not found. Invoking solver."
+                # If (pre-computed) solution not found, invoke solver.
+                invoke_solver(db, zmq_socket, False)
+
+        # Failure handle attempt done. Look ahead again.
         look_ahead(db, deploymentActions)
     else:
         invoke_solver(db, zmq_socket, False)
@@ -170,21 +189,27 @@ def invoke_solver(db, zmq_socket, initial):
             if(dist!=0):
                 print "Deployment computation done"
                 if (model is not None):
-                    # Get failed node.
-                    failedNodes = backend.get_failed_nodes()
-
-                    # Solution found so store time.
-                    for failedNode in failedNodes:
-                        failureColl = db["Failures"]
-                        failureColl.update({"failedEntity": solver.nodeNames[failedNode], "solutionFoundTime": 0},
-                                           {"$currentDate": {"solutionFoundTime": {"$type": "date"}}},
-                                           upsert = False)
-
-                    solver.print_difference(componentsToShutDown, componentsToStart)
-                    print "Populating Nodes collection with information with processes and component instances"
-                    populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown)
                     print "Computing new deployment actions and populating DeploymentActions collection."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
+
+                    # Get failed node.
+                    # NOTE: Important to get failed nodes from backend solver and not from the database as
+                    # the latter could have changed from the time solver initiated its computation. We only
+                    # want nodes for which the solver computed the solution.
+                    failedNodeIndexes = backend.get_failed_nodes()
+
+                    # Store solution found time.
+                    for nodeIndex in failedNodeIndexes:
+                        reColl = db["ReconfigurationEvents"]
+                        reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":False},
+                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
+                                       "$set":{"actionCount":len(actions)}})
+
+                    solver.print_difference(componentsToShutDown, componentsToStart)
+
+                    print "Populating Nodes collection with information with processes and component instances"
+                    populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown)
+
                     # Send actions using zeromq if not lookahead.
                     if (not LOOK_AHEAD):
                         for action in actions:
@@ -305,7 +330,6 @@ def handle_action(db, actionDoc):
     actionCompleted = actionDoc["completed"]
     actionNode = actionDoc["node"]
     actionProcess = actionDoc["process"]
-    actionTimeStamp = actionDoc["time"]
     actionStartScript = actionDoc["startScript"]
     actionStopScript = actionDoc["stopScript"]
 
@@ -362,8 +386,6 @@ def populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown)
 
 def compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
     actions = list()
-    import time
-    actionsTimeStamp = time.time()
 
     # Add all start actions.
     for startAction in componentsToStart:
@@ -380,7 +402,6 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
         action["completed"] = False
         action["process"] = "process_" + solver.componentNames[startAction[0]]
         action["node"] = solver.nodeNames[startAction[1]]
-        action["time"] = actionsTimeStamp
         action["startScript"] = startScript
         action["stopScript"] = stopScript
 
@@ -401,7 +422,6 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
         action["completed"] = False
         action["process"] = "process_" + solver.componentNames[stopAction[0]]
         action["node"] = solver.nodeNames[stopAction[1]]
-        action["time"] = actionsTimeStamp
         action["startScript"] = startScript
         action["stopScript"] = stopScript
 

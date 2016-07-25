@@ -130,7 +130,6 @@ def handle_action(db, actionDoc):
         actionCompleted = actionDoc["completed"]
         actionNode = actionDoc["node"]
         actionProcess = actionDoc["process"]
-        actionTimeStamp = actionDoc["time"]
         actionStartScript = actionDoc["startScript"]
         actionStopScript = actionDoc["stopScript"]
 
@@ -147,10 +146,15 @@ def handle_action(db, actionDoc):
             result = nColl.find({"status":"FAULTY"})
 
             for r in result:
-                failureColl = db["Failures"]
-                failureColl.update({"failedEntity": r["name"], "reconfiguredTime":0},
-                                   {"$currentDate": {"reconfiguredTime": {"$type": "date"}}},
-                                   upsert = False)
+                reColl = db["ReconfigurationEvents"]
+                reColl.update({"entity": r["name"], "completed":False},
+                              {"$currentDate": {"reconfiguredTime": {"$type": "date"}},
+                               "$inc":{"actionCount":-1}})
+
+                # If after above update, the actionCount field of a ReconfigurationEvent is 0, mark that
+                # reconfigurationEvent as completed.
+                reColl.update({"entity": r["name"], "completed":False, "actionCount":0},
+                              {"$set":{"completed":True}})
 
             # Update database to reflect affect of above start action.
             update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, pid)

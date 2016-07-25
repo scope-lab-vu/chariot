@@ -48,12 +48,11 @@ def execute_action():
                                 "solutionFoundTime":0,
                                 "reconfiguredTime":0,
                                 "actionCount":0}},
-                      upsert = True)
+                       upsert = True)
 
         # Mark node faulty.
         nColl.update({"name":NODE_NAME, "status":"ACTIVE"},
-                     {"$set": {"status":"FAULTY"}},
-                     upsert = False)
+                     {"$set": {"status":"FAULTY"}})
 
         # Store names of affected component instances.
         findResults = nColl.find({"name":NODE_NAME, "status":"FAULTY"})
