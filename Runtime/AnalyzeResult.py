@@ -1,32 +1,40 @@
 __author__ = "Subhav Pradhan"
 
+from SolverBackend import Serialize
 import pymongo
 import csv
 
-if __name__ == '__main__':
-    client = pymongo.MongoClient("192.168.1.6", 27017)
+def main():
+    client = pymongo.MongoClient("localhost", 27017)
     db = client["ConfigSpace"]
-    failureColl = db["Failures"]
-
-    from SolverBackend import Serialize
-    for failureEntry in failureColl.find():
-        failure = Serialize(**failureEntry)
-        failedEntity = failure.failedEntity
-        detectionTime = failure.detectionTime
-        solutionFoundTime = failure.solutionFoundTime
-        reconfigTime = failure.reconfiguredTime
+    reColl = db["ReconfigurationEvents"]
+    findResult = reColl.find()
+    solutionFoundDurations = list()
+    solutionFoundDurations.append("Solution Finding")
+    reconfigDurations = list()
+    reconfigDurations.append("Reconfiguration")
+    for re in findResult:
+        reconfigEvent = Serialize(**re)
+        detectionTime = reconfigEvent.detectionTime
+        solutionFoundTime = reconfigEvent.solutionFoundTime
+        reconfigTime = reconfigEvent.reconfiguredTime
 
         solutionFindingDuration = solutionFoundTime - detectionTime
-        actualReconfigDuration = reconfigTime - solutionFoundTime
-        totalReconfigDuration = reconfigTime - detectionTime
+        reconfigDuration = reconfigTime - solutionFoundTime
 
-        print "Entity: ", failedEntity
-        print "D Time: ", detectionTime, type(detectionTime)
-        print "S Time: ", solutionFoundTime
-        print "R Time: ", reconfigTime
+        solutionFoundDurations.append(solutionFindingDuration.total_seconds())
+        reconfigDurations.append(reconfigDuration.total_seconds())
 
-        print "Solution Finding Time: ", solutionFindingDuration.total_seconds()
-        print "Reconfiguration Time: ", actualReconfigDuration.total_seconds()
-        print "Total Reconfiguration Time: ", totalReconfigDuration.total_seconds()
+    print solutionFoundDurations
+    print reconfigDurations
+
+    with open("output.csv", "ab") as f:
+        writer = csv.writer(f)
+        writer.writerows([solutionFoundDurations, reconfigDurations])
+        writer.writerow([])
+        f.close()
+
+if __name__ == '__main__':
+    main()
 
 
