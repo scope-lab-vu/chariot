@@ -73,7 +73,7 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
     else:
         # If not, it means we need to handle the scenario where process to start is not in the right place in
         # Nodes collection. So, a new process document must be created and inserted.
-        # NOTE: This (TO_BE_DEPLOYED processes not in right place) should never happen but we keep the code below
+        # NOTE: This (TO_BE_DEPLOYED processes not in right place) should not happen but we keep the code below
         # to handle scenario if it ever does happens.
         processDocument = dict()
         processDocument["name"] = actionProcess
@@ -97,21 +97,18 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
         processDocument["components"].append(componentDocument)
 
         result = nColl.update({"name":actionNode},
-                              {"$push":{"processes":processDocument}},
-                              upsert = False)
+                              {"$push":{"processes":processDocument}})
 
         # Update information in ComponentInstances collection as well.
         ciColl = db["ComponentInstances"]
 
         result = ciColl.update({"name":component},
-                               {"$set":{"status":"ACTIVE"}},
-                               upsert = False)
+                               {"$set":{"status":"ACTIVE"}})
 
     # Mark action as taken.
     daColl = db["DeploymentActions"]
-    daColl.update({"action":"START", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
-                  {"$set":{"status":"1_TAKEN"}},
-                  upsert = False)
+    daColl.update({"action":"START", "completed":False, "process":actionProcess, "node": actionNode},
+                  {"$set":{"completed":True}})
 
 def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
     component = re.sub("process_", "", actionProcess)
@@ -123,22 +120,21 @@ def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
 
     # Mark action as taken.
     daColl = db["DeploymentActions"]
-    daColl.update({"action":"STOP", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
-                  {"$set":{"status":"1_TAKEN"}},
-                  upsert = False)
+    daColl.update({"action":"STOP", "complete":False, "process":actionProcess, "node": actionNode},
+                  {"$set":{"completed":True}})
 
 def handle_action(db, actionDoc):
     actionNode = actionDoc["node"]
     if actionNode == NODE_NAME:
         action = actionDoc["action"]
-        actionStatus = actionDoc["status"]
+        actionCompleted = actionDoc["completed"]
         actionNode = actionDoc["node"]
         actionProcess = actionDoc["process"]
         actionTimeStamp = actionDoc["time"]
         actionStartScript = actionDoc["startScript"]
         actionStopScript = actionDoc["stopScript"]
 
-        if action == "START" and actionStatus == "0_TAKEN":
+        if action == "START" and not actionCompleted:
             print "STARTING process:", actionProcess, "on node:", actionNode
             if not SIMULATE_DM_ACTIONS:
                 pid = execute_start_action(actionProcess, actionStartScript)
@@ -158,7 +154,7 @@ def handle_action(db, actionDoc):
 
             # Update database to reflect affect of above start action.
             update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, pid)
-        elif action == "STOP" and actionStatus == "0_TAKEN":
+        elif action == "STOP" and not actionCompleted:
             print "STOPPING process:", actionProcess, "on node:", actionNode
             if not SIMULATE_DM_ACTIONS:
                 execute_stop_action(db, actionNode, actionProcess, actionStopScript)

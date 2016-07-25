@@ -302,18 +302,18 @@ def mark_node_failure(db, nodeName):
 
 def handle_action(db, actionDoc):
     action = actionDoc["action"]
-    actionStatus = actionDoc["status"]
+    actionCompleted = actionDoc["completed"]
     actionNode = actionDoc["node"]
     actionProcess = actionDoc["process"]
     actionTimeStamp = actionDoc["time"]
     actionStartScript = actionDoc["startScript"]
     actionStopScript = actionDoc["stopScript"]
 
-    if action == "START" and actionStatus == "0_TAKEN":
+    if action == "START" and not actionCompleted:
         # Update database to reflect affect of above start action.
         from DeploymentManager import update_start_action
         update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, 0)
-    elif action == "STOP" and actionStatus == "0_TAKEN":
+    elif action == "STOP" and not actionCompleted:
         from DeploymentManager import update_stop_action
         # Update database to reflect affect of above stop action.
         update_stop_action(db, actionNode, actionProcess, actionStartScript, actionStopScript)
@@ -377,7 +377,7 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
         action = dict()
         action["action"] = "START"
-        action["status"] = "0_TAKEN"
+        action["completed"] = False
         action["process"] = "process_" + solver.componentNames[startAction[0]]
         action["node"] = solver.nodeNames[startAction[1]]
         action["time"] = actionsTimeStamp
@@ -398,7 +398,7 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
         action = dict()
         action["action"] = "STOP"
-        action["status"] = "0_TAKEN"
+        action["completed"] = False
         action["process"] = "process_" + solver.componentNames[stopAction[0]]
         action["node"] = solver.nodeNames[stopAction[1]]
         action["time"] = actionsTimeStamp
