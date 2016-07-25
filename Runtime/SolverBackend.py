@@ -538,12 +538,12 @@ class Device:
 class ComponentType:
     name = None
     providedFunctionality = None
-    memoryRequirement = None        # Tuple (amount, unit).
-    storageRequirement = None       # Tuple (amount, unit).
-    osRequirement = None
-    middlewareRequirement = None
-    artifactRequirements = None     # List of strings.
-    deviceRequirements = None       # List of strings.
+    requiredMemory = None        # Tuple (amount, unit).
+    requiredStorage = None       # Tuple (amount, unit).
+    requiredOS = None
+    requiredMiddleware = None
+    requiredArtifacts = None     # List of strings.
+    requiredDevices = None       # List of strings.
     startScript = None
     stopScript = None
     period = None                   # Tuple (amount, unit)
@@ -552,12 +552,12 @@ class ComponentType:
     def __init__(self):
         self.name = ""
         self.providedFunctionality = ""
-        self.memoryRequirement = (0, "")
-        self.storageRequirement = (0, "")
-        self.osRequirement = ""
-        self.middlewareRequirement = ""
-        self.artifactRequirements = list()
-        self.deviceRequirements = list()
+        self.requiredMemory = (0, "")
+        self.requiredStorage = (0, "")
+        self.requiredOS = ""
+        self.requiredMiddleware = ""
+        self.requiredArtifacts = list()
+        self.requiredDevices = list()
         self.startScript = ""
         self.stopScript = ""
         self.period = (0.0, "")
@@ -1093,7 +1093,7 @@ class SolverBackend:
 
                     self.cumResource2componentInstIndex["memory"].\
                         append((self.componentInstName2Index[componentInstance.name],
-                                componentType.memoryRequirement[0]))
+                                componentType.requiredMemory[0]))
 
         # Initialize resource to component instance mapping with 0's to begin with.
         self.componentInstCumRequiredResources = [[0 for x in range (len(self.componentInstances))]
@@ -1149,11 +1149,11 @@ class SolverBackend:
         for componentInstance in self.componentInstances:
             for componentType in self.componentTypes:
                 if componentInstance.type == componentType.name:
-                    for deviceRequirement in componentType.deviceRequirements:
-                        if deviceRequirement not in self.compResource2componentInstIndex:
-                            self.compResource2componentInstIndex[deviceRequirement] = list()
+                    for requiredDevice in componentType.requiredDevices:
+                        if requiredDevice not in self.compResource2componentInstIndex:
+                            self.compResource2componentInstIndex[requiredDevice] = list()
 
-                        self.compResource2componentInstIndex[deviceRequirement].\
+                        self.compResource2componentInstIndex[requiredDevice].\
                             append(self.componentInstName2Index[componentInstance.name])
 
         # Initialize resource to component instance mapping with 0's to begin with.
@@ -1285,19 +1285,19 @@ class SolverBackend:
             componentTypeToAdd.name = componentType.name
             componentTypeToAdd.providedFunctionality = componentType.providedFunctionality
 
-            memoryRequirement = Serialize(**componentType.memoryRequirement)
-            componentTypeToAdd.memoryRequirement = (memoryRequirement.memory, memoryRequirement.unit)
+            requiredMemory = Serialize(**componentType.requiredMemory)
+            componentTypeToAdd.requiredMemory = (requiredMemory.memory, requiredMemory.unit)
 
-            storageRequirement = Serialize(**componentType.storageRequirement)
-            componentTypeToAdd.storageRequirement = (storageRequirement.storage, storageRequirement.unit)
+            requiredStorage = Serialize(**componentType.requiredStorage)
+            componentTypeToAdd.requiredStorage = (requiredStorage.storage, requiredStorage.unit)
 
-            componentTypeToAdd.osRequirement = componentType.osRequirement
+            componentTypeToAdd.requiredOS = componentType.requiredOS
 
-            for ar in componentType.artifactRequirements:
-                componentTypeToAdd.artifactRequirements.append(ar)
+            for ra in componentType.requiredArtifacts:
+                componentTypeToAdd.requiredArtifacts.append(ra)
 
-            for dr in componentType.deviceRequirements:
-                componentTypeToAdd.deviceRequirements.append(dr)
+            for rd in componentType.requiredDevices:
+                componentTypeToAdd.requiredDevices.append(rd)
 
             componentTypeToAdd.startScript = componentType.startScript
             componentTypeToAdd.stopScript = componentType.stopScript
@@ -1336,9 +1336,6 @@ class SolverBackend:
                     deviceToAdd = Device()
                     deviceToAdd.name = device.name
 
-                    meanTimeToFailure = Serialize(**device.meanTimeToFailure)
-                    deviceToAdd.meanTimeToFailure = (meanTimeToFailure.time, meanTimeToFailure.unit)
-
                     for a in device.artifacts:
                         deviceToAdd.artifacts.append((a["name"], a["location"]))
 
@@ -1357,10 +1354,6 @@ class SolverBackend:
             print "Adding Node with name:", node.name
             nodeToAdd = Node()
             nodeToAdd.name = node.name
-
-            meanTimeToFailure = Serialize(**node.meanTimeToFailure)
-            nodeToAdd.meanTimeToFailure = (meanTimeToFailure.time, meanTimeToFailure.unit)
-
             nodeToAdd.nodeTemplate = node.nodeTemplate
             nodeToAdd.status = node.status
 
@@ -1421,7 +1414,7 @@ class SolverBackend:
                 goalDescriptionToAdd.replicationConstraints.append(replConstraintToAdd)
 
             # Add objectives.
-            for o in GoalDescription.objectives:
+            for o in goalDescription.objectives:
                 objective = Serialize(**o)
                 objectiveToAdd = Objective()
                 objectiveToAdd.name = objective.name

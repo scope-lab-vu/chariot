@@ -24,7 +24,8 @@ class NewConfigurationSolverBound(NewConfigurationSolver):
                                                           backend.componentInstUtilization,
                                                           backend.nodeReliability,
                                                           backend.compResourceReliability,
-                                                          backend.goalDescriptions[0].reliabilityThreshold) # NOTE: See below.
+                                                          0)
+                                                          #backend.goalDescriptions[0].reliabilityThreshold) # NOTE: See below.
 
         # NOTE: We currently assume a single goal. This makes no difference (as far as we know) to most of the
         # existing constraints. However, in case of the reliability constraint, different goal can have different
