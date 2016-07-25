@@ -140,21 +140,16 @@ def handle_action(db, actionDoc):
             else:
                 pid = randint(1000, 2000)
 
-            # Update deployment time in Failures collection. To do so, first figure out which node failed.
-            # NOTE: This only works for a single failure at a time.
-            nColl = db["Nodes"]
-            result = nColl.find({"status":"FAULTY"})
+            # Update deployment time in ReconfigurationEvents collection.
+            reColl = db["ReconfigurationEvents"]
+            reColl.update({"completed":False},
+                          {"$currentDate": {"reconfiguredTime": {"$type": "date"}},
+                          "$inc":{"actionCount":-1}})
 
-            for r in result:
-                reColl = db["ReconfigurationEvents"]
-                reColl.update({"entity": r["name"], "completed":False},
-                              {"$currentDate": {"reconfiguredTime": {"$type": "date"}},
-                               "$inc":{"actionCount":-1}})
-
-                # If after above update, the actionCount field of a ReconfigurationEvent is 0, mark that
-                # reconfigurationEvent as completed.
-                reColl.update({"entity": r["name"], "completed":False, "actionCount":0},
-                              {"$set":{"completed":True}})
+            # If after above update, the actionCount field of a ReconfigurationEvent is 0, mark that
+            # reconfigurationEvent as completed.
+            reColl.update({"completed":False, "actionCount":0},
+                          {"$set":{"completed":True}})
 
             # Update database to reflect affect of above start action.
             update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, pid)

@@ -87,7 +87,7 @@ def handle_join(nodeInfo):
        
         # NOTE: Using update as we need to use currentDate which
         # is an update operator. 
-        reColl.update({"entity":nodeInfo["name"], "completed":False},
+        reColl.update({"completed":False},
                       {"$currentDate":{"detectionTime":{"$type":"date"}},
                        "$set": {"kind":"UPDATE",
                                 "solutionFoundTime":0,
@@ -107,7 +107,7 @@ def handle_failure(node):
     
     # NOTE: Using update as we need to use currentDate which
     # is an update operator. 
-    reColl.update({"entity":node, "completed":False},
+    reColl.update({"completed":False},
                   {"$currentDate":{"detectionTime":{"$type":"date"}},
                    "$set": {"kind":"FAILURE",
                             "solutionFoundTime":0,

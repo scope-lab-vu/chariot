@@ -87,12 +87,12 @@ def find_solution(db, zmq_socket):
                 # If number of recovery actions is 0 then no actions required, mark
                 # reconfiguration event as completed.
                 if numOfActions == 0:
-                    reColl.update({"entity":node, "completed":False},
+                    reColl.update({"completed":False},
                                   {"$currentDate":{"solutionFoundTime":{"$type":"date"}, "reconfiguredTime":{"$type":"date"}},
                                    "$set": {"completed":True,
                                             "actionCount":0}})
                 else:
-                    reColl.update({"entity":node, "completed":False},
+                    reColl.update({"completed":False},
                                   {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
                                    "$set": {"actionCount":numOfActions}})
 
@@ -185,12 +185,6 @@ def invoke_solver(db, zmq_socket, initial):
             print "No deployment found!"
             return None
         else:
-            # Get failed node.
-            # NOTE: Important to get failed nodes from backend solver and not from the database as
-            # the latter could have changed from the time solver initiated its computation. We only
-            # want nodes for which the solver computed the solution.
-            failedNodeIndexes = backend.get_failed_nodes()
-
             reColl = db["ReconfigurationEvents"]
 
             if dist !=0:
@@ -202,10 +196,9 @@ def invoke_solver(db, zmq_socket, initial):
                     # If distance != 0, there has to be some actions. So, update reconfiguration event
                     # appropriately.
                     if not LOOK_AHEAD:
-                        for nodeIndex in failedNodeIndexes:
-                            reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":False},
-                                          {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
-                                           "$set":{"actionCount":len(actions)}})
+                        reColl.update({"completed":False},
+                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
+                                      "$set":{"actionCount":len(actions)}})
 
                     solver.print_difference(componentsToShutDown, componentsToStart)
 
@@ -227,11 +220,10 @@ def invoke_solver(db, zmq_socket, initial):
 
                 # No action so update reconfiguration event.
                 if not LOOK_AHEAD:
-                    for nodeIndex in failedNodeIndexes:
-                        reColl.update({"entity":solver.nodeNames[nodeIndex], "completed":False},
-                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
-                                       "$set":{"completed":True,
-                                               "actionCount":0}})
+                    reColl.update({"completed":False},
+                                  {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
+                                  "$set":{"completed":True,
+                                          "actionCount":0}})
                 return None
     return actions
 

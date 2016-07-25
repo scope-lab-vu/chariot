@@ -55,7 +55,7 @@ def execute_action():
 
             # NOTE: Using update as we need to use currentDate which
             # is an update operator.
-            reColl.update({"entity":NODE_NAME, "completed":False},
+            reColl.update({"completed":False},
                           {"$currentDate":{"detectionTime":{"$type":"date"}},
                            "$set": {"kind":"UPDATE",
                                     "solutionFoundTime":0,
@@ -72,7 +72,7 @@ def execute_action():
 
         # NOTE: Using update as we need to use currentDate which
         # is an update operator.
-        reColl.update({"entity":NODE_NAME, "completed":False},
+        reColl.update({"completed":False},
                       {"$currentDate":{"detectionTime":{"$type":"date"}},
                        "$set": {"kind":"FAILURE",
                                 "solutionFoundTime":0,
