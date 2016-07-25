@@ -88,8 +88,7 @@ def find_solution(db, zmq_socket):
                 # reconfiguration event as completed.
                 if numOfActions == 0:
                     reColl.update({"entity":node, "completed":False},
-                                  {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
-                                   "$currentDate":{"reconfiguredTime":{"$type":"date"}},
+                                  {"$currentDate":{"solutionFoundTime":{"$type":"date"}, "reconfiguredTime":{"$type":"date"}},
                                    "$set": {"completed":True,
                                             "actionCount":0}})
                 else:
