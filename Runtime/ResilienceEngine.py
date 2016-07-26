@@ -59,58 +59,64 @@ def mongo_connect(serverName):
 
 def find_solution(db, zmq_socket):
     if (LOOK_AHEAD):
-        # Current implementation only does look ahead for node failures, so look for nodes that
-        # has failed, find corresponding solution in LookAhead collection, send solution
-        # actions to related DM, and store solution actions in DeploymentActions collection.
-        nColl = db["Nodes"]
-        nResult = nColl.find({"status":"FAULTY"})
+        # If RE in look ahead mode, then check if the triggering reconfiguration event is a
+        # failure or an update. If it is the latter, we cannot look ahead so invoke the solver.
+        reColl = db["ReconfigurationEvents"]
+        findUpdateEvent = reColl.find_one({"completed":False, "kind":"UPDATE"})
+        if findUpdateEvent is not None:
+            invoke_solver()
+        else:
+            # Current implementation only does look ahead for node failures, so look for nodes that
+            # has failed, find corresponding solution in LookAhead collection, send solution
+            # actions to related DM, and store solution actions in DeploymentActions collection.
+            nColl = db["Nodes"]
+            nResult = nColl.find({"status":"FAULTY"})
 
-        faultyNodes = list()
-        for r in nResult:
-            faultyNodes.append(r["name"])
+            faultyNodes = list()
+            for r in nResult:
+                faultyNodes.append(r["name"])
 
-        laColl = db["LookAhead"]
-        daColl = db["DeploymentActions"]
-        deploymentActions = list()
-        for node in faultyNodes:
-            print "Searching pre-computed solution for failure of node:", node
-            laResult = laColl.find_one({"failedEntity":node})
+            laColl = db["LookAhead"]
+            daColl = db["DeploymentActions"]
+            deploymentActions = list()
+            for node in faultyNodes:
+                print "Searching pre-computed solution for failure of node:", node
+                laResult = laColl.find_one({"failedEntity":node})
 
-            # If solution found, store time, get deployment actions and send them out.
-            if laResult is not None:
-                print "Pre-computed solution found."
-                reColl = db["ReconfigurationEvents"]
+                # If solution found, store time, get deployment actions and send them out.
+                if laResult is not None:
+                    print "Pre-computed solution found."
 
-                # Check number of recovery actions to set actionCount.
-                numOfActions = len(laResult["recoveryActions"])
+                    # Check number of recovery actions to set actionCount.
+                    numOfActions = len(laResult["recoveryActions"])
 
-                # If number of recovery actions is 0 then no actions required, mark
-                # reconfiguration event as completed.
-                if numOfActions == 0:
-                    reColl.update({"completed":False},
-                                  {"$currentDate":{"solutionFoundTime":{"$type":"date"}, "reconfiguredTime":{"$type":"date"}},
-                                   "$set": {"completed":True,
-                                            "actionCount":0}})
+                    # If number of recovery actions is 0 then no actions required, mark
+                    # reconfiguration event as completed.
+                    if numOfActions == 0:
+                        reColl.update({"completed":False},
+                                      {"$currentDate":{"solutionFoundTime":{"$type":"date"}, "reconfiguredTime":{"$type":"date"}},
+                                       "$set": {"completed":True,
+                                                "actionCount":0}})
+                    else:
+                        reColl.update({"completed":False},
+                                      {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
+                                       "$set": {"actionCount":numOfActions}})
+
+                        for action in laResult["recoveryActions"]:
+                            # Store action.
+                            daColl.insert(action)
+                            deploymentActions.append(action)
+
+                            # Send action.
+                            if send_action(db, action, zmq_socket) is False:
+                                return
                 else:
-                    reColl.update({"completed":False},
-                                  {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
-                                   "$set": {"actionCount":numOfActions}})
+                    print "Pre-computed solution not found. Invoking solver."
+                    # If (pre-computed) solution not found, invoke solver.
+                    invoke_solver(db, zmq_socket, False)
 
-                    for action in laResult["recoveryActions"]:
-                        # Store action.
-                        daColl.insert(action)
-                        deploymentActions.append(action)
-
-                        # Send action.
-                        if send_action(db, action, zmq_socket) is False:
-                            return
-            else:
-                print "Pre-computed solution not found. Invoking solver."
-                # If (pre-computed) solution not found, invoke solver.
-                invoke_solver(db, zmq_socket, False)
-
-        # Failure handle attempt done. Look ahead again.
-        look_ahead(db, deploymentActions)
+            # Failure handle attempt done. Look ahead again.
+            look_ahead(db, deploymentActions)
     else:
         invoke_solver(db, zmq_socket, False)
 
@@ -224,7 +230,9 @@ def invoke_solver(db, zmq_socket, initial):
                                   {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
                                   "$set":{"completed":True,
                                           "actionCount":0}})
-                return None
+                # Here we return empty list to distinguish returns for scenarios where no action is required and where
+                # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
+                return list()
     return actions
 
 # Get node IP and port as a pair.
