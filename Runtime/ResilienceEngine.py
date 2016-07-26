@@ -64,7 +64,7 @@ def find_solution(db, zmq_socket):
         reColl = db["ReconfigurationEvents"]
         findUpdateEvent = reColl.find_one({"completed":False, "kind":"UPDATE"})
         if findUpdateEvent is not None:
-            invoke_solver()
+            invoke_solver(db, zmq_socket, False, True)
         else:
             # Current implementation only does look ahead for node failures, so look for nodes that
             # has failed, find corresponding solution in LookAhead collection, send solution
@@ -88,7 +88,8 @@ def find_solution(db, zmq_socket):
                     print "Pre-computed solution found."
 
                     # Check number of recovery actions to set actionCount.
-                    numOfActions = len(laResult["recoveryActions"])
+                    recoveryActions = laResult["recoveryActions"]
+                    numOfActions = len(recoveryActions)
 
                     # If number of recovery actions is 0 then no actions required, mark
                     # reconfiguration event as completed.
@@ -102,18 +103,21 @@ def find_solution(db, zmq_socket):
                                       {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
                                        "$set": {"actionCount":numOfActions}})
 
-                        for action in laResult["recoveryActions"]:
-                            # Store action.
-                            daColl.insert(action)
-                            deploymentActions.append(action)
+                        # Making a copy as db insert below will modify by adding _id.
+                        recoveryActionsToInsert = copy.deepcopy(recoveryActions)
 
-                            # Send action.
-                            if send_action(db, action, zmq_socket) is False:
+                        # Store actions in DeploymentActions collection.
+                        for ra in recoveryActionsToInsert:
+                            daColl.insert(ra)
+
+                        # Save each action in deploymentActions list and send each action.
+                        for ra in recoveryActions:
+                            deploymentActions.append(ra)
+
+                            if send_action(db, ra, zmq_socket) is False:
                                 return
                 else:
-                    print "Pre-computed solution not found. Invoking solver."
-                    # If (pre-computed) solution not found, invoke solver.
-                    invoke_solver(db, zmq_socket, False)
+                    print "Pre-computed solution not found!"
 
             # Failure handle attempt done. Look ahead again.
             look_ahead(db, deploymentActions)
@@ -122,9 +126,8 @@ def find_solution(db, zmq_socket):
 
 # Returns true if send succeeds, false otherwise.
 def send_action (db, action, zmq_socket):
-     # Get address of node to send action to.
+    # Get address of node to send action to.
     addr, port = get_node_address(db, action["node"])
-
     zmq_addr = None
     if (addr is not None and port is not None):
         zmq_addr = "tcp://%s:%d"%(str(addr), int(port))
@@ -146,7 +149,7 @@ def send_action (db, action, zmq_socket):
 
 # This function gets current configuration and invokes the solver. No looking ahead.
 # This function returns list of deployment actions if solution found.
-def invoke_solver(db, zmq_socket, initial):
+def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
     from SolverBackend import SolverBackend
 
     backend = SolverBackend()
@@ -201,10 +204,10 @@ def invoke_solver(db, zmq_socket, initial):
 
                     # If distance != 0, there has to be some actions. So, update reconfiguration event
                     # appropriately.
-                    if not LOOK_AHEAD:
+                    if not LOOK_AHEAD or lookAheadUpdate:
                         reColl.update({"completed":False},
                                       {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
-                                      "$set":{"actionCount":len(actions)}})
+                                       "$set":{"actionCount":len(actions)}})
 
                     solver.print_difference(componentsToShutDown, componentsToStart)
 
@@ -217,19 +220,29 @@ def invoke_solver(db, zmq_socket, initial):
                             if send_action(db, action, zmq_socket) is False:
                                 return
                     else:
-                        # If lookahead then do initial lookahead for initial deployment.
-                        if initial:
-                            print "Initial lookahead mechanism"
+                        # If lookahead then send actions if initial deployment or if look ahead
+                        # update. Once actions are sent, look ahead again.
+                        if initial or lookAheadUpdate:
+                            for action in actions:
+                                if send_action(db, action, zmq_socket) is False:
+                                    return
+
+                            if initial:
+                                print "Initial lookahead mechanism"
+                            else:
+                                print "Update lookahead mechanism"
+
                             look_ahead(db, actions)
             elif dist == 0:
                 print "Same deployment as before. No need for any changes."
 
                 # No action so update reconfiguration event.
-                if not LOOK_AHEAD:
+                if not LOOK_AHEAD or lookAheadUpdate:
                     reColl.update({"completed":False},
                                   {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
-                                  "$set":{"completed":True,
-                                          "actionCount":0}})
+                                   "$set":{"completed":True,
+                                           "actionCount":0}})
+
                 # Here we return empty list to distinguish returns for scenarios where no action is required and where
                 # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
                 return list()
