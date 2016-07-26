@@ -47,68 +47,30 @@ def execute_stop_action(db, actionNode, actionProcess, actionStopScript):
 def update_start_action(db, actionNode, actionProcess, startScript, stopScript, pid):
     component = re.sub("process_", "", actionProcess)
 
+    # Find process with correct (TO_BE_DEPLOYED) status.
     nColl = db["Nodes"]
+    findResult = nColl.find({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}})
 
-    # Handle scenario where process to start is already in the right place in Nodes collection. This
-    # will be true for all cases (initial deployment as well as reconfiguration, via ResilienceEngineMain.py
-    # populate_nodes function). So, before updating, make sure status is TO_BE_DEPLOYED. If so, update
-    # status to ACTIVE.
-    result = nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}},
-                          {"$set": {"processes.$.status": "ACTIVE", "processes.$.pid":pid}},
-                          upsert = False)
+    # If found, update process status to ACTIVE and update component instance information too.
+    if findResult.count() != 0:
+        nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}},
+                     {"$set": {"processes.$.status": "ACTIVE", "processes.$.pid":pid}})
 
-    # If above update matched, then update the component instance status too.
-    if result is not None:
-        if result["ok"] > 0:
-            nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "components":{"$elemMatch":{"name":component}}}}},
-                         {"$set": {"processes.$.components.0.status": "ACTIVE"}},  #WARNING: This assumens, one component/process.
-                         upsert = False)
-
-            # Update information in ComponentInstances collection as well.
-            ciColl = db["ComponentInstances"]
-
-            result = ciColl.update({"name":component},
-                                   {"$set":{"status":"ACTIVE"}},
-                                   upsert = False)
-    else:
-        # If not, it means we need to handle the scenario where process to start is not in the right place in
-        # Nodes collection. So, a new process document must be created and inserted.
-        # NOTE: This (TO_BE_DEPLOYED processes not in right place) should not happen but we keep the code below
-        # to handle scenario if it ever does happens.
-        processDocument = dict()
-        processDocument["name"] = actionProcess
-        processDocument["pid"] = pid
-        processDocument["status"] = "ACTIVE"
-        processDocument["startScript"] = startScript
-        processDocument["stopScript"] = stopScript
-        processDocument["components"] = list()
-
-        # Find component instance in ComponentInstances collection and fill information below.
-        ciColl = db["ComponentInstances"]
-        ciDoc = ciColl.find_one({"name":component})
-
-        componentDocument = dict()
-        componentDocument["name"] = component
-        componentDocument["status"] = "ACTIVE"
-        componentDocument["type"] = ciDoc["type"]
-        componentDocument["functionalityInstance"] = ciDoc["functionalityInstance"]
-        componentDocument["node"] = ciDoc["node"]
-
-        processDocument["components"].append(componentDocument)
-
-        result = nColl.update({"name":actionNode},
-                              {"$push":{"processes":processDocument}})
+        nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "components":{"$elemMatch":{"name":component}}}}},
+                     {"$set": {"processes.$.components.0.status": "ACTIVE"}})  #WARNING: This assumens, one component/process.
 
         # Update information in ComponentInstances collection as well.
         ciColl = db["ComponentInstances"]
 
-        result = ciColl.update({"name":component},
-                               {"$set":{"status":"ACTIVE"}})
+        ciColl.update({"name":component},
+                      {"$set":{"status":"ACTIVE"}})
 
-    # Mark action as taken.
-    daColl = db["DeploymentActions"]
-    daColl.update({"action":"START", "completed":False, "process":actionProcess, "node": actionNode},
-                  {"$set":{"completed":True}})
+        # Mark action as taken.
+        daColl = db["DeploymentActions"]
+        daColl.update({"action":"START", "completed":False, "process":actionProcess, "node": actionNode},
+                      {"$set":{"completed":True}})
+    else:
+        print "Process: ", actionProcess, " with status TO_BE_DEPLOYED, not found in node: ", actionNode
 
 def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
     component = re.sub("process_", "", actionProcess)
