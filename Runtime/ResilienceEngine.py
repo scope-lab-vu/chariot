@@ -239,12 +239,16 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
             elif dist == 0:
                 print "Same deployment as before. No need for any changes."
 
-                # No action so update reconfiguration event.
+                # No action so update reconfiguration event if non-lookahead or if lookahead and update scenario.
                 if not LOOK_AHEAD or lookAheadUpdate:
                     reColl.update({"completed":False},
                                   {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
                                    "$set":{"completed":True,
                                            "actionCount":0}})
+
+                    # If lookahead update scenario then perform lookahead.
+                    if lookAheadUpdate:
+                        look_ahead(db, actions)
 
                 # Here we return empty list to distinguish returns for scenarios where no action is required and where
                 # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
