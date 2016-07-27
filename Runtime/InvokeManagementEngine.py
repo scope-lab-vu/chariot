@@ -1,7 +1,36 @@
+__author__="Subhav Pradhan"
+
+from pymongo import MongoClient
 import getopt, sys
 import socket
 
-def invoke_management_engine(serverAddress):
+def invoke_management_engine(serverAddress, isUpdate):
+    # Add appropriate reconfiguration event.
+    client = MongoClient("localhost")
+    db = client["ConfigSpace"]
+    reColl = db["ReconfigurationEvents"]
+
+    if isUpdate:
+        # NOTE: Using update as we need to use currentDate which
+        # is an update operator.
+        reColl.update({"completed":False},
+                        {"$currentDate":{"detectionTime":{"$type":"date"}},
+                         "$set": {"kind":"UPDATE",
+                                  "solutionFoundTime":0,
+                                  "reconfiguredTime":0,
+                                  "actionCount":0}},
+                         upsert = True)
+    else:
+        # NOTE: Using update as we need to use currentDate which
+        # is an update operator.
+        reColl.update({"completed":False},
+                      {"$currentDate":{"detectionTime":{"$type":"date"}},
+                       "$set": {"kind":"FAILURE",
+                                "solutionFoundTime":0,
+                                "reconfiguredTime":0,
+                                "actionCount":0}},
+                       upsert = True)
+
     serverPort = 7000
 
     # Find own IP.
@@ -69,6 +98,6 @@ def main():
         managementEngine = "localhost"
         print "Using monitoring server: ", managementEngine
 
-    invoke_management_engine(managementEngine)
+    invoke_management_engine(managementEngine, True)
 if __name__ == '__main__':
     main()

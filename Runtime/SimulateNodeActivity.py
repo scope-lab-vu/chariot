@@ -49,38 +49,11 @@ def execute_action():
                 systemInitialization = False
 
         if not systemInitialization:
-            # Create and store hardware update reconfiguration event
-            # before invoking the solver.
-            reColl = db["ReconfigurationEvents"]
-
-            # NOTE: Using update as we need to use currentDate which
-            # is an update operator.
-            reColl.update({"completed":False},
-                          {"$currentDate":{"detectionTime":{"$type":"date"}},
-                           "$set": {"kind":"UPDATE",
-                                    "solutionFoundTime":0,
-                                    "reconfiguredTime":0,
-                                    "actionCount":0}},
-                          upsert = True)
-
             # Using localhost as management engine address since that will always
             # be the case for simulation.
-            invoke_management_engine("localhost")
+            invoke_management_engine("localhost", True)
     elif STOP_ACTION:
         print "STOPPING node:", NODE_NAME
-
-        # Create and store failure reconfiguration event.
-        reColl = db["ReconfigurationEvents"]
-
-        # NOTE: Using update as we need to use currentDate which
-        # is an update operator.
-        reColl.update({"completed":False},
-                      {"$currentDate":{"detectionTime":{"$type":"date"}},
-                       "$set": {"kind":"FAILURE",
-                                "solutionFoundTime":0,
-                                "reconfiguredTime":0,
-                                "actionCount":0}},
-                       upsert = True)
 
         # Mark node faulty.
         nColl.update({"name":NODE_NAME, "status":"ACTIVE"},
@@ -112,7 +85,7 @@ def execute_action():
 
         # Using localhost as management engine address since that will always
         # be the case for simulation.
-        invoke_management_engine("localhost")
+        invoke_management_engine("localhost", False)
 
 def print_usage():
     print "USAGE:"

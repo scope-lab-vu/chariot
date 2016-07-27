@@ -82,40 +82,13 @@ def handle_join(nodeInfo):
             systemInitialization = False
     
     if not systemInitialization:
-        # Create and store hardware update reconfiguration event 
-        # before invoking the solver.
-        reColl = db["ReconfigurationEvents"]
-       
-        # NOTE: Using update as we need to use currentDate which
-        # is an update operator. 
-        reColl.update({"completed":False},
-                      {"$currentDate":{"detectionTime":{"$type":"date"}},
-                       "$set": {"kind":"UPDATE",
-                                "solutionFoundTime":0,
-                                "reconfiguredTime":0,
-                                "actionCount":0}},
-                      upsert = True)
-
-        invoke_management_engine(MANAGEMENT_ENGINE)
+        invoke_management_engine(MANAGEMENT_ENGINE, True)
 
 def handle_failure(node):
     db = MONGO_CLIENT["ConfigSpace"]
     nColl = db["Nodes"]
     ciColl = db["ComponentInstances"]
-    
-    # Create and store failure reconfiguration event.
-    reColl = db["ReconfigurationEvents"]
-    
-    # NOTE: Using update as we need to use currentDate which
-    # is an update operator. 
-    reColl.update({"completed":False},
-                  {"$currentDate":{"detectionTime":{"$type":"date"}},
-                   "$set": {"kind":"FAILURE",
-                            "solutionFoundTime":0,
-                            "reconfiguredTime":0,
-                            "actionCount":0}},
-                  upsert = True)
-                
+
     # Mark node faulty in Nodes collection.
     nColl.update({"name": node, "status": "ACTIVE"}, 
                  {"$set": {"status": "FAULTY"}}, 
@@ -145,7 +118,7 @@ def handle_failure(node):
                  {"$pull": {"processes": {"name": {"$ne": "null"}}}})
 
     # Invoke solver for reconfiguration.
-    invoke_management_engine(MANAGEMENT_ENGINE)
+    invoke_management_engine(MANAGEMENT_ENGINE, False)
 
 def print_usage():
     print "USAGE:"
