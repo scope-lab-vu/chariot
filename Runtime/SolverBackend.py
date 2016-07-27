@@ -182,7 +182,7 @@ class GoalDescription:
                 componentInstanceToAdd.name = componentName
                 componentInstanceToAdd.type = componentType.name
                 componentInstanceToAdd.status = "TO_BE_DEPLOYED"
-                componentInstanceToAdd.node = functionalityInstance.node
+                componentInstanceToAdd.alwaysDeployOnNode = functionalityInstance.alwaysDeployOnNode
                 componentInstanceToAdd.functionalityInstanceName = functionalityInstance.name
                 componentInstanceToAdd.mustDeploy = functionalityInstance.mustDeploy
                 self.componentInstances.append(componentInstanceToAdd)
@@ -212,7 +212,7 @@ class GoalDescription:
                                         functionalityInstanceToAdd.name = functionality.name + "_func_instance_" + node.name
                                         functionalityInstanceToAdd.functionalityName = functionality.name
                                         functionalityInstanceToAdd.objectiveName = objective.name
-                                        functionalityInstanceToAdd.node = node.name
+                                        functionalityInstanceToAdd.alwaysDeployOnNode = node.name
                                         functionalityInstanceToAdd.mustDeploy = True
                                         self.functionalityInstances.append(functionalityInstanceToAdd)
                                         self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
@@ -429,7 +429,7 @@ class FunctionalityInstance:
     functionalityName = None        # This attribute will be empty for voter and consensus provider
                                     # functionality instances.
 
-    node = None                     # This attribute is only valid if functionality instance is
+    alwaysDeployOnNode = None       # This attribute is only valid if functionality instance is
                                     # tied to a node as part of per node replication pattern.
 
     isVoter = None                  # This flag determines if a functionality instance is related
@@ -451,7 +451,7 @@ class FunctionalityInstance:
         self.name = ""
         self.functionalityName = ""
         self.objectiveName = ""
-        self.node = ""
+        self.alwaysDeployOnNode = ""
         self.isVoter = False
         self.isConsensusProvider = False
         self.componentType = ""
@@ -570,7 +570,7 @@ class ComponentInstance:
     functionalityInstanceName = None    # Name of functionality instance (i.e. functionality) provided by a component
                                         # instance. We currently assume one functionality per component instance.
 
-    node = None                         # This attribute is only valid if functionality instance is
+    alwaysDeployOnNode = None           # This attribute is only valid if functionality instance is
                                         # tied to a node as part of a per node replication pattern.
 
     mustDeploy = None                   # This flag determines if a component instance should always be
@@ -582,7 +582,7 @@ class ComponentInstance:
         self.type = ""
         self.status = ""
         self.functionalityInstanceName = ""
-        self.node = ""
+        self.alwaysDeployOnNode = ""
         self.mustDeploy = False
 
 class SolverBackend:
@@ -894,7 +894,7 @@ class SolverBackend:
             #    componentInstanceDocument["status"] = componentInstance.status
             componentInstanceDocument["status"] = componentInstance.status
             componentInstanceDocument["functionalityInstanceName"] = componentInstance.functionalityInstanceName
-            componentInstanceDocument["node"] = componentInstance.node
+            componentInstanceDocument["alwaysDeployOnNode"] = componentInstance.alwaysDeployOnNode
             componentInstanceDocument["mustDeploy"] = componentInstance.mustDeploy
 
             ciColl.update({"name":componentInstance.name},
@@ -1377,7 +1377,7 @@ class SolverBackend:
                             componentInstanceToAdd.status = componentInstance.status
                             componentInstanceToAdd.type = componentInstance.type
                             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
-                            componentInstanceToAdd.node = componentInstance.node
+                            componentInstanceToAdd.alwaysDeployOnNode = componentInstance.alwaysDeployOnNode
                             componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
 
                             processToAdd.componentInstances.append(componentInstanceToAdd)
@@ -1503,17 +1503,17 @@ class SolverBackend:
                                                                         # for display, so we do not read it as status
                                                                         # is only relevant if read from Nodes.
             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
-            componentInstanceToAdd.node = componentInstance.node
+            componentInstanceToAdd.alwaysDeployOnNode = componentInstance.alwaysDeployOnNode
             componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
 
             # Load node-specific component instances (i.e. component instance that are part of per node replication
             # pattern) if and only if their corresponding node is active.
-            if componentInstanceToAdd.node != "":
-                if(self.check_node_status(componentInstance.node) == "ACTIVE"):
+            if componentInstanceToAdd.alwaysDeployOnNode!= "":
+                if(self.check_node_status(componentInstance.alwaysDeployOnNode) == "ACTIVE"):
                     self.add_component_instance(componentInstanceToAdd, False)
                 else:
                     print "Skipping node specific ComponentInstance with name:", componentInstance.name, "as its assigned node:", \
-                        componentInstance.node, "is not ACTIVE"
+                        componentInstance.alwaysDeployOnNode, "is not ACTIVE"
             else:
                 self.add_component_instance(componentInstanceToAdd, False)
 

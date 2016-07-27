@@ -392,7 +392,7 @@ def populate_nodes(db, actions):
             liveComponentInstDocument["status"] = "TO_BE_DEPLOYED"
             liveComponentInstDocument["type"] = componentInstanceToAdd["type"]
             liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd["functionalityInstanceName"]
-            liveComponentInstDocument["node"] = componentInstanceToAdd["node"]
+            liveComponentInstDocument["alwaysDeployOnNode"] = componentInstanceToAdd["alwaysDeployOnNode"]
             liveComponentInstDocument["mustDeploy"] = componentInstanceToAdd["mustDeploy"]
 
             processDocument["components"].append(liveComponentInstDocument)
@@ -427,7 +427,7 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
     # Add all stop actions.
     for stopAction in componentsToShutDown:
-        componentInstanceName = solver.componentNames[startAction[0]]
+        componentInstanceName = solver.componentNames[stopAction[0]]
         componentInstance = backend.get_component_instance(componentInstanceName)
         if componentInstance is not None:
             startScript = ""
