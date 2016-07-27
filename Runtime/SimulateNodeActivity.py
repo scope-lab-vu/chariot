@@ -3,7 +3,7 @@ __author__ = "Subhav Pradhan"
 import getopt
 import sys
 from pymongo import MongoClient
-import socket
+from InvokeManagementEngine import invoke_management_engine
 
 def execute_action():
     client = MongoClient("localhost")
@@ -63,7 +63,9 @@ def execute_action():
                                     "actionCount":0}},
                           upsert = True)
 
-            invoke_solver()
+            # Using localhost as management engine address since that will always
+            # be the case for simulation.
+            invoke_management_engine("localhost")
     elif STOP_ACTION:
         print "STOPPING node:", NODE_NAME
 
@@ -108,41 +110,9 @@ def execute_action():
         nColl.update({"name":NODE_NAME, "status":"FAULTY"},
                      {"$pull":{"processes":{"name":{"$ne":"null"}}}})
 
-
-SOLVER_IP = "127.0.0.1"
-SOLVER_PORT = 7000
-MY_PORT = 8888
-
-PING = "PING"
-PING_RESPONSE_READY = "READY"
-PING_RESPONSE_BUSY = "BUSY"
-SOLVE = "SOLVE"
-SOLVE_RESPONSE_OK = "OK"
-
-def invoke_solver():
-    sock = socket.socket(socket.AF_INET,    # Internet
-                         socket.SOCK_DGRAM) # UDP
-    sock.bind((SOLVER_IP, MY_PORT))
-
-    print "Pinging solver for status"
-
-    # First, ping solver and see if its is ready or busy.
-    sock.sendto(PING, (SOLVER_IP, SOLVER_PORT))
-
-    print "Waiting for solver response..."
-    data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-
-    print "Solver response message:", data
-
-    # If ready, ask solver to solve.
-    if data == PING_RESPONSE_READY:
-        print "Requesting solver for solution"
-        sock.sendto(SOLVE, (SOLVER_IP, SOLVER_PORT))
-
-    print "Waiting for solver response..."
-    data, addr = sock.recvfrom(1024)
-
-    print "Solver response message:", data
+        # Using localhost as management engine address since that will always
+        # be the case for simulation.
+        invoke_management_engine("localhost")
 
 def print_usage():
     print "USAGE:"
@@ -205,10 +175,6 @@ def main():
 
     # Add action affects to the database.
     execute_action()
-
-    # Invoke solver if action was stop.
-    if STOP_ACTION:
-        invoke_solver()
 
 if __name__ == '__main__':
     main()

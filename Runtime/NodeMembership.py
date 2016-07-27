@@ -4,7 +4,7 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooState
 from kazoo.exceptions import NodeExistsError
 import json
-import logging, netifaces, socket, time, datetime
+import logging, netifaces, socket, time
 import sys, getopt
 
 def connection_state_listener(state):

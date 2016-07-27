@@ -8,12 +8,22 @@ from SolverBackend import Serialize, SolverBackend
 
 def solver_loop (db, zmq_socket):
     print "Solver loop started"
+
+    # Find own IP.
+    myIP = "localhost"                          # Temporarily set to localhost.
+    myPort = 7000
+
+    PING = "PING"
+    PING_RESPONSE_READY = "READY"
+    PING_RESPONSE_BUSY = "BUSY"
+    SOLVE = "SOLVE"
+    SOLVE_RESPONSE_OK = "OK"
+
     sock = None
     try:
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
-        #sock.bind((socket.gethostname(), SOLVER_PORT))
-        sock.bind(("127.0.0.1", SOLVER_PORT))
+        sock.bind((myIP, myPort))
         print socket.gethostname()
         inComputation = False
         while True:
@@ -464,28 +474,12 @@ def print_usage():
 
 def main():
     global LOOK_AHEAD
-    global SOLVER_PORT
     global ZMQ_PORT
     global INITIAL_DEPLOYMENT
 
-    # Defining types of messages exchanged between failure monitor and solver.
-    global PING
-    global PING_RESPONSE_READY
-    global PING_RESPONSE_BUSY
-    global SOLVE
-    global SOLVE_RESPONSE_OK
-
     LOOK_AHEAD = False
-    SOLVER_PORT = 7000
     ZMQ_PORT = 8000
     INITIAL_DEPLOYMENT = False
-
-
-    PING = "PING"
-    PING_RESPONSE_READY = "READY"
-    PING_RESPONSE_BUSY = "BUSY"
-    SOLVE = "SOLVE"
-    SOLVE_RESPONSE_OK = "OK"
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hmil",
