@@ -733,7 +733,7 @@ class SolverBackend:
         self.load_nodes_info(db)                        # IMPORTANT: This ordering between template and nodes matter.
         self.load_component_instances(db)               # Load any existing component instances
         self.load_component_types(db)
-        self.load_goal_descriptions(db)               # Any required component instances that are were not present
+        self.load_goal_descriptions(db)                 # Any required component instances that are were not present
                                                         # in existing state (loaded as part of load_component_instances)
                                                         # will be generated here.
         self.load_component_to_node_assignment(db)

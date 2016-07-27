@@ -3,8 +3,8 @@ __author__ = "Subhav Pradhan"
 import sys, time, getopt
 import pymongo
 import socket, zmq, json
-import copy
-from SolverBackend import Serialize
+import copy, re
+from SolverBackend import Serialize, SolverBackend
 
 def solver_loop (db, zmq_socket):
     print "Solver loop started"
@@ -103,6 +103,9 @@ def find_solution(db, zmq_socket):
                                       {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
                                        "$set": {"actionCount":numOfActions}})
 
+                        print "Populating Nodes collection with information about processes and component instances"
+                        populate_nodes(db, recoveryActions)
+
                         # Making a copy as db insert below will modify by adding _id.
                         recoveryActionsToInsert = copy.deepcopy(recoveryActions)
 
@@ -150,8 +153,6 @@ def send_action (db, action, zmq_socket):
 # This function gets current configuration and invokes the solver. No looking ahead.
 # This function returns list of deployment actions if solution found.
 def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
-    from SolverBackend import SolverBackend
-
     backend = SolverBackend()
 
     print "Loading ConfigSpace."
@@ -202,37 +203,39 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                     print "Computing new deployment actions and populating DeploymentActions collection."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
 
-                    # If distance != 0, there has to be some actions. So, update reconfiguration event
-                    # appropriately.
+                    # Perform steps needed for non-lookahead or lookahead but update scenario.
                     if not LOOK_AHEAD or lookAheadUpdate:
                         reColl.update({"completed":False},
                                       {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
                                        "$set":{"actionCount":len(actions)}})
 
-                    solver.print_difference(componentsToShutDown, componentsToStart)
+                        # Print actions (difference).
+                        solver.print_difference(componentsToShutDown, componentsToStart)
 
-                    print "Populating Nodes collection with information with processes and component instances"
-                    populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown)
+                        print "Populating Nodes collection with information about processes and component instances"
+                        populate_nodes(db, actions)
 
-                    # Send actions using zeromq if not lookahead.
-                    if not LOOK_AHEAD:
+                        # Send actions using zeromq if not lookahead.
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
                                 return
-                    else:
-                        # If lookahead then send actions if initial deployment or if look ahead
-                        # update. Once actions are sent, look ahead again.
-                        if initial or lookAheadUpdate:
-                            for action in actions:
-                                if send_action(db, action, zmq_socket) is False:
-                                    return
 
-                            if initial:
-                                print "Initial lookahead mechanism"
-                            else:
-                                print "Update lookahead mechanism"
-
+                        # If lookahead update scenario then perform update lookahead.
+                        if lookAheadUpdate:
+                            print "Update lookahead mechanism"
                             look_ahead(db, actions)
+
+                    # If lookahead and initial then send action and perform initial lookahead.
+                    if LOOK_AHEAD and initial:
+                        print "Populating Nodes collection with information about processes and component instances"
+                        populate_nodes(db, actions)
+
+                        for action in actions:
+                            if send_action(db, action, zmq_socket) is False:
+                                return
+
+                        print "Initial lookahead mechanism"
+                        look_ahead(db, actions)
             elif dist == 0:
                 print "Same deployment as before. No need for any changes."
 
@@ -364,47 +367,40 @@ def handle_action(db, actionDoc):
         # Update database to reflect affect of above stop action.
         update_stop_action(db, actionNode, actionProcess, actionStartScript, actionStopScript)
 
-def populate_nodes(db, backend, solver, componentsToStart, componentsToShutDown):
+def populate_nodes(db, actions):
     nColl = db["Nodes"]
 
-    for info in componentsToStart:
-        componentInstanceToAddName = solver.componentNames[info[0]]
-        componentInstanceToAdd = backend.get_component_instance(componentInstanceToAddName)
+    for action in actions:
+        # Get component instance name from process name.
+        componentInstanceName = re.sub("process_", "", action["process"])
+
+        # Get component instance with above name in ComponentInstances collection.
+        ciColl = db["ComponentInstances"]
+        componentInstanceToAdd = ciColl.find_one({"name":componentInstanceName})
+
         if componentInstanceToAdd is not None:
-            startScript = ""
-            stopScript = ""
-            if (componentInstanceToAdd.type != ""):
-                startScript, stopScript = backend.get_component_scripts(componentInstanceToAdd.type)
-
-            # Generate start and stop scripts for CHARIOT components.
-            if startScript == "":
-                startScript = "start_" + componentInstanceToAdd.name
-            if stopScript == "":
-                stopScript = "stop_" + componentInstanceToAdd.name
-
             processDocument = dict()
-            processDocument["name"] = "process_" + componentInstanceToAdd.name
+            processDocument["name"] = action["process"]
             processDocument["pid"] = long(0)
             processDocument["status"] = "TO_BE_DEPLOYED"
-            processDocument["startScript"] = startScript
-            processDocument["stopScript"] = stopScript
+            processDocument["startScript"] = action["startScript"]
+            processDocument["stopScript"] = action["stopScript"]
             processDocument["components"] = list()
 
             liveComponentInstDocument = dict()
-            liveComponentInstDocument["name"] = componentInstanceToAdd.name
+            liveComponentInstDocument["name"] = componentInstanceName
             liveComponentInstDocument["status"] = "TO_BE_DEPLOYED"
-            liveComponentInstDocument["type"] = componentInstanceToAdd.type
-            liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd.functionalityInstanceName
-            liveComponentInstDocument["node"] = componentInstanceToAdd.node
-            liveComponentInstDocument["mustDeploy"] = componentInstanceToAdd.mustDeploy
+            liveComponentInstDocument["type"] = componentInstanceToAdd["type"]
+            liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd["functionalityInstanceName"]
+            liveComponentInstDocument["node"] = componentInstanceToAdd["node"]
+            liveComponentInstDocument["mustDeploy"] = componentInstanceToAdd["mustDeploy"]
 
             processDocument["components"].append(liveComponentInstDocument)
 
-            nColl.update({"name":solver.nodeNames[info[1]], "status":"ACTIVE"},
-                         {"$push":{"processes":processDocument}},
-                         upsert = False)
+            nColl.update({"name":action["node"], "status":"ACTIVE"},
+                         {"$push":{"processes":processDocument}})
         else:
-            print "WARNING: Component instance with name:", componentInstanceToAddName, "not found!"
+            print "Component instance with name:", componentInstanceName, "not found!"
 
 def compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
     actions = list()
