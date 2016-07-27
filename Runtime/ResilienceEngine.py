@@ -248,7 +248,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
 
                     # If lookahead update scenario then perform lookahead.
                     if lookAheadUpdate:
-                        look_ahead(db, actions)
+                        look_ahead(db, list())
 
                 # Here we return empty list to distinguish returns for scenarios where no action is required and where
                 # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
@@ -309,6 +309,7 @@ def look_ahead(db, actions):
 
         # If solver found solution, query deployment actions to get solution.
         recoveryActions = invoke_solver(tmpDb, None, False)
+
         if (recoveryActions is not None):
             # Store solution in main (ConfigSpace) db.
             entry = dict()
