@@ -56,6 +56,7 @@ def main():
 
     if interface is None or nodeTemplate is None or network is None:
         print "Network interface, network name, or node template name not provided!"
+	print_usage()
         sys.exit()
 
     if monitoringServer is None:
