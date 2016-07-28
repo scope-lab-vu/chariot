@@ -155,7 +155,7 @@ def main():
             mongoServer = arg
         elif opt in ("-s", "--managementEngine"):
             print "Management engine address :", arg
-            mongoServer = arg
+            MANAGEMENT_ENGINE = arg
         else:
             print "Invalid command line argument."
             print_usage()
