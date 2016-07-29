@@ -62,7 +62,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	override doGenerate(Resource input, IFileSystemAccess fsa){// throws MongoException {
 		//throw new UnsupportedOperationException("TODO: auto-generated method stub")
 		//var mongo = new Mongo("192.168.1.6")
-		val mongo = new Mongo()
+		val mongo = new Mongo("127.0.0.1",7777)
 		try {
 		  mongo.getConnector().getDBPortPool(mongo.getAddress()).get().ensureOpen();
 		} catch (Exception e) {
