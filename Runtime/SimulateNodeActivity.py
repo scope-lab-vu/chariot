@@ -2,145 +2,112 @@ __author__ = "Subhav Pradhan"
 
 import getopt
 import sys
-import pymongo
-import socket
-import time
+from pymongo import MongoClient
+from InvokeManagementEngine import invoke_management_engine
 
 def execute_action():
-    client = pymongo.MongoClient("localhost")
+    client = MongoClient("localhost")
     db = client["ConfigSpace"]
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
 
-    if (NODE_NAME != "" and (START_ACTION or STOP_ACTION)):
-        if PROCESS_NAME == "":
-            if START_ACTION:
-                print "STARTING node:", NODE_NAME
-                result = lsColl.update({"name":NODE_NAME, "status":"FAULTY"},
-                                       {"$set": {"status":"ACTIVE"}},
-                                       upsert = False)
-            elif STOP_ACTION:
-                print "STOPPING node:", NODE_NAME
 
-                # Store current time as detection time.
-                failureColl = db["Failures"]
-                failureColl.update({"failedEntity":NODE_NAME},
-                                   {"$currentDate": {"detectionTime": {"$type": "date"}},
-                                    "$set": {"solutionFoundTime":0, "reconfiguredTime":0}},
-                                   upsert = True)
+    if START_ACTION:
+        print "STARTING node:", NODE_NAME
 
-                # Mark node faulty.
-                result = lsColl.update({"name":NODE_NAME, "status":"ACTIVE"},
-                                       {"$set": {"status":"FAULTY"}},
-                                       upsert = False)
+        # Create object to store in database.
+        nodeToAdd = dict()
+        nodeToAdd["name"] = NODE_NAME
+        nodeToAdd["nodeTemplate"] = NODE_TEMPLATE
+        nodeToAdd["status"] = "ACTIVE"
 
-                # Store names of affected component instances.
-                findResults = lsColl.find({"name":NODE_NAME, "status":"FAULTY"})
-                failedComponentInstances = list()
-                from SolverBackend import Serialize
-                for findResult in findResults:
-                    node = Serialize(**findResult)
-                    for p in node.processes:
-                        process = Serialize(**p)
-                        for c in process.components:
-                            component = Serialize(**c)
-                            failedComponentInstances.append(component.name)
+        interfaceToAdd = dict()
+        interfaceToAdd["name"] = ""
+        interfaceToAdd["address"] = "127.0.0.1:"+NODE_PORT
+        interfaceToAdd["network"] = ""
 
-                # Update ComponentInstances collection using above collected information.
-                ciColl = db["ComponentInstances"]
-                for compInst in failedComponentInstances:
-                    result = ciColl.update({"name":compInst},
-                                           {"$set":{"status":"FAULTY"}})
+        nodeToAdd["interfaces"] = list()
+        nodeToAdd["interfaces"].append(interfaceToAdd)
 
-                # Pull all processes.
-                result = lsColl.update({"name":NODE_NAME, "status":"FAULTY"},
-                                       {"$pull":{"processes":{"name":{"$ne":"null"}}}})
+        nodeToAdd["processes"] = list()
 
-        else:
-            if START_ACTION:
-                print "Processes can only be STARTED by DM"
-            elif STOP_ACTION:
-                print "STOPPING process:", PROCESS_NAME, "on node:", NODE_NAME
-                result = lsColl.update({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"ACTIVE"}}},
-                                       {"$set":{"processes.$.status":"FAULTY"}},
-                                       upsert = False)
+        # NOTE: Update used with upsert instead of insert because
+        # we might be adding node that had previously failed or
+        # been removed.
+        nColl.update({"name":NODE_NAME}, nodeToAdd, upsert = True)
 
-                # Store names of affected component instances.
-                findResults = lsColl.find({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"FAULTY"}}})
-                failedComponentInstances = list()
-                from SolverBackend import Serialize
-                for findResult in findResults:
-                    node = Serialize(**findResult)
-                    for p in node.processes:
-                        process = Serialize(**p)
-                        if process.name == PROCESS_NAME:
-                            for c in process.components:
-                                component = Serialize(**c)
-                                failedComponentInstances.append(component.name)
+        # Check if any application already exists. If there are
+        # applications then it means that the node join has to
+        # be treated as hardware update and therefore the solver
+        # should be invoked. If there are no applications then
+        # this node is addition is happening at system initialization
+        # time so do not invoke the solver.
+        systemInitialization = True
 
-                # Update ComponentInstances collection using above collected information.
-                ciColl = db["ComponentInstances"]
-                for compInst in failedComponentInstances:
-                    result = ciColl.update({"name":compInst},
-                                           {"$set":{"status":"FAULTY"}})
+        if "GoalDescriptions" in db.collection_names():
+            gdColl = db["GoalDescriptions"]
+            if gdColl.count() != 0:
+                systemInitialization = False
 
-                # Mark component instances as failed in LiveSystem collection as well.
-                result = lsColl.update({"name":NODE_NAME, "status":"ACTIVE", "processes":{"$elemMatch":{"name":PROCESS_NAME, "status":"FAULTY"}}},
-                                       {"$set":{"processes.$.components.0.status":"FAULTY"}},   # NOTE: This assumes one component per process.
-                                       upsert = False)
+        if not systemInitialization:
+            # Using localhost as management engine address since that will always
+            # be the case for simulation.
+            invoke_management_engine("localhost", True)
+    elif STOP_ACTION:
+        print "STOPPING node:", NODE_NAME
 
-SOLVER_IP = "127.0.0.1"
-SOLVER_PORT = 7000
-MY_PORT = 8888
+        # Mark node faulty.
+        nColl.update({"name":NODE_NAME, "status":"ACTIVE"},
+                     {"$set": {"status":"FAULTY"}})
 
-PING = "PING"
-PING_RESPONSE_READY = "READY"
-PING_RESPONSE_BUSY = "BUSY"
-SOLVE = "SOLVE"
-SOLVE_RESPONSE_OK = "OK"
+        # Store names of affected component instances.
+        findResults = nColl.find({"name":NODE_NAME, "status":"FAULTY"})
+        failedComponentInstances = list()
 
-def invoke_solver():
-    sock = socket.socket(socket.AF_INET,    # Internet
-                         socket.SOCK_DGRAM) # UDP
-    sock.bind((SOLVER_IP, MY_PORT))
+        from SolverBackend import Serialize
 
-    print "Pinging solver for status"
+        for findResult in findResults:
+            node = Serialize(**findResult)
+            for p in node.processes:
+                process = Serialize(**p)
+                for c in process.components:
+                    component = Serialize(**c)
+                    failedComponentInstances.append(component.name)
 
-    # First, ping solver and see if its is ready or busy.
-    sock.sendto(PING, (SOLVER_IP, SOLVER_PORT))
+        # Update ComponentInstances collection using above collected information.
+        ciColl = db["ComponentInstances"]
+        for compInst in failedComponentInstances:
+            ciColl.update({"name":compInst},
+                          {"$set":{"status":"FAULTY"}})
 
-    print "Waiting for solver response..."
-    data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+        # Pull all processes.
+        nColl.update({"name":NODE_NAME, "status":"FAULTY"},
+                     {"$pull":{"processes":{"name":{"$ne":"null"}}}})
 
-    print "Solver response message:", data
-
-    # If ready, ask solver to solve.
-    if data == PING_RESPONSE_READY:
-        print "Requesting solver for solution"
-        sock.sendto(SOLVE, (SOLVER_IP, SOLVER_PORT))
-
-    print "Waiting for solver response..."
-    data, addr = sock.recvfrom(1024)
-
-    print "Solver response message:", data
+        # Using localhost as management engine address since that will always
+        # be the case for simulation.
+        invoke_management_engine("localhost", False)
 
 def print_usage():
     print "USAGE:"
-    print "SimulateNodeActivity --nodeName <node name> [--processName <process name>] --action <'start' | 'stop'>"
+    print "SimulateNodeActivity --nodeName <node name> --nodeTemplate <node template name> " \
+          "--port <unique port number for DM> --action <'start' | 'stop'>"
 
-if __name__ == '__main__':
+def main():
     global NODE_NAME
-    global PROCESS_NAME
+    global NODE_TEMPLATE
+    global NODE_PORT
     global START_ACTION
     global STOP_ACTION
 
-    NODE_NAME = ""
-    PROCESS_NAME = ""
+    NODE_NAME = None
+    NODE_TEMPLATE = None
+    NODE_PORT = None
     START_ACTION = False
     STOP_ACTION = False
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hnpa",
-                                   ["help", "nodeName=", "processName=","action="])
+        opts, args = getopt.getopt(sys.argv[1:], "hntpa",
+                                   ["help", "nodeName=", "nodeTemplate=","port=", "action="])
     except getopt.GetoptError:
         print 'Cannot retrieve passed parameters.'
         print_usage()
@@ -153,9 +120,12 @@ if __name__ == '__main__':
         elif opt in ("-n", "--nodeName"):
             print "Node name:", arg
             NODE_NAME = arg
-        elif opt in ("-p", "--processName"):
-            print "Process name:", arg
-            PROCESS_NAME = arg
+        elif opt in ("-t", "--nodeTemplate"):
+            print "Node template name:", arg
+            NODE_TEMPLATE = arg
+        elif opt in ("-p", "--port"):
+            print "Port number:", arg
+            NODE_PORT = arg
         elif opt in ("-s", "--action"):
             print "Action:", arg
             if arg == "start":
@@ -166,12 +136,18 @@ if __name__ == '__main__':
                 print_usage()
                 sys.exit()
 
-    if (NODE_NAME == ""):
+    if (NODE_NAME is None):
+        print "Node name not provided!"
         print_usage()
         sys.exit()
 
-    # Add failure affects to the database.
+    if (START_ACTION and (NODE_TEMPLATE is None or NODE_PORT is None)):
+        print "Node template and/or node port not provided!"
+        print_usage()
+        sys.exit()
+
+    # Add action affects to the database.
     execute_action()
-    # Invoke solver if action was stop.
-    if STOP_ACTION:
-        invoke_solver()
+
+if __name__ == '__main__':
+    main()

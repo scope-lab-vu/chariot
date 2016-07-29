@@ -35,7 +35,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		void addObjective ((DM_Objective)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_SystemDescription")
+			//val LOGGER = Logger.getLogger("DM_GoalDescription")
 			val DM_Objective objectiveToAdd = new DM_Objective => initializer
 			this.objectives.add(objectiveToAdd)
 			/*val List<String> tmp = this.objectives.map[name]
@@ -43,19 +43,19 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 				this.objectives += objectiveToAdd
 			else
 				LOGGER.info (objectiveToAdd.getName() + 
-					" objective already exists in system " + this.name)*/
+					" objective already exists in goal " + this.name)*/
 		}
 		
 		/*
 		 * 
 		 */
 		void insert (DB database) {
-			val LOGGER = Logger.getLogger("DM_SystemDescription")
+			val LOGGER = Logger.getLogger("DM_GoalDescription")
 			
-			val dbCollection = database.getCollection('SystemDescriptions')
+			val dbCollection = database.getCollection('GoalDescriptions')
 
 			// Check if already exists. Store only if no existing
-			// system has the same name.
+			// goal has the same name.
 			val result = dbCollection.findOne((new DM_GoalDescription => [
 				name = this.name
 			]).getDbObject())
@@ -63,11 +63,11 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			if (result == null) {
 				dbCollection.save(this.getDbObject())
 				LOGGER.info (this.name + 
-					" system description added to database")
+					" goal description added to database")
 			}
 			else {
 				LOGGER.info (this.name + 
-					" system description type already exists")
+					" goal description type already exists")
 					
 				this.update(result, dbCollection)
 			}
@@ -77,14 +77,14 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
-		 	val LOGGER = Logger.getLogger("DM_SystemDescription")
+		 	val LOGGER = Logger.getLogger("DM_GoalDescription")
 		 	
 		 	// Delete existing object and save current version.
 		 	targetCollection.remove(objectToUpdate)
 		 	targetCollection.save(this.getDbObject())
 		 	
 		 	LOGGER.info (this.name + 
-				" system has been updated.")
+				" goal has been updated.")
 		 }
 	} 
 	
@@ -121,7 +121,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		void addNodeCategory(String nodeCategory) {
-			val LOGGER = Logger.getLogger("DM_SystemConstraint")
+			val LOGGER = Logger.getLogger("DM_ReplicationConstraint")
 			
 			if (this.nodeCategories == null)
 				this.nodeCategories = new ArrayList<String>
@@ -150,7 +150,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		void addFunctionality ((DM_Functionality)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_SystemDescription")
+			//val LOGGER = Logger.getLogger("DM_Objective")
 			val DM_Functionality functionalityToAdd = new DM_Functionality => initializer
 			this.functionalities.add(functionalityToAdd)	//@TODO: Check for duplicates.
 			/*val List<String> tmp = this.functionalities.map[name]
@@ -178,7 +178,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		void addDependsOn (String dependsOn) {
-			val LOGGER = Logger.getLogger("DM_SystemDescription")
+			val LOGGER = Logger.getLogger("DM_Functionality")
 			
 			if (this.dependsOn == null)
 				this.dependsOn = new ArrayList<String>

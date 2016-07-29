@@ -3,17 +3,27 @@ __author__ = "Subhav Pradhan"
 import sys, time, getopt
 import pymongo
 import socket, zmq, json
-import copy
-from SolverBackend import Serialize
+import copy, re
+from SolverBackend import Serialize, SolverBackend
 
 def solver_loop (db, zmq_socket):
     print "Solver loop started"
+
+    # Find own IP.
+    myIP = "localhost"                          # Temporarily set to localhost.
+    myPort = 7000
+
+    PING = "PING"
+    PING_RESPONSE_READY = "READY"
+    PING_RESPONSE_BUSY = "BUSY"
+    SOLVE = "SOLVE"
+    SOLVE_RESPONSE_OK = "OK"
+
     sock = None
     try:
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
-        #sock.bind((socket.gethostname(), SOLVER_PORT))
-        sock.bind(("127.0.0.1", SOLVER_PORT))
+        sock.bind((myIP, myPort))
         print socket.gethostname()
         inComputation = False
         while True:
@@ -57,50 +67,80 @@ def mongo_connect(serverName):
     print "Connected to MongoDB server"
     return client
 
-
 def find_solution(db, zmq_socket):
     if (LOOK_AHEAD):
-        # Current implementation only does look ahead for node failures, so look for nodes that
-        # has failed, find corresponding solution in LookAhead collection, send solution
-        # actions to related DM, and store solution actions in DeploymentActions collection.
-        lsColl = db["LiveSystem"]
-        lsResult = lsColl.find({"status":"FAULTY"})
+        # If RE in look ahead mode, then check if the triggering reconfiguration event is a
+        # failure or an update. If it is the latter, we cannot look ahead so invoke the solver.
+        reColl = db["ReconfigurationEvents"]
+        findUpdateEvent = reColl.find_one({"completed":False, "kind":"UPDATE"})
+        if findUpdateEvent is not None:
+            invoke_solver(db, zmq_socket, False, True)
+        else:
+            # Current implementation only does look ahead for node failures, so look for nodes that
+            # has failed, find corresponding solution in LookAhead collection, send solution
+            # actions to related DM, and store solution actions in DeploymentActions collection.
+            nColl = db["Nodes"]
+            nResult = nColl.find({"status":"FAULTY"})
 
-        faultyNodes = list()
-        for r in lsResult:
-            faultyNodes.append(r["name"])
+            faultyNodes = list()
+            for r in nResult:
+                faultyNodes.append(r["name"])
 
-        laColl = db["LookAhead"]
-        daColl = db["DeploymentActions"]
-        deploymentActions = list()
-        for node in faultyNodes:
-            print "Searching pre-computed solution for failure of node:", node
-            laResult = laColl.find({"failedEntity":node, "failureKind":"NODE"})
-            # If solution found, store time.
-            if laResult is not None:
-                failureColl = db["Failures"]
-                failureColl.update({"failedEntity":node, "solutionFoundTime":0},
-                                   {"$currentDate": {"solutionFoundTime": {"$type": "date"}}},
-                                   upsert = False)
-            for r in laResult:
-                for action in r["recoveryActions"]:
-                    # Store action.
-                    daColl.insert(action)
-                    deploymentActions.append(action)
+            laColl = db["LookAhead"]
+            daColl = db["DeploymentActions"]
+            deploymentActions = list()
+            for node in faultyNodes:
+                print "Searching pre-computed solution for failure of node:", node
+                laResult = laColl.find_one({"failedEntity":node})
 
-                    # Send action.
-                    if send_action(db, action, zmq_socket) is False:
-                        return
-        # Look ahead again
-        look_ahead(db, deploymentActions)
+                # If solution found, store time, get deployment actions and send them out.
+                if laResult is not None:
+                    print "Pre-computed solution found."
+
+                    # Check number of recovery actions to set actionCount.
+                    recoveryActions = laResult["recoveryActions"]
+                    numOfActions = len(recoveryActions)
+
+                    # If number of recovery actions is 0 then no actions required, mark
+                    # reconfiguration event as completed.
+                    if numOfActions == 0:
+                        reColl.update({"completed":False},
+                                      {"$currentDate":{"solutionFoundTime":{"$type":"date"}, "reconfiguredTime":{"$type":"date"}},
+                                       "$set": {"completed":True,
+                                                "actionCount":0}})
+                    else:
+                        reColl.update({"completed":False},
+                                      {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
+                                       "$set": {"actionCount":numOfActions}})
+
+                        print "Populating Nodes collection with information about processes and component instances"
+                        populate_nodes(db, recoveryActions)
+
+                        # Making a copy as db insert below will modify by adding _id.
+                        recoveryActionsToInsert = copy.deepcopy(recoveryActions)
+
+                        # Store actions in DeploymentActions collection.
+                        for ra in recoveryActionsToInsert:
+                            daColl.insert(ra)
+
+                        # Save each action in deploymentActions list and send each action.
+                        for ra in recoveryActions:
+                            deploymentActions.append(ra)
+
+                            if send_action(db, ra, zmq_socket) is False:
+                                return
+                else:
+                    print "Pre-computed solution not found!"
+
+            # Failure handle attempt done. Look ahead again.
+            look_ahead(db, deploymentActions)
     else:
         invoke_solver(db, zmq_socket, False)
 
 # Returns true if send succeeds, false otherwise.
 def send_action (db, action, zmq_socket):
-     # Get address of node to send action to.
+    # Get address of node to send action to.
     addr, port = get_node_address(db, action["node"])
-
     zmq_addr = None
     if (addr is not None and port is not None):
         zmq_addr = "tcp://%s:%d"%(str(addr), int(port))
@@ -122,9 +162,7 @@ def send_action (db, action, zmq_socket):
 
 # This function gets current configuration and invokes the solver. No looking ahead.
 # This function returns list of deployment actions if solution found.
-def invoke_solver(db, zmq_socket, initial):
-    from SolverBackend import SolverBackend
-
+def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
     backend = SolverBackend()
 
     print "Loading ConfigSpace."
@@ -167,51 +205,77 @@ def invoke_solver(db, zmq_socket, initial):
             print "No deployment found!"
             return None
         else:
-            if(dist!=0):
+            reColl = db["ReconfigurationEvents"]
+
+            if dist !=0:
                 print "Deployment computation done"
                 if (model is not None):
-                    # Get failed node.
-                    failedNodes = backend.get_failed_nodes()
-
-                    # Solution found so store time.
-                    for failedNode in failedNodes:
-                        failureColl = db["Failures"]
-                        failureColl.update({"failedEntity": solver.nodeNames[failedNode], "solutionFoundTime": 0},
-                                           {"$currentDate": {"solutionFoundTime": {"$type": "date"}}},
-                                           upsert = False)
-
-                    solver.print_difference(componentsToShutDown, componentsToStart)
-                    print "Populating LiveSystem with information about processes and component instances"
-                    populate_live_system(db, backend, solver, componentsToStart, componentsToShutDown)
                     print "Computing new deployment actions and populating DeploymentActions collection."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
-                    # Send actions using zeromq if not lookahead.
-                    if (not LOOK_AHEAD):
+
+                    # Perform steps needed for non-lookahead or lookahead but update scenario.
+                    if not LOOK_AHEAD or lookAheadUpdate:
+                        reColl.update({"completed":False},
+                                      {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
+                                       "$set":{"actionCount":len(actions)}})
+
+                        # Print actions (difference).
+                        solver.print_difference(componentsToShutDown, componentsToStart)
+
+                        print "Populating Nodes collection with information about processes and component instances"
+                        populate_nodes(db, actions)
+
+                        # Send actions using zeromq if not lookahead.
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
                                 return
-                    else:
-                        # If lookahead then do initial lookahead for initial deployment.
-                        if (initial):
-                            print "Initial lookahead mechanism"
+
+                        # If lookahead update scenario then perform update lookahead.
+                        if lookAheadUpdate:
+                            print "Update lookahead mechanism"
                             look_ahead(db, actions)
-            elif (dist == 0):
+
+                    # If lookahead and initial then send action and perform initial lookahead.
+                    if LOOK_AHEAD and initial:
+                        print "Populating Nodes collection with information about processes and component instances"
+                        populate_nodes(db, actions)
+
+                        for action in actions:
+                            if send_action(db, action, zmq_socket) is False:
+                                return
+
+                        print "Initial lookahead mechanism"
+                        look_ahead(db, actions)
+            elif dist == 0:
                 print "Same deployment as before. No need for any changes."
-                return None
-    
+
+                # No action so update reconfiguration event if non-lookahead or if lookahead and update scenario.
+                if not LOOK_AHEAD or lookAheadUpdate:
+                    reColl.update({"completed":False},
+                                  {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
+                                   "$set":{"completed":True,
+                                           "actionCount":0}})
+
+                    # If lookahead update scenario then perform lookahead.
+                    if lookAheadUpdate:
+                        look_ahead(db, list())
+
+                # Here we return empty list to distinguish returns for scenarios where no action is required and where
+                # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
+                return list()
     return actions
 
 # Get node IP and port as a pair.
 def get_node_address(db, node):
-    lsColl = db["LiveSystem"]
-    result = lsColl.find_one({"name":node})
+    nColl = db["Nodes"]
+    result = nColl.find_one({"name":node})
     nodeSerialized = Serialize(**result)
     if (len(nodeSerialized.interfaces) > 0):
         # NOTE: We currently expect a node to have one interface.
         interfaceSerialized = Serialize(**nodeSerialized.interfaces[0])
         address = interfaceSerialized.address
         seperatorIndex = address.find(":")
-        if (seperatorIndex is not None):
+        if (seperatorIndex != -1):
             ip = address[:(seperatorIndex)]
             port = address[(seperatorIndex+1):]
         else:
@@ -228,8 +292,8 @@ def look_ahead(db, actions):
     laColl.remove({})
 
     # Get list of nodes that are currently available (and therefore can fail).
-    lsColl = db["LiveSystem"]
-    result = lsColl.find({"status":"ACTIVE"})
+    nColl = db["Nodes"]
+    result = nColl.find({"status":"ACTIVE"})
     aliveNodes = list()
     for r in result:
         nodeName = r["name"]
@@ -255,11 +319,11 @@ def look_ahead(db, actions):
 
         # If solver found solution, query deployment actions to get solution.
         recoveryActions = invoke_solver(tmpDb, None, False)
+
         if (recoveryActions is not None):
             # Store solution in main (ConfigSpace) db.
             entry = dict()
             entry["failedEntity"] = node
-            entry["failureKind"] = "NODE"
             entry["recoveryActions"] = list()
 
             for action in recoveryActions:
@@ -273,14 +337,14 @@ def look_ahead(db, actions):
     print "** TIME TAKEN TO LOOK AHEAD: ", elapsedTime
 
 def mark_node_failure(db, nodeName):
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
 
-    result = lsColl.update({"name":nodeName, "status":"ACTIVE"},
-                           {"$set": {"status":"FAULTY"}},
-                           upsert = False)
+    result = nColl.update({"name":nodeName, "status":"ACTIVE"},
+                          {"$set": {"status":"FAULTY"}},
+                          upsert = False)
 
     # Store names of affected component instances.
-    findResults = lsColl.find({"name":nodeName, "status":"FAULTY"})
+    findResults = nColl.find({"name":nodeName, "status":"FAULTY"})
     failedComponentInstances = list()
     from SolverBackend import Serialize
     for findResult in findResults:
@@ -298,81 +362,63 @@ def mark_node_failure(db, nodeName):
                                {"$set":{"status":"FAULTY"}})
 
     # Pull all processes.
-    result = lsColl.update({"name":nodeName, "status":"FAULTY"},
-                           {"$pull":{"processes":{"name":{"$ne":"null"}}}})
+    result = nColl.update({"name":nodeName, "status":"FAULTY"},
+                          {"$pull":{"processes":{"name":{"$ne":"null"}}}})
 
 def handle_action(db, actionDoc):
     action = actionDoc["action"]
-    actionStatus = actionDoc["status"]
+    actionCompleted = actionDoc["completed"]
     actionNode = actionDoc["node"]
     actionProcess = actionDoc["process"]
-    actionTimeStamp = actionDoc["time"]
     actionStartScript = actionDoc["startScript"]
     actionStopScript = actionDoc["stopScript"]
 
-    if action == "START" and actionStatus == "0_TAKEN":
+    if action == "START" and not actionCompleted:
         # Update database to reflect affect of above start action.
         from DeploymentManager import update_start_action
         update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, 0)
-    elif action == "STOP" and actionStatus == "0_TAKEN":
+    elif action == "STOP" and not actionCompleted:
         from DeploymentManager import update_stop_action
         # Update database to reflect affect of above stop action.
         update_stop_action(db, actionNode, actionProcess, actionStartScript, actionStopScript)
 
-def populate_live_system(db, backend, solver, componentsToStart, componentsToShutDown):
-    lsColl = db["LiveSystem"]
+def populate_nodes(db, actions):
+    nColl = db["Nodes"]
 
-    for info in componentsToStart:
-        componentInstanceToAddName = solver.componentNames[info[0]]
-        componentInstanceToAdd = backend.get_component_instance(componentInstanceToAddName)
+    for action in actions:
+        # Get component instance name from process name.
+        componentInstanceName = re.sub("process_", "", action["process"])
+
+        # Get component instance with above name in ComponentInstances collection.
+        ciColl = db["ComponentInstances"]
+        componentInstanceToAdd = ciColl.find_one({"name":componentInstanceName})
+
         if componentInstanceToAdd is not None:
-            startScript = ""
-            stopScript = ""
-            if (componentInstanceToAdd.type != ""):
-                startScript, stopScript = backend.get_component_scripts(componentInstanceToAdd.type)
-
-            # Generate start and stop scripts for CHARIOT components.
-            if startScript == "":
-                startScript = "start_" + componentInstanceToAdd.name
-            if stopScript == "":
-                stopScript = "stop_" + componentInstanceToAdd.name
-
             processDocument = dict()
-            processDocument["name"] = "process_" + componentInstanceToAdd.name
+            processDocument["name"] = action["process"]
             processDocument["pid"] = long(0)
             processDocument["status"] = "TO_BE_DEPLOYED"
-            processDocument["startScript"] = startScript
-            processDocument["stopScript"] = stopScript
+            processDocument["startScript"] = action["startScript"]
+            processDocument["stopScript"] = action["stopScript"]
             processDocument["components"] = list()
 
             liveComponentInstDocument = dict()
-            liveComponentInstDocument["name"] = componentInstanceToAdd.name
+            liveComponentInstDocument["name"] = componentInstanceName
             liveComponentInstDocument["status"] = "TO_BE_DEPLOYED"
-            liveComponentInstDocument["type"] = componentInstanceToAdd.type
-            liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd.functionalityInstanceName
-            liveComponentInstDocument["node"] = componentInstanceToAdd.node
-            liveComponentInstDocument["mustDeploy"] = componentInstanceToAdd.mustDeploy
+            liveComponentInstDocument["type"] = componentInstanceToAdd["type"]
+            liveComponentInstDocument["functionalityInstanceName"] = componentInstanceToAdd["functionalityInstanceName"]
+            liveComponentInstDocument["alwaysDeployOnNode"] = componentInstanceToAdd["alwaysDeployOnNode"]
+            liveComponentInstDocument["mustDeploy"] = componentInstanceToAdd["mustDeploy"]
 
             processDocument["components"].append(liveComponentInstDocument)
 
-            lsColl.update({"name":solver.nodeNames[info[1]], "status":"ACTIVE"},
-                          {"$push":{"processes":processDocument}},
-                          upsert = False)
+            nColl.update({"name":action["node"], "status":"ACTIVE"},
+                         {"$push":{"processes":processDocument}})
         else:
-            print "WARNING: Component instance with name:", componentInstanceToAddName, "not found!"
+            print "Component instance with name:", componentInstanceName, "not found!"
 
 def compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
-    deplActionsColl = None
-    if "DeploymentActions" in db.collection_names():
-        print "DeploymentActions collection already exist, using existing collection"
-        deplActionsColl = db["DeploymentActions"]
-    else:
-        print "DeploymentActions collection doesn't exist, creating a new one."
-        deplActionsColl = db.create_collection("DeploymentActions")
-
     actions = list()
-    import time
-    actionsTimeStamp = time.time()
 
     # Add all start actions.
     for startAction in componentsToStart:
@@ -386,10 +432,9 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
         action = dict()
         action["action"] = "START"
-        action["status"] = "0_TAKEN"
+        action["completed"] = False
         action["process"] = "process_" + solver.componentNames[startAction[0]]
         action["node"] = solver.nodeNames[startAction[1]]
-        action["time"] = actionsTimeStamp
         action["startScript"] = startScript
         action["stopScript"] = stopScript
 
@@ -397,7 +442,7 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
     # Add all stop actions.
     for stopAction in componentsToShutDown:
-        componentInstanceName = solver.componentNames[startAction[0]]
+        componentInstanceName = solver.componentNames[stopAction[0]]
         componentInstance = backend.get_component_instance(componentInstanceName)
         if componentInstance is not None:
             startScript = ""
@@ -407,10 +452,9 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
         action = dict()
         action["action"] = "STOP"
-        action["status"] = "0_TAKEN"
+        action["completed"] = False
         action["process"] = "process_" + solver.componentNames[stopAction[0]]
         action["node"] = solver.nodeNames[stopAction[1]]
-        action["time"] = actionsTimeStamp
         action["startScript"] = startScript
         action["stopScript"] = stopScript
 
@@ -418,6 +462,7 @@ def compute_deployment_actions(db, backend, solver, componentsToStart, component
 
     actionsToInsert = copy.deepcopy(actions) # Making a copy as db insert below will modify by adding _id.
 
+    deplActionsColl = db["DeploymentActions"]
     for action in actionsToInsert:
         deplActionsColl.insert(action)
 
@@ -429,28 +474,12 @@ def print_usage():
 
 def main():
     global LOOK_AHEAD
-    global SOLVER_PORT
     global ZMQ_PORT
     global INITIAL_DEPLOYMENT
 
-    # Defining types of messages exchanged between failure monitor and solver.
-    global PING
-    global PING_RESPONSE_READY
-    global PING_RESPONSE_BUSY
-    global SOLVE
-    global SOLVE_RESPONSE_OK
-
     LOOK_AHEAD = False
-    SOLVER_PORT = 7000
     ZMQ_PORT = 8000
     INITIAL_DEPLOYMENT = False
-
-
-    PING = "PING"
-    PING_RESPONSE_READY = "READY"
-    PING_RESPONSE_BUSY = "BUSY"
-    SOLVE = "SOLVE"
-    SOLVE_RESPONSE_OK = "OK"
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hmil",

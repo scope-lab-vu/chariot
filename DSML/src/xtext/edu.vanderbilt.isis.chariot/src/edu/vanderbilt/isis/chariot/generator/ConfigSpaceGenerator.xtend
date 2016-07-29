@@ -55,7 +55,6 @@ class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
 	//@Inject extension CHARIOT_Test t1
 	
-	
 	final val LOGGER= LoggerFactory.getLogger(typeof(ConfigSpaceGenerator))
 	/*
 	 * 

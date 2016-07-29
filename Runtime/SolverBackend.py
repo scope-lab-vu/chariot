@@ -1,6 +1,5 @@
 __author__ = "Subhav Pradhan"
 
-import json
 import operator
 from operator import attrgetter
 import datetime
@@ -9,9 +8,9 @@ class Serialize:
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
-class SystemDescription:
+class GoalDescription:
     name = None
-    constraints = None                  # List of constraints read from the database.
+    replicationConstraints = None       # List of constraints read from the database.
     objectives = None
     functionalityInstances = None       # List of functionality instances.
     computedFunctionalities = None      # List of functionalities for which instances have been computed.
@@ -29,7 +28,7 @@ class SystemDescription:
 
     def __init__(self):
         self.name = ""
-        self.constraints = list()
+        self.replicationConstraints = list()
         self.objectives = list()
         self.functionalityInstances = list()
         self.computedFunctionalities = list()
@@ -50,8 +49,8 @@ class SystemDescription:
     def get_component_instances(self):
         return self.componentInstances
 
-    def get_constraints(self):
-        return self.constraints
+    def get_replication_constraints(self):
+        return self.replicationConstraints
 
     # This function computes dependencies for each component instance and returns a list of tuple <component instance
     # name, list of names of component instances it depends on>.
@@ -183,7 +182,7 @@ class SystemDescription:
                 componentInstanceToAdd.name = componentName
                 componentInstanceToAdd.type = componentType.name
                 componentInstanceToAdd.status = "TO_BE_DEPLOYED"
-                componentInstanceToAdd.node = functionalityInstance.node
+                componentInstanceToAdd.alwaysDeployOnNode = functionalityInstance.alwaysDeployOnNode
                 componentInstanceToAdd.functionalityInstanceName = functionalityInstance.name
                 componentInstanceToAdd.mustDeploy = functionalityInstance.mustDeploy
                 self.componentInstances.append(componentInstanceToAdd)
@@ -213,7 +212,7 @@ class SystemDescription:
                                         functionalityInstanceToAdd.name = functionality.name + "_func_instance_" + node.name
                                         functionalityInstanceToAdd.functionalityName = functionality.name
                                         functionalityInstanceToAdd.objectiveName = objective.name
-                                        functionalityInstanceToAdd.node = node.name
+                                        functionalityInstanceToAdd.alwaysDeployOnNode = node.name
                                         functionalityInstanceToAdd.mustDeploy = True
                                         self.functionalityInstances.append(functionalityInstanceToAdd)
                                         self.computedFunctionalities.append(functionalityInstanceToAdd.functionalityName)
@@ -345,13 +344,13 @@ class SystemDescription:
     def check_replication_constraint(self, functionalityName):
         retval = list()
 
-        for constraint in self.constraints:
-            if functionalityName == constraint.functionality:
-                if constraint.kind == "VOTER_REPLICATION" or \
-                   constraint.kind == "CONSENSUS_REPLICATION" or \
-                   constraint.kind == "CLUSTER_REPLICATION" or \
-                   constraint.kind == "PER_NODE_REPLICATION":
-                    retval.append(constraint)
+        for replConstraint in self.replicationConstraints:
+            if functionalityName == replConstraint.functionality:
+                if replConstraint.kind == "VOTER_REPLICATION" or \
+                   replConstraint.kind == "CONSENSUS_REPLICATION" or \
+                   replConstraint.kind == "CLUSTER_REPLICATION" or \
+                   replConstraint.kind == "PER_NODE_REPLICATION":
+                    retval.append(replConstraint)
 
         return retval
 
@@ -360,9 +359,9 @@ class SystemDescription:
     def check_collocation_constraint(self, functionality):
         retval = list()
 
-        for constraint in self.constraints:
-            if functionality.name == constraint.functionality and constraint.kind == "NODE_COLLOCATION":
-                retval.append(constraint)
+        for replConstraint in self.replicationConstraints:
+            if functionality.name == replConstraint.functionality and replConstraint.kind == "NODE_COLLOCATION":
+                retval.append(replConstraint)
 
         return retval
 
@@ -376,7 +375,7 @@ class SystemDescription:
 
         return retval
 
-class SystemConstraint:
+class ReplicationConstraint:
     kind = None
     functionality = None        # Functionality name
     minInstances = None
@@ -430,7 +429,7 @@ class FunctionalityInstance:
     functionalityName = None        # This attribute will be empty for voter and consensus provider
                                     # functionality instances.
 
-    node = None                     # This attribute is only valid if functionality instance is
+    alwaysDeployOnNode = None       # This attribute is only valid if functionality instance is
                                     # tied to a node as part of per node replication pattern.
 
     isVoter = None                  # This flag determines if a functionality instance is related
@@ -452,7 +451,7 @@ class FunctionalityInstance:
         self.name = ""
         self.functionalityName = ""
         self.objectiveName = ""
-        self.node = ""
+        self.alwaysDeployOnNode = ""
         self.isVoter = False
         self.isConsensusProvider = False
         self.componentType = ""
@@ -539,12 +538,12 @@ class Device:
 class ComponentType:
     name = None
     providedFunctionality = None
-    memoryRequirement = None        # Tuple (amount, unit).
-    storageRequirement = None       # Tuple (amount, unit).
-    osRequirement = None
-    middlewareRequirement = None
-    artifactRequirements = None     # List of strings.
-    deviceRequirements = None       # List of strings.
+    requiredMemory = None        # Tuple (amount, unit).
+    requiredStorage = None       # Tuple (amount, unit).
+    requiredOS = None
+    requiredMiddleware = None
+    requiredArtifacts = None     # List of strings.
+    requiredDevices = None       # List of strings.
     startScript = None
     stopScript = None
     period = None                   # Tuple (amount, unit)
@@ -553,12 +552,12 @@ class ComponentType:
     def __init__(self):
         self.name = ""
         self.providedFunctionality = ""
-        self.memoryRequirement = (0, "")
-        self.storageRequirement = (0, "")
-        self.osRequirement = ""
-        self.middlewareRequirement = ""
-        self.artifactRequirements = list()
-        self.deviceRequirements = list()
+        self.requiredMemory = (0, "")
+        self.requiredStorage = (0, "")
+        self.requiredOS = ""
+        self.requiredMiddleware = ""
+        self.requiredArtifacts = list()
+        self.requiredDevices = list()
         self.startScript = ""
         self.stopScript = ""
         self.period = (0.0, "")
@@ -571,7 +570,7 @@ class ComponentInstance:
     functionalityInstanceName = None    # Name of functionality instance (i.e. functionality) provided by a component
                                         # instance. We currently assume one functionality per component instance.
 
-    node = None                         # This attribute is only valid if functionality instance is
+    alwaysDeployOnNode = None           # This attribute is only valid if functionality instance is
                                         # tied to a node as part of a per node replication pattern.
 
     mustDeploy = None                   # This flag determines if a component instance should always be
@@ -583,19 +582,18 @@ class ComponentInstance:
         self.type = ""
         self.status = ""
         self.functionalityInstanceName = ""
-        self.node = ""
+        self.alwaysDeployOnNode = ""
         self.mustDeploy = False
 
 class SolverBackend:
     # List of entities constructed from information in the database.
-    systemDescriptions = None
+    goalDescriptions = None
     nodes = None
     nodeTemplates = None
     objectives = None
     componentTypes = None
-    constraints = None
 
-    # Generated lists. These lists store cross system description instances.
+    # Generated lists. These lists store cross goal description instances.
     functionalityInstances = None
     functionalityConstraints = None
     componentInstances = None
@@ -644,12 +642,11 @@ class SolverBackend:
     compResource2componentInstIndex = None
 
     def __init__(self):
-        self.systemDescriptions = list()
+        self.goalDescriptions = list()
         self.nodes = list()
         self.nodeTemplates = list()
         self.objectives = list()
         self.componentTypes = list()
-        self.constraints = list()
 
         self.functionalityInstances = list()
         self.functionalityConstraints = list()
@@ -736,7 +733,7 @@ class SolverBackend:
         self.load_nodes_info(db)                        # IMPORTANT: This ordering between template and nodes matter.
         self.load_component_instances(db)               # Load any existing component instances
         self.load_component_types(db)
-        self.load_system_descriptions(db)               # Any required component instances that are were not present
+        self.load_goal_descriptions(db)                 # Any required component instances that are were not present
                                                         # in existing state (loaded as part of load_component_instances)
                                                         # will be generated here.
         self.load_component_to_node_assignment(db)
@@ -751,8 +748,8 @@ class SolverBackend:
 
     # This function communicates constraint for each component instance using the component instance's dependencies.
     def add_component_instance_dependencies(self, solver):
-        for systemDesc in self.systemDescriptions:
-            dependencies = systemDesc.get_component_instances_dependencies()
+        for goalDesc in self.goalDescriptions:
+            dependencies = goalDesc.get_component_instances_dependencies()
             for dependency in dependencies:
                 if len(dependency[1]) > 0:
                     for dependencySource in dependency[1]:
@@ -897,7 +894,7 @@ class SolverBackend:
             #    componentInstanceDocument["status"] = componentInstance.status
             componentInstanceDocument["status"] = componentInstance.status
             componentInstanceDocument["functionalityInstanceName"] = componentInstance.functionalityInstanceName
-            componentInstanceDocument["node"] = componentInstance.node
+            componentInstanceDocument["alwaysDeployOnNode"] = componentInstance.alwaysDeployOnNode
             componentInstanceDocument["mustDeploy"] = componentInstance.mustDeploy
 
             ciColl.update({"name":componentInstance.name},
@@ -1000,22 +997,22 @@ class SolverBackend:
 
     # This function computes and stores list of node reliability (exp(-TCritical/MTTF)).
     #
-    # NOTE: Currently we only consider a single system. We assume that the default unit of all time is months.
+    # NOTE: Currently we only consider a single goal. We assume that the default unit of all time is months.
     def load_node_reliability(self):
         reliability2nodeIndex = list()
 
-        systemTimeElapsed = datetime.datetime.now() - self.systemDescriptions[0].startTime
+        goalTimeElapsed = datetime.datetime.now() - self.goalDescriptions[0].startTime
         avgDaysPerMonth = 30.42
-        systemTimeElapsedInMonths = float(systemTimeElapsed.days)/avgDaysPerMonth
+        goalTimeElapsedInMonths = float(goalTimeElapsed.days)/avgDaysPerMonth
 
-        # Compute reliability of each node if elapsed system time hasn't surpassed expected system lifetime.
-        if systemTimeElapsedInMonths < self.systemDescriptions[0].lifeTime[0]:
-            tCritical = self.systemDescriptions[0].lifeTime[0] - systemTimeElapsedInMonths
+        # Compute reliability of each node if elapsed goal time hasn't surpassed expected goal lifetime.
+        if goalTimeElapsedInMonths < self.goalDescriptions[0].lifeTime[0]:
+            tCritical = self.goalDescriptions[0].lifeTime[0] - goalTimeElapsedInMonths
             from math import exp
             for node in self.nodes:
                 reliability = exp(-tCritical/node.meanTimeToFailure[0])
                 reliability2nodeIndex.append((self.nodeName2Index[node.name], reliability))
-        # If elapsed system time has surpassed expected system lifetime, set reliability to maximum (i.e., 1).
+        # If elapsed goal time has surpassed expected goal lifetime, set reliability to maximum (i.e., 1).
         else:
             for node in self.nodes:
                 reliability2nodeIndex.append((self.nodeName2Index[node.name], 1))
@@ -1040,14 +1037,14 @@ class SolverBackend:
     def load_comparative_resource_reliability(self):
         reliability2compResourceIndex = dict()
 
-        systemTimeElapsed = datetime.datetime.now() - self.systemDescriptions[0].startTime
+        goalTimeElapsed = datetime.datetime.now() - self.goalDescriptions[0].startTime
         avgDaysPerMonth = 30.42
-        systemTimeElapsedInMonths = float(systemTimeElapsed.days) / avgDaysPerMonth
+        goalTimeElapsedInMonths = float(goalTimeElapsed.days) / avgDaysPerMonth
 
-        # Compute reliability of each comparative resource if elapsed system time hasn't surpassed expected
-        # system lifetime.
-        if systemTimeElapsedInMonths < self.systemDescriptions[0].lifeTime[0]:
-            tCritical = self.systemDescriptions[0].lifeTime[0] - systemTimeElapsedInMonths
+        # Compute reliability of each comparative resource if elapsed goal time hasn't surpassed expected
+        # goal lifetime.
+        if goalTimeElapsedInMonths < self.goalDescriptions[0].lifeTime[0]:
+            tCritical = self.goalDescriptions[0].lifeTime[0] - goalTimeElapsedInMonths
             from math import exp
             for node in self.nodes:
                 # Store ALL devices.
@@ -1061,7 +1058,7 @@ class SolverBackend:
                     reliability2compResourceIndex[deviceResource.name].append((self.nodeName2Index[node.name],
                                                                                reliability))
         else:
-            # If elapsed system time has surpassed expected system lifetime, set reliability to maximum (i.e., 1).
+            # If elapsed goal time has surpassed expected goal lifetime, set reliability to maximum (i.e., 1).
             for node in self.nodes:
                 nodeDeviceResources = node.compute_device_provisions(self.nodeTemplates)
                 for deviceResource in nodeDeviceResources:
@@ -1096,7 +1093,7 @@ class SolverBackend:
 
                     self.cumResource2componentInstIndex["memory"].\
                         append((self.componentInstName2Index[componentInstance.name],
-                                componentType.memoryRequirement[0]))
+                                componentType.requiredMemory[0]))
 
         # Initialize resource to component instance mapping with 0's to begin with.
         self.componentInstCumRequiredResources = [[0 for x in range (len(self.componentInstances))]
@@ -1152,11 +1149,11 @@ class SolverBackend:
         for componentInstance in self.componentInstances:
             for componentType in self.componentTypes:
                 if componentInstance.type == componentType.name:
-                    for deviceRequirement in componentType.deviceRequirements:
-                        if deviceRequirement not in self.compResource2componentInstIndex:
-                            self.compResource2componentInstIndex[deviceRequirement] = list()
+                    for requiredDevice in componentType.requiredDevices:
+                        if requiredDevice not in self.compResource2componentInstIndex:
+                            self.compResource2componentInstIndex[requiredDevice] = list()
 
-                        self.compResource2componentInstIndex[deviceRequirement].\
+                        self.compResource2componentInstIndex[requiredDevice].\
                             append(self.componentInstName2Index[componentInstance.name])
 
         # Initialize resource to component instance mapping with 0's to begin with.
@@ -1288,19 +1285,19 @@ class SolverBackend:
             componentTypeToAdd.name = componentType.name
             componentTypeToAdd.providedFunctionality = componentType.providedFunctionality
 
-            memoryRequirement = Serialize(**componentType.memoryRequirement)
-            componentTypeToAdd.memoryRequirement = (memoryRequirement.memory, memoryRequirement.unit)
+            requiredMemory = Serialize(**componentType.requiredMemory)
+            componentTypeToAdd.requiredMemory = (requiredMemory.memory, requiredMemory.unit)
 
-            storageRequirement = Serialize(**componentType.storageRequirement)
-            componentTypeToAdd.storageRequirement = (storageRequirement.storage, storageRequirement.unit)
+            requiredStorage = Serialize(**componentType.requiredStorage)
+            componentTypeToAdd.requiredStorage = (requiredStorage.storage, requiredStorage.unit)
 
-            componentTypeToAdd.osRequirement = componentType.osRequirement
+            componentTypeToAdd.requiredOS = componentType.requiredOS
 
-            for ar in componentType.artifactRequirements:
-                componentTypeToAdd.artifactRequirements.append(ar)
+            for ra in componentType.requiredArtifacts:
+                componentTypeToAdd.requiredArtifacts.append(ra)
 
-            for dr in componentType.deviceRequirements:
-                componentTypeToAdd.deviceRequirements.append(dr)
+            for rd in componentType.requiredDevices:
+                componentTypeToAdd.requiredDevices.append(rd)
 
             componentTypeToAdd.startScript = componentType.startScript
             componentTypeToAdd.stopScript = componentType.stopScript
@@ -1339,9 +1336,6 @@ class SolverBackend:
                     deviceToAdd = Device()
                     deviceToAdd.name = device.name
 
-                    meanTimeToFailure = Serialize(**device.meanTimeToFailure)
-                    deviceToAdd.meanTimeToFailure = (meanTimeToFailure.time, meanTimeToFailure.unit)
-
                     for a in device.artifacts:
                         deviceToAdd.artifacts.append((a["name"], a["location"]))
 
@@ -1353,17 +1347,13 @@ class SolverBackend:
 
     # This function loads nodes, processes and component instances.
     def load_nodes_info(self, db):
-        collection = db["LiveSystem"]
+        collection = db["Nodes"]
 
         for n in collection.find():
             node = Serialize(**n)
             print "Adding Node with name:", node.name
             nodeToAdd = Node()
             nodeToAdd.name = node.name
-
-            meanTimeToFailure = Serialize(**node.meanTimeToFailure)
-            nodeToAdd.meanTimeToFailure = (meanTimeToFailure.time, meanTimeToFailure.unit)
-
             nodeToAdd.nodeTemplate = node.nodeTemplate
             nodeToAdd.status = node.status
 
@@ -1387,7 +1377,7 @@ class SolverBackend:
                             componentInstanceToAdd.status = componentInstance.status
                             componentInstanceToAdd.type = componentInstance.type
                             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
-                            componentInstanceToAdd.node = componentInstance.node
+                            componentInstanceToAdd.alwaysDeployOnNode = componentInstance.alwaysDeployOnNode
                             componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
 
                             processToAdd.componentInstances.append(componentInstanceToAdd)
@@ -1398,33 +1388,33 @@ class SolverBackend:
         # Sort nodes by names so that node indexes are consistent.
         self.nodes = sorted(self.nodes, key = attrgetter("name"))
 
-    def load_system_descriptions(self, db):
-        collection = db["SystemDescriptions"]
+    def load_goal_descriptions(self, db):
+        collection = db["GoalDescriptions"]
 
-        for sd in collection.find():
-            systemDescription = Serialize(**sd)
-            print "Adding SystemDescription with name:", systemDescription.name
-            systemDescriptionToAdd = SystemDescription()
-            systemDescriptionToAdd.name = systemDescription.name
+        for gd in collection.find():
+            goalDescription = Serialize(**gd)
+            print "Adding GoalDescription with name:", goalDescription.name
+            goalDescriptionToAdd = GoalDescription()
+            goalDescriptionToAdd.name = goalDescription.name
 
             # Add constraints.
-            for c in systemDescription.constraints:
-                constraint = Serialize(**c)
-                constraintToAdd = SystemConstraint()
-                constraintToAdd.kind = constraint.kind
-                constraintToAdd.functionality = constraint.functionality
-                constraintToAdd.minInstances = constraint.minInstances
-                constraintToAdd.maxInstances = constraint.maxInstances
-                constraintToAdd.numInstances = constraint.numInstances
-                constraintToAdd.serviceComponentType = constraint.serviceComponentType
+            for rc in goalDescription.replicationConstraints:
+                replConstraint = Serialize(**rc)
+                replConstraintToAdd = ReplicationConstraint()
+                replConstraintToAdd.kind = replConstraint.kind
+                replConstraintToAdd.functionality = replConstraint.functionality
+                replConstraintToAdd.minInstances = replConstraint.minInstances
+                replConstraintToAdd.maxInstances = replConstraint.maxInstances
+                replConstraintToAdd.numInstances = replConstraint.numInstances
+                replConstraintToAdd.serviceComponentType = replConstraint.serviceComponentType
 
-                for nc in constraint.nodeCategories:
-                    constraintToAdd.nodeCategories.append(nc)
+                for nc in replConstraint.nodeCategories:
+                    replConstraintToAdd.nodeCategories.append(nc)
 
-                systemDescriptionToAdd.constraints.append(constraintToAdd)
+                goalDescriptionToAdd.replicationConstraints.append(replConstraintToAdd)
 
             # Add objectives.
-            for o in systemDescription.objectives:
+            for o in goalDescription.objectives:
                 objective = Serialize(**o)
                 objectiveToAdd = Objective()
                 objectiveToAdd.name = objective.name
@@ -1440,14 +1430,14 @@ class SolverBackend:
 
                     objectiveToAdd.functionalities.append(functionalityToAdd)
 
-                systemDescriptionToAdd.objectives.append(objectiveToAdd)
+                goalDescriptionToAdd.objectives.append(objectiveToAdd)
 
             # Compute/generate different entities.
-            systemDescriptionToAdd.compute_functionality_instances(self.nodes, self.nodeTemplates)
-            systemDescriptionToAdd.compute_component_instances(self.componentTypes)
+            goalDescriptionToAdd.compute_functionality_instances(self.nodes, self.nodeTemplates)
+            goalDescriptionToAdd.compute_component_instances(self.componentTypes)
 
             # Retrieve and store objectives.
-            for objective in systemDescriptionToAdd.get_objectives():
+            for objective in goalDescriptionToAdd.get_objectives():
                 self.objectives.append(objective)
 
             # Sort above objectives and store name to ID mapping.
@@ -1456,26 +1446,22 @@ class SolverBackend:
                 self.objectiveName2Index[self.objectives[i].name] = i
 
             # Retrieve and store functionality instances.
-            for functionalityInstance in systemDescriptionToAdd.get_functionality_instances():
+            for functionalityInstance in goalDescriptionToAdd.get_functionality_instances():
                 self.functionalityInstances.append(functionalityInstance)
 
             # Get functionality constraints. These will be used to construct constraints for the solver.
-            for functionalityConstraint in systemDescriptionToAdd.get_functionality_constraints():
+            for functionalityConstraint in goalDescriptionToAdd.get_functionality_constraints():
                 self.functionalityConstraints.append(functionalityConstraint)
 
             # Retrieve and store component instances.
-            for componentInstance in systemDescriptionToAdd.get_component_instances():
+            for componentInstance in goalDescriptionToAdd.get_component_instances():
                 self.add_component_instance(componentInstance, False)
 
             # Sort above component instances using name.
             self.componentInstances = sorted(self.componentInstances, key = attrgetter("name"))
 
-            # Get constraints as represented in the database.
-            for constraint in systemDescriptionToAdd.get_constraints():
-                self.constraints.append(constraint)
-
-            # Add system description to collection.
-            self.systemDescriptions.append(systemDescriptionToAdd)
+            # Add goal description to collection.
+            self.goalDescriptions.append(goalDescriptionToAdd)
 
             # print
             #
@@ -1515,19 +1501,19 @@ class SolverBackend:
             componentInstanceToAdd.type = componentInstance.type
             componentInstanceToAdd.status = componentInstance.status    # Status is stored in this collection purely
                                                                         # for display, so we do not read it as status
-                                                                        # is only relevant if read from LiveSystem.
+                                                                        # is only relevant if read from Nodes.
             componentInstanceToAdd.functionalityInstanceName = componentInstance.functionalityInstanceName
-            componentInstanceToAdd.node = componentInstance.node
+            componentInstanceToAdd.alwaysDeployOnNode = componentInstance.alwaysDeployOnNode
             componentInstanceToAdd.mustDeploy = componentInstance.mustDeploy
 
             # Load node-specific component instances (i.e. component instance that are part of per node replication
             # pattern) if and only if their corresponding node is active.
-            if componentInstanceToAdd.node != "":
-                if(self.check_node_status(componentInstance.node) == "ACTIVE"):
+            if componentInstanceToAdd.alwaysDeployOnNode!= "":
+                if(self.check_node_status(componentInstance.alwaysDeployOnNode) == "ACTIVE"):
                     self.add_component_instance(componentInstanceToAdd, False)
                 else:
                     print "Skipping node specific ComponentInstance with name:", componentInstance.name, "as its assigned node:", \
-                        componentInstance.node, "is not ACTIVE"
+                        componentInstance.alwaysDeployOnNode, "is not ACTIVE"
             else:
                 self.add_component_instance(componentInstanceToAdd, False)
 

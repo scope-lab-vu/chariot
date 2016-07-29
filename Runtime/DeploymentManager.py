@@ -27,9 +27,9 @@ def execute_start_action(actionProcess, actionStartScript):
 def execute_stop_action(db, actionNode, actionProcess, actionStopScript):
     if (actionNode == NODE_NAME):
         # Find PID in the database.
-        lsColl = db["LiveSystem"]
+        nColl = db["Nodes"]
 
-        nodeDoc = lsColl.find_one({"name":actionNode})
+        nodeDoc = nColl.find_one({"name":actionNode})
         nodeSerialized = Serialize(**nodeDoc)
         pid = None
 
@@ -47,118 +47,75 @@ def execute_stop_action(db, actionNode, actionProcess, actionStopScript):
 def update_start_action(db, actionNode, actionProcess, startScript, stopScript, pid):
     component = re.sub("process_", "", actionProcess)
 
-    lsColl = db["LiveSystem"]
+    # Find process with correct (TO_BE_DEPLOYED) status.
+    nColl = db["Nodes"]
+    findResult = nColl.find({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}})
 
-    # Handle scenario where process to start is already in the right place in LiveSystem collection. This
-    # will be true for all cases (initial deployment as well as reconfiguration, via ResilienceEngineMain.py
-    # populate_live_system function). So, before updating, make sure status is TO_BE_DEPLOYED. If so, update
-    # status to ACTIVE.
-    result = lsColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}},
-                           {"$set": {"processes.$.status": "ACTIVE", "processes.$.pid":pid}},
-                           upsert = False)
+    # If found, update process status to ACTIVE and update component instance information too.
+    if findResult.count() != 0:
+        nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "status":"TO_BE_DEPLOYED"}}},
+                     {"$set": {"processes.$.status": "ACTIVE", "processes.$.pid":pid}})
 
-    # If above update matched, then update the component instance status too.
-    if result is not None:
-        if result["ok"] > 0:
-            lsColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "components":{"$elemMatch":{"name":component}}}}},
-                          {"$set": {"processes.$.components.0.status": "ACTIVE"}},  #WARNING: This assumens, one component/process.
-                          upsert = False)
-
-            # Update information in ComponentInstances collection as well.
-            ciColl = db["ComponentInstances"]
-
-            result = ciColl.update({"name":component},
-                                   {"$set":{"status":"ACTIVE"}},
-                                   upsert = False)
-    else:
-        # If not, it means we need to handle the scenario where process to start is not in the right place in
-        # LiveSystem collection. So, a new process document must be created and inserted.
-        # NOTE: This (TO_BE_DEPLOYED processes not in right place) should never happen but we keep the code below
-        # to handle scenario if it ever does happens.
-        processDocument = dict()
-        processDocument["name"] = actionProcess
-        processDocument["pid"] = pid
-        processDocument["status"] = "ACTIVE"
-        processDocument["startScript"] = startScript
-        processDocument["stopScript"] = stopScript
-        processDocument["components"] = list()
-
-        # Find component instance in ComponentInstances collection and fill information below.
-        ciColl = db["ComponentInstances"]
-        ciDoc = ciColl.find_one({"name":component})
-
-        componentDocument = dict()
-        componentDocument["name"] = component
-        componentDocument["status"] = "ACTIVE"
-        componentDocument["type"] = ciDoc["type"]
-        componentDocument["functionalityInstance"] = ciDoc["functionalityInstance"]
-        componentDocument["node"] = ciDoc["node"]
-
-        processDocument["components"].append(componentDocument)
-
-        result = lsColl.update({"name":actionNode},
-                               {"$push":{"processes":processDocument}},
-                               upsert = False)
+        nColl.update({"name":actionNode, "processes":{"$elemMatch":{"name":actionProcess, "components":{"$elemMatch":{"name":component}}}}},
+                     {"$set": {"processes.$.components.0.status": "ACTIVE"}})  #WARNING: This assumens, one component/process.
 
         # Update information in ComponentInstances collection as well.
         ciColl = db["ComponentInstances"]
 
-        result = ciColl.update({"name":component},
-                               {"$set":{"status":"ACTIVE"}},
-                               upsert = False)
+        ciColl.update({"name":component},
+                      {"$set":{"status":"ACTIVE"}})
 
-    # Mark action as taken.
-    daColl = db["DeploymentActions"]
-    daColl.update({"action":"START", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
-                  {"$set":{"status":"1_TAKEN"}},
-                  upsert = False)
+        # Mark action as taken.
+        daColl = db["DeploymentActions"]
+        daColl.update({"action":"START", "completed":False, "process":actionProcess, "node": actionNode},
+                      {"$set":{"completed":True}})
+    else:
+        print "Process: ", actionProcess, " with status TO_BE_DEPLOYED, not found in node: ", actionNode
 
 def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
     component = re.sub("process_", "", actionProcess)
 
-    lsColl = db["LiveSystem"]
+    nColl = db["Nodes"]
 
-    result = lsColl.update({"name":actionNode},
+    result = nColl.update({"name":actionNode},
                            {"$pull":{"processes":{"name":actionProcess}}})
 
     # Mark action as taken.
     daColl = db["DeploymentActions"]
-    daColl.update({"action":"STOP", "status":"0_TAKEN", "process":actionProcess, "node": actionNode},
-                  {"$set":{"status":"1_TAKEN"}},
-                  upsert = False)
+    daColl.update({"action":"STOP", "complete":False, "process":actionProcess, "node": actionNode},
+                  {"$set":{"completed":True}})
 
 def handle_action(db, actionDoc):
     actionNode = actionDoc["node"]
     if actionNode == NODE_NAME:
         action = actionDoc["action"]
-        actionStatus = actionDoc["status"]
+        actionCompleted = actionDoc["completed"]
         actionNode = actionDoc["node"]
         actionProcess = actionDoc["process"]
-        actionTimeStamp = actionDoc["time"]
         actionStartScript = actionDoc["startScript"]
         actionStopScript = actionDoc["stopScript"]
 
-        if action == "START" and actionStatus == "0_TAKEN":
+        if action == "START" and not actionCompleted:
             print "STARTING process:", actionProcess, "on node:", actionNode
             if not SIMULATE_DM_ACTIONS:
                 pid = execute_start_action(actionProcess, actionStartScript)
             else:
                 pid = randint(1000, 2000)
 
-            # Update deployment time in Failures collection. To do so, first figure out which node failed.
-            # NOTE: This only works for a single failure at a time.
-            lsColl = db["LiveSystem"]
-            result = lsColl.find({"status":"FAULTY"})
+            # Update deployment time in ReconfigurationEvents collection.
+            reColl = db["ReconfigurationEvents"]
+            reColl.update({"completed":False},
+                          {"$currentDate": {"reconfiguredTime": {"$type": "date"}},
+                          "$inc":{"actionCount":-1}})
 
-            for r in result:
-                failureColl = db["Failures"]
-                failureColl.update({"failedEntity": r["name"], "reconfiguredTime":0},
-                                   {"$currentDate": {"reconfiguredTime": {"$type": "date"}}},
-                                   upsert = False)
+            # If after above update, the actionCount field of a ReconfigurationEvent is 0, mark that
+            # reconfigurationEvent as completed.
+            reColl.update({"completed":False, "actionCount":0},
+                          {"$set":{"completed":True}})
 
             # Update database to reflect affect of above start action.
             update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, pid)
-        elif action == "STOP" and actionStatus == "0_TAKEN":
+        elif action == "STOP" and not actionCompleted:
             print "STOPPING process:", actionProcess, "on node:", actionNode
             if not SIMULATE_DM_ACTIONS:
                 execute_stop_action(db, actionNode, actionProcess, actionStopScript)
@@ -218,9 +175,6 @@ def main():
         mongoServer = "localhost"
         print "Using mongo server: ", mongoServer
 
-    if SIMULATE_DM_ACTIONS:
-        os.environ["SIMULATED_HOSTNAME"] = NODE_NAME
-
     client = None
     db = None
 
@@ -244,13 +198,13 @@ def main():
     # Get IP and port of host.
     addr, port = get_node_address(db, NODE_NAME)
 
-    # Connect to given (stored in database) or default port.
+    # Connect to given address(stored in database) or default port.
     if (addr is not None and port is not None):
         print "Using address: ", str(addr), " and port: ", int(port)
         zmq_socket.bind("tcp://%s:%d"%(str(addr), int(port)))
     elif (addr is not None and port is None):
         # If port is none, use default ZMQ_PORT.
-        print "Using address: ", str(addr), " and port: ", int(port)
+        print "Using address: ", str(addr)
         zmq_socket.bind("tcp://%s:%d"%(str(addr),ZMQ_PORT))
 
     while True:

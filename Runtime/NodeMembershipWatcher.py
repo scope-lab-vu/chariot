@@ -5,6 +5,7 @@ from kazoo.client import KazooState
 from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.protocol.states import EventType
 from pymongo import MongoClient
+from InvokeManagementEngine import invoke_management_engine
 import json
 import logging,time
 import sys, getopt
@@ -81,40 +82,13 @@ def handle_join(nodeInfo):
             systemInitialization = False
     
     if not systemInitialization:
-        # Create and store hardware update reconfiguration event 
-        # before invoking the solver.
-        reColl = db["ReconfigurationEvents"]
-       
-        # NOTE: Using update as we need to use currentDate which
-        # is an update operator. 
-        reColl.update({"entity":nodeInfo["name"], "completed":False},
-                      {"$currentDate":{"detectionTime":{"$type":"date"}},
-                       "$set": {"kind":"UPDATE",
-                                "solutionFoundTime":0,
-                                "reconfiguredTime":0,
-                                "actionCount":0}},
-                      upsert = True)
-
-        invoke_solver()
+        invoke_management_engine(MANAGEMENT_ENGINE, True)
 
 def handle_failure(node):
     db = MONGO_CLIENT["ConfigSpace"]
     nColl = db["Nodes"]
     ciColl = db["ComponentInstances"]
-    
-    # Create and store failure reconfiguration event.
-    reColl = db["ReconfigurationEvents"]
-    
-    # NOTE: Using update as we need to use currentDate which
-    # is an update operator. 
-    reColl.update({"entity":node, "completed":False},
-                  {"$currentDate":{"detectionTime":{"$type":"date"}},
-                   "$set": {"kind":"UPDATE",
-                            "solutionFoundTime":0,
-                            "reconfiguredTime":0,
-                            "actionCount":0}},
-                  upsert = True)
-                
+
     # Mark node faulty in Nodes collection.
     nColl.update({"name": node, "status": "ACTIVE"}, 
                  {"$set": {"status": "FAULTY"}}, 
@@ -144,73 +118,44 @@ def handle_failure(node):
                  {"$pull": {"processes": {"name": {"$ne": "null"}}}})
 
     # Invoke solver for reconfiguration.
-    # invoke_solver()
-
-def invoke_solver():
-    SOLVER_IP = "solver"
-    SOLVER_PORT = 7000
-    MY_IP = "zk"
-    MY_PORT = 7001
-    PING = "PING"
-    PING_RESPONSE_READY = "READY"
-    PING_RESPONSE_BUSY = "BUSY"
-    SOLVE = "SOLVE"
-    SOLVE_RESPONSE_OK = "OK"
-
-    sock = socket.socket(socket.AF_INET,    # Internet
-                         socket.SOCK_DGRAM) # UDP
-    sock.bind((MY_IP, MY_PORT))
-
-    print "Pinging solver for status"
-
-    # First, ping solver and see if its is ready or busy.
-    sock.sendto(PING, (SOLVER_IP, SOLVER_PORT))
-
-    print "Waiting for solver response..."
-    data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
-
-    print "Solver response message:", data
-
-    # If ready, ask solver to solve.
-    if data == PING_RESPONSE_READY:
-        print "Requesting solver for solution"
-        sock.sendto(SOLVE, (SOLVER_IP, SOLVER_PORT))
-
-        print "Waiting for solver response..."
-        data, addr = sock.recvfrom(1024)
-
-        print "Solver response message:", data
+    invoke_management_engine(MANAGEMENT_ENGINE, False)
 
 def print_usage():
     print "USAGE:"
-    print "NodeMembershipWatcher --monitoringServer <monitoring server address> --mongoServer <mongo server address>"
-            
+    print "NodeMembershipWatcher --monitoringServer <monitoring server address> --mongoServer <mongo server address>" \
+          " --managementEngine <management engine address>"
+
 def main():
     global CURRENT_MEMBERS
-    global MONGO_CLIENT # Global mongo client object.
-    global ZK_CLIENT    # Global zookeeper client object.
+    global MONGO_CLIENT         # Mongo client object.
+    global ZK_CLIENT            # Zookeeper client object.
+    global MANAGEMENT_ENGINE    # Management engine address.
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hmd",
-                                    ["help", "monitoringServer=", "mongoServer="])
+        opts, args = getopt.getopt(sys.argv[1:], "hmds",
+                                    ["help", "monitoringServer=", "mongoServer=", "managementEngine="])
     except getopt.GetoptError:
         print "Cannot retrieve passed parameters."
         print_usage()
         sys.exit()
-    
+
     monitoringServer = None
     mongoServer = None
+    MANAGEMENT_ENGINE = None
     
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             print_usage()
             sys.exit()
-        elif opt in ("-m", "--monitoringserver"):
+        elif opt in ("-m", "--monitoringServer"):
             print "Monitoring server address:", arg
             monitoringServer = arg
         elif opt in ("-d", "--mongoServer"):
             print "Mongo server address :", arg
             mongoServer = arg
+        elif opt in ("-s", "--managementEngine"):
+            print "Management engine address :", arg
+            MANAGEMENT_ENGINE = arg
         else:
             print "Invalid command line argument."
             print_usage()
@@ -223,6 +168,10 @@ def main():
     if mongoServer is None:
         mongoServer = "localhost"
         print "Using mongo server: ", mongoServer
+
+    if MANAGEMENT_ENGINE is None:
+        MANAGEMENT_ENGINE = "localhost"
+        print "Using management engine: ", MANAGEMENT_ENGINE
 
     # Setting default logging required to use Kazoo.
     logging.basicConfig()
