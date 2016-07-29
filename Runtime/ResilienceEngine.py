@@ -275,7 +275,7 @@ def get_node_address(db, node):
         interfaceSerialized = Serialize(**nodeSerialized.interfaces[0])
         address = interfaceSerialized.address
         seperatorIndex = address.find(":")
-        if (seperatorIndex is not None):
+        if (seperatorIndex != -1):
             ip = address[:(seperatorIndex)]
             port = address[(seperatorIndex+1):]
         else:

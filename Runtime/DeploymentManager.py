@@ -175,9 +175,6 @@ def main():
         mongoServer = "localhost"
         print "Using mongo server: ", mongoServer
 
-    if SIMULATE_DM_ACTIONS:
-        os.environ["SIMULATED_HOSTNAME"] = NODE_NAME
-
     client = None
     db = None
 
@@ -201,13 +198,13 @@ def main():
     # Get IP and port of host.
     addr, port = get_node_address(db, NODE_NAME)
 
-    # Connect to given (stored in database) or default port.
+    # Connect to given address(stored in database) or default port.
     if (addr is not None and port is not None):
         print "Using address: ", str(addr), " and port: ", int(port)
         zmq_socket.bind("tcp://%s:%d"%(str(addr), int(port)))
     elif (addr is not None and port is None):
         # If port is none, use default ZMQ_PORT.
-        print "Using address: ", str(addr), " and port: ", int(port)
+        print "Using address: ", str(addr)
         zmq_socket.bind("tcp://%s:%d"%(str(addr),ZMQ_PORT))
 
     while True:
