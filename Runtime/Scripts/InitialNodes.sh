@@ -10,11 +10,15 @@ case "$1" in
         
         echo "Starting DeploymentManager on each node"
         fab -H s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,s21 -f FabFile.py start_deployment_manager:mongoServer=mongo
+
+        echo "Starting ResourceMonitoring on each node"
+        fab -H s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,s21 -f FabFile.py start_resource_monitor
         ;;
     stop)
         echo "Tearing down initial setup"
         fab -H s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,s21 -f FabFile.py stop_node_membership
         fab -H s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,s21 -f FabFile.py stop_deployment_manager
+        fab -H s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,s21 -f FabFile.py stop_resource_monitor
         ;;
     *)
 

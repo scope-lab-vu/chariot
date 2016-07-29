@@ -10,11 +10,15 @@ case "$1" in
         
         echo "Starting DeploymentManager on each node"
         fab -H s43,s44,s45,s46,s47,s48,s49,s50,s51,s52,s53,s54,s55,s56,s57,s58,s59,s60,s61,s62,s63,s64,s65,s66,s67,s68,s69,s70,s71,s72,s73 -f FabFile.py start_deployment_manager:mongoServer=mongo
+        
+        echo "Starting ResourceMonitoring on each node"
+        fab -H s43,s44,s45,s46,s47,s48,s49,s50,s51,s52,s53,s54,s55,s56,s57,s58,s59,s60,s61,s62,s63,s64,s65,s66,s67,s68,s69,s70,s71,s72,s73 -f FabFile.py start_resource_monitor
         ;;
     stop)
         echo "Tearing down second update"
         fab -H s43,s44,s45,s46,s47,s48,s49,s50,s51,s52,s53,s54,s55,s56,s57,s58,s59,s60,s61,s62,s63,s64,s65,s66,s67,s68,s69,s70,s71,s72,s73 -f FabFile.py stop_node_membership
         fab -H s43,s44,s45,s46,s47,s48,s49,s50,s51,s52,s53,s54,s55,s56,s57,s58,s59,s60,s61,s62,s63,s64,s65,s66,s67,s68,s69,s70,s71,s72,s73 -f FabFile.py stop_deployment_manager
+        fab -H s43,s44,s45,s46,s47,s48,s49,s50,s51,s52,s53,s54,s55,s56,s57,s58,s59,s60,s61,s62,s63,s64,s65,s66,s67,s68,s69,s70,s71,s72,s73 -f FabFile.py stop_resource_monitor
         ;;
     *)
 
