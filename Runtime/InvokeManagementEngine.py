@@ -34,7 +34,7 @@ def invoke_management_engine(serverAddress, isUpdate):
     serverPort = 7000
 
     # Find own IP.
-    myIP = "localhost"                      # Temporarily set to localhost.
+    myIP = socket.gethostbyname(socket.gethostname())
     myPort = 8888
 
     PING = "PING"

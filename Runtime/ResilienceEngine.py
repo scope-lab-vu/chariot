@@ -10,7 +10,7 @@ def solver_loop (db, zmq_socket):
     print "Solver loop started"
 
     # Find own IP.
-    myIP = "localhost"                          # Temporarily set to localhost.
+    myIP = socket.gethostbyname(socket.gethostname())
     myPort = 7000
 
     PING = "PING"
@@ -24,7 +24,6 @@ def solver_loop (db, zmq_socket):
         sock = socket.socket(socket.AF_INET,    # Internet
                              socket.SOCK_DGRAM) # UDP
         sock.bind((myIP, myPort))
-        print socket.gethostname()
         inComputation = False
         while True:
             print "Waiting for request..."
