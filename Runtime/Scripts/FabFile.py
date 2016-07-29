@@ -29,5 +29,13 @@ def stop_deployment_manager():
     run("nohup /home/ubuntu/workspace/chariot/Runtime/Scripts/DeploymentManager.sh stop")
 
 @parallel
+def start_resource_monitor():
+    run("nohup /home/ubuntu/workspace/chariot/Runtime/Scripts/ResourceMonitor.sh start")
+
+@parallel
+def stop_resource_monitor():
+    run("nohup /home/ubuntu/workspace/chariot/Runtime/Scripts/ResourceMonitor.sh stop")
+
+@parallel
 def install_python_packages():
     run('sudo apt-get install -y python-dev; sudo apt-get install -y python-pip; sudo pip install kazoo; sudo pip install pymongo; sudo pip install netifaces; sudo pip install pyzmq')
