@@ -15,15 +15,15 @@ def monitor(dmPID, nmPID):
     
     dmProcess = psutil.Process(dmPID)
     dmCPU = dmProcess.cpu_percent()
-    dmMemory = (dmProcess.memory_info()[1])/1024    #KB
+    dmMemory = (dmProcess.memory_info()[1]) #Bytes.
 
     nmProcess = psutil.Process(nmPID)
     nmCPU = nmProcess.cpu_percent()
-    nmMemory = (nmProcess.memory_info()[1])/1024    #KB
+    nmMemory = (nmProcess.memory_info()[1]) #Bytes
 
     networkBandwidth = psutil.net_io_counters(pernic=True)["eth0"]
-    sent = (networkBandwidth.bytes_sent)            #Bytes
-    recv = (networkBandwidth.bytes_recv)            #Bytes
+    sent = (networkBandwidth.bytes_sent)    #Bytes
+    recv = (networkBandwidth.bytes_recv)    #Bytes
     
     with open("/home/ubuntu/tmpResourceMonitor/ResourceUsage.csv", "ab") as f:
         writer = csv.writer(f)
