@@ -4,9 +4,9 @@ from pymongo import MongoClient
 import getopt, sys
 import socket
 
-def invoke_management_engine(serverAddress, isUpdate):
+def invoke_management_engine(mongoServer, managementEngine, isUpdate):
     # Add appropriate reconfiguration event.
-    client = MongoClient("localhost")
+    client = MongoClient(mongoServer)
     db = client["ConfigSpace"]
     reColl = db["ReconfigurationEvents"]
 
@@ -31,7 +31,9 @@ def invoke_management_engine(serverAddress, isUpdate):
                                 "actionCount":0}},
                        upsert = True)
 
-    serverPort = 7000
+    print "Invoking solver!"
+
+    managementEnginePort = 7000
 
     # Find own IP.
     myIP = socket.gethostbyname(socket.gethostname())
@@ -50,7 +52,7 @@ def invoke_management_engine(serverAddress, isUpdate):
     print "Pinging management engine for status"
 
     # First, ping server and see if its is ready or busy.
-    sock.sendto(PING, (serverAddress, serverPort))
+    sock.sendto(PING, (managementEngine, managementEnginePort))
 
     print "Waiting for response..."
     data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
@@ -60,7 +62,7 @@ def invoke_management_engine(serverAddress, isUpdate):
     # If ready, ask solver to solve.
     if data == PING_RESPONSE_READY:
         print "Requesting for solution"
-        sock.sendto(SOLVE, (serverAddress, serverPort))
+        sock.sendto(SOLVE, (managementEngine, managementEnginePort))
 
     print "Waiting for response..."
     data, addr = sock.recvfrom(1024)
@@ -69,23 +71,27 @@ def invoke_management_engine(serverAddress, isUpdate):
 
 def print_usage():
     print "USAGE:"
-    print "InvokeManagementEngine --managementEngine <management engine address>"
+    print "InvokeManagementEngine --mongoServer <mongo server address> --managementEngine <management engine address>"
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hm",
-                                    ["help", "managementEngine="])
+        opts, args = getopt.getopt(sys.argv[1:], "hdm",
+                                    ["help", "mongoServer=", "managementEngine="])
     except getopt.GetoptError:
         print "Cannot retrieve passed parameters."
         print_usage()
         sys.exit()
 
+    mongoServer = None
     managementEngine = None
 
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             print_usage()
             sys.exit()
+        elif opt in ("-d", "--mongoServer"):
+            print "Mongo server address:", arg
+            mongoServer = arg
         elif opt in ("-m", "--managementEngine"):
             print "Management engine address:", arg
             managementEngine = arg
@@ -94,10 +100,14 @@ def main():
             print_usage()
             sys.exit()
 
+    if mongoServer is None:
+        mongoServer = "localhost"
+        print "Using mongo server: ", mongoServer
+    
     if managementEngine is None:
         managementEngine = "localhost"
         print "Using monitoring server: ", managementEngine
 
-    invoke_management_engine(managementEngine, True)
+    invoke_management_engine(mongoServer, managementEngine, True)
 if __name__ == '__main__':
     main()

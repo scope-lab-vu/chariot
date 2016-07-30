@@ -51,7 +51,7 @@ def execute_action():
         if not systemInitialization:
             # Using localhost as management engine address since that will always
             # be the case for simulation.
-            invoke_management_engine("localhost", True)
+            invoke_management_engine("localhost", "localhost", True)
     elif STOP_ACTION:
         print "STOPPING node:", NODE_NAME
 
@@ -85,7 +85,7 @@ def execute_action():
 
         # Using localhost as management engine address since that will always
         # be the case for simulation.
-        invoke_management_engine("localhost", False)
+        invoke_management_engine("localhost", "localhost", False)
 
 def print_usage():
     print "USAGE:"

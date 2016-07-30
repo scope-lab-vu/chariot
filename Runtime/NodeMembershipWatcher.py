@@ -33,6 +33,7 @@ def membership_watch(children,event):
                     # NOTE: This returns tuple. First element has data.
                     nodeInfo = ZK_CLIENT.get("/group-membership/"+child)
                     nodeInfoJson = json.loads(nodeInfo[0])
+                    print nodeInfoJson
 
                     handle_join(nodeInfoJson)            
         # Handle node failure.
@@ -61,7 +62,8 @@ def handle_join(nodeInfo):
     nodeToAdd["processes"] = list()
 
     # Add node to database.
-    db = MONGO_CLIENT["ConfigSpace"]
+    mongoClient = MongoClient(MONGO_SERVER)
+    db = mongoClient["ConfigSpace"]
     nColl = db["Nodes"]
     # NOTE: Update used with upsert instead of insert because
     # we might be adding node that had previously failed or
@@ -82,10 +84,16 @@ def handle_join(nodeInfo):
             systemInitialization = False
     
     if not systemInitialization:
-        invoke_management_engine(MANAGEMENT_ENGINE, True)
+        print "New node added after system initialization. Inovking ManagementEngine to handle update."
+        invoke_management_engine(MONGO_SERVER, MANAGEMENT_ENGINE, True)
+    else:
+        print "New node added during system initialization."
 
 def handle_failure(node):
-    db = MONGO_CLIENT["ConfigSpace"]
+    print "Handeling failure of node: ", node
+    
+    mongoClient = MongoClient(MONGO_SERVER)
+    db = mongoClient["ConfigSpace"]
     nColl = db["Nodes"]
     ciColl = db["ComponentInstances"]
 
@@ -118,7 +126,7 @@ def handle_failure(node):
                  {"$pull": {"processes": {"name": {"$ne": "null"}}}})
 
     # Invoke solver for reconfiguration.
-    invoke_management_engine(MANAGEMENT_ENGINE, False)
+    invoke_management_engine(MONGO_SERVER, MANAGEMENT_ENGINE, False)
 
 def print_usage():
     print "USAGE:"
@@ -127,9 +135,9 @@ def print_usage():
 
 def main():
     global CURRENT_MEMBERS
-    global MONGO_CLIENT         # Mongo client object.
     global ZK_CLIENT            # Zookeeper client object.
     global MANAGEMENT_ENGINE    # Management engine address.
+    global MONGO_SERVER         # Mongo server address.
     
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hmds",
@@ -140,7 +148,7 @@ def main():
         sys.exit()
 
     monitoringServer = None
-    mongoServer = None
+    MONGO_SERVER = None
     MANAGEMENT_ENGINE = None
     
     for opt, arg in opts:
@@ -152,7 +160,7 @@ def main():
             monitoringServer = arg
         elif opt in ("-d", "--mongoServer"):
             print "Mongo server address :", arg
-            mongoServer = arg
+            MONGO_SERVER = arg
         elif opt in ("-s", "--managementEngine"):
             print "Management engine address :", arg
             MANAGEMENT_ENGINE = arg
@@ -165,9 +173,9 @@ def main():
         monitoringServer = "localhost"
         print "Using monitoring server: ", monitoringServer
 
-    if mongoServer is None:
-        mongoServer = "localhost"
-        print "Using mongo server: ", mongoServer
+    if MONGO_SERVER is None:
+        MONGO_SERVER = "localhost"
+        print "Using mongo server: ", MONGO_SERVER
 
     if MANAGEMENT_ENGINE is None:
         MANAGEMENT_ENGINE = "localhost"
@@ -177,7 +185,7 @@ def main():
     logging.basicConfig()
     
     CURRENT_MEMBERS = list()
-    MONGO_CLIENT = MongoClient(mongoServer, 27017)
+    
     ZK_CLIENT = KazooClient(hosts=(monitoringServer+":2181"))
     
     # Add connection state listener to know the state
