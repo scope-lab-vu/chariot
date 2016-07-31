@@ -92,23 +92,47 @@ class NewConfigurationSolver(ConfigurationSolver):
         c2n = self.c2n
         c2n_old = self.c2n_old
 
-        if not initial:
-            config_distance = Sum([self.abs(c2n_old[i][j] - c2n[i][j]) for j in range(self.NO_OF_NODES)
-                for i in range(self.NO_OF_COMPONENTS)])
-            config_distance_val = Int("config_distance_val")
-            s.minimize(config_distance)
-            s.add(config_distance_val == config_distance)
+        #if not initial:
+        #    config_distance = Sum([self.abs(c2n_old[i][j] - c2n[i][j]) for j in range(self.NO_OF_NODES)
+        #        for i in range(self.NO_OF_COMPONENTS)])
+        #    config_distance_val = Int("config_distance_val")
+        #    s.minimize(config_distance)
+        #    s.add(config_distance_val == config_distance)
 
-        r = s.check()
-        if r == unsat:
-            return [None, None]
-        elif r == sat:
-            if initial:
-                return [self.NO_OF_COMPONENTS, s.model()]
+        #r = s.check()
+        #if r == unsat:
+        #    return [None, None]
+        #elif r == sat:
+        #    if initial:
+        #        return [self.NO_OF_COMPONENTS, s.model()]
+        #    else:
+        #        return [s.model()[config_distance_val].as_long(), s.model()]
+        #else:
+        #    raise Z3Exception("Failed.")
+
+        absNorm = Int("absNorm")
+
+        absNormFormula = Sum([self.abs(c2n_old[i][j] - c2n[i][j]) for j in range(self.NO_OF_NODES)
+            for i in range(self.NO_OF_COMPONENTS)])
+
+        s.add(absNorm == absNormFormula)
+
+        last_model = None
+        while True:
+            r = s.check()
+            if r == unsat:
+                s.pop()
+                if last_model is None:
+                    return [None, None]
+                else:
+                    return [last_model[absNorm].as_long(), last_model]
+
+            elif r == unknown:
+                raise Z3Exception("Failed.")
+
             else:
-                return [s.model()[config_distance_val].as_long(), s.model()]
-        else:
-            raise Z3Exception("Failed.")
+                last_model = s.model()
+                s.add(absNorm < last_model[absNorm])
 
 
     # Check if current state (represented by c2n_old) is valid.

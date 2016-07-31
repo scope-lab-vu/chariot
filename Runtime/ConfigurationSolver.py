@@ -54,7 +54,8 @@ class ConfigurationSolver(object):
 
 
         # Initialization -- general
-        self.solver = Optimize()
+        #self.solver = Optimize()
+        self.solver = Solver()
         self.defineComponent2NodeMatrix()
         self.defineResourceConstraints()
         self.defineFunctions()

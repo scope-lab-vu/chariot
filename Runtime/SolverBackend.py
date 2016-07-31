@@ -52,10 +52,10 @@ class GoalDescription:
     def get_replication_constraints(self):
         return self.replicationConstraints
 
-    # This function computes dependencies for each component instance and returns a list of tuple <component instance
-    # name, list of names of component instances it depends on>.
+    # This function computes dependencies for each component instance and returns a dictionary in which each
+    # entry is a tuple <component instance name, list of names of component instances it depends on>.
     def get_component_instances_dependencies(self):
-        retVal = list(list())
+        retVal = dict()
 
         for compInst in self.componentInstances:
             compInstDependencies = list()
@@ -102,7 +102,7 @@ class GoalDescription:
                     if functionalityInstance.name != funcInst.name and functionalityInstance.name[:-8] in funcInst.name:
                         compInstDependencies.append(self.funcInstancesToCompInstances[funcInst.name])
 
-            retVal.append((compInst.name, compInstDependencies))
+            retVal[compInst.name] = compInstDependencies
 
         return retVal
 
@@ -303,6 +303,7 @@ class GoalDescription:
 
                                     self.functionalityConstraints.append(("atleast",
                                                                           constraint.minInstances,
+                                                                          constraint.maxInstances,
                                                                           tmpFunctionalityInstancesList,
                                                                           objective.name))
 
@@ -749,7 +750,7 @@ class SolverBackend:
     # This function communicates constraint for each component instance using the component instance's dependencies.
     def add_component_instance_dependencies(self, solver):
         for goalDesc in self.goalDescriptions:
-            dependencies = goalDesc.get_component_instances_dependencies()
+            dependencies = goalDesc.get_component_instances_dependencies().items()
             for dependency in dependencies:
                 if len(dependency[1]) > 0:
                     for dependencySource in dependency[1]:
@@ -810,7 +811,7 @@ class SolverBackend:
                                                              self.componentInstName2Index[secondComponentInstanceName])
             elif constraint[0] == "atleast":
                 compIndexes = list()
-                for functionalityInstance in constraint[2]:
+                for functionalityInstance in constraint[3]:
                     componentInstanceName = self.find_component_instance(functionalityInstance)
                     componentInstanceIndex = self.componentInstName2Index[componentInstanceName]
                     compIndexes.append(componentInstanceIndex)
@@ -829,12 +830,17 @@ class SolverBackend:
                 if prevDeployed:
                     print "** Previously deployed so using atleast"
                     # This atleast group has been previously deployed so using atleast constraint.
-                    objectiveIndex = self.objectiveName2Index[constraint[3]]
+                    objectiveIndex = self.objectiveName2Index[constraint[4]]
                     constraintToAdd = solver.ForceAtleast(objectiveIndex, compIndexes, constraint[1])
                 else:
-                    print "** No previous deployedment so using maximum"
+                #    print "** No previous deployedment so using maximum"
                     # This atleast group has not been deployed before so using maximum optimization.
-                    solver.Maximize(compIndexes)
+                #    solver.Maximize(compIndexes)
+                    print "** No previous deployment so assigning must deploy"
+                    objectiveIndex = self.objectiveName2Index[constraint[4]]
+                    constraintToAdd = solver.ForceExactly(objectiveIndex, compIndexes, constraint[2])
+                    
+                    
             if constraintToAdd is not None:
                 #print "****", constraint[0], ": ", constraintToAdd
                 solver.solver.add(constraintToAdd)
