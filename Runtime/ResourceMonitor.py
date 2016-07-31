@@ -15,11 +15,11 @@ def monitor(dmPID, nmPID):
     
     dmProcess = psutil.Process(dmPID)
     dmCPU = dmProcess.cpu_percent()
-    dmMemory = (dmProcess.memory_info()[1]) #Bytes.
+    dmMemory = (dmProcess.memory_info()[0])/float(2 ** 20) #MB
 
     nmProcess = psutil.Process(nmPID)
     nmCPU = nmProcess.cpu_percent()
-    nmMemory = (nmProcess.memory_info()[1]) #Bytes
+    nmMemory = (nmProcess.memory_info()[0])/float(2 ** 20) #MB
 
     networkBandwidth = psutil.net_io_counters(pernic=True)["eth0"]
     sent = (networkBandwidth.bytes_sent)    #Bytes
@@ -68,7 +68,7 @@ def main():
  
     while 1:
         monitor(dmPID, nmPID)
-        time.sleep(5)
+        time.sleep(1)
 
 if __name__ == '__main__':
     main()

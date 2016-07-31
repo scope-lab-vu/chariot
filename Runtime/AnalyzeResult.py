@@ -5,7 +5,7 @@ import pymongo
 import csv
 
 def main():
-    client = pymongo.MongoClient("localhost", 27017)
+    client = pymongo.MongoClient("mongo", 27017)
     db = client["ConfigSpace"]
     reColl = db["ReconfigurationEvents"]
     findResult = reColl.find()
@@ -19,11 +19,18 @@ def main():
         solutionFoundTime = reconfigEvent.solutionFoundTime
         reconfigTime = reconfigEvent.reconfiguredTime
 
-        solutionFindingDuration = solutionFoundTime - detectionTime
-        reconfigDuration = reconfigTime - solutionFoundTime
-
-        solutionFoundDurations.append(solutionFindingDuration.total_seconds())
-        reconfigDurations.append(reconfigDuration.total_seconds())
+        if solutionFoundTime != 0:
+            solutionFindingDuration = solutionFoundTime - detectionTime
+            solutionFoundDurations.append(solutionFindingDuration.total_seconds())
+        else:
+            solutionFoundDurations.append(0)
+        
+        if reconfigTime != 0:
+            reconfigDuration = reconfigTime - solutionFoundTime
+            reconfigDurations.append(reconfigDuration.total_seconds())
+        else:
+            reconfigDurations.append(0)
+            
 
     print solutionFoundDurations
     print reconfigDurations
