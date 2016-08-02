@@ -38,4 +38,4 @@ def stop_resource_monitor():
 
 @parallel
 def install_python_packages():
-    run('sudo apt-get install -y python-dev; sudo apt-get install -y python-pip; sudo pip install kazoo; sudo pip install pymongo; sudo pip install netifaces; sudo pip install pyzmq')
+    run('sudo apt-get install -y python-dev; sudo apt-get install -y python-pip; sudo pip install kazoo; sudo pip install pymongo; sudo pip install netifaces; sudo pip install pyzmq; sudo pip install psutil')
