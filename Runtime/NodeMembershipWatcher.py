@@ -33,7 +33,6 @@ def membership_watch(children,event):
                     # NOTE: This returns tuple. First element has data.
                     nodeInfo = ZK_CLIENT.get("/group-membership/"+child)
                     nodeInfoJson = json.loads(nodeInfo[0])
-                    print nodeInfoJson
 
                     handle_join(nodeInfoJson)            
         # Handle node failure.

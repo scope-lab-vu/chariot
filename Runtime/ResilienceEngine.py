@@ -162,6 +162,7 @@ def send_action (db, action, zmq_socket):
 # This function gets current configuration and invokes the solver. No looking ahead.
 # This function returns list of deployment actions if solution found.
 def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
+    startTime = time.time()
     backend = SolverBackend()
 
     print "Loading ConfigSpace."
@@ -191,6 +192,10 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
 
     # TODO: Check if current deployment is valid. If valid, no need to invoke solver.
     #solver.check_valid()
+    elapsedTime = time.time() - startTime
+    print "** Problem setup time: ", elapsedTime
+
+    startTime = time.time() 
 
     # Get new deployment.
     result = solver.get_difference(initial)
@@ -200,12 +205,19 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
 
     if(result is not None):
         [componentsToShutDown, componentsToStart, model, dist] = result
+        reColl = db["ReconfigurationEvents"]
         if (dist == None):
             print "No deployment found!"
+
+            if not LOOK_AHEAD or lookAheadUpdate:
+                reColl.update({"completed":False},
+                              {"$set":{"completed":True}})
+                                
+            elapsedTime = time.time() - startTime
+            print "** Solver time: ", elapsedTime
+            
             return None
         else:
-            reColl = db["ReconfigurationEvents"]
-
             if dist !=0:
                 print "Deployment computation done"
                 if (model is not None):
@@ -227,6 +239,8 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                         # Send actions using zeromq if not lookahead.
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
+                                elapsedTime = time.time() - startTime
+                                print "** Solver time: ", elapsedTime
                                 return
 
                         # If lookahead update scenario then perform update lookahead.
@@ -241,6 +255,8 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
 
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
+                                elapsedTime = time.time() - startTime
+                                print "** Solver time: ", elapsedTime
                                 return
 
                         print "Initial lookahead mechanism"
@@ -259,9 +275,16 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                     if lookAheadUpdate:
                         look_ahead(db, list())
 
+                elapsedTime = time.time() - startTime
+                print "** Solver time: ", elapsedTime
+                    
                 # Here we return empty list to distinguish returns for scenarios where no action is required and where
                 # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
                 return list()
+
+    elapsedTime = time.time() - startTime
+    print "** Solver time: ", elapsedTime
+
     return actions
 
 # Get node IP and port as a pair.
