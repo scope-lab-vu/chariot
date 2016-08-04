@@ -10,7 +10,8 @@ def solver_loop (db, zmq_socket):
     print "Solver loop started"
 
     # Find own IP.
-    myIP = socket.gethostbyname(socket.gethostname())
+    #myIP = socket.gethostbyname(socket.gethostname())
+    myIP = "localhost"
     myPort = 7000
 
     PING = "PING"
@@ -132,7 +133,7 @@ def find_solution(db, zmq_socket):
                     print "Pre-computed solution not found!"
 
             # Failure handle attempt done. Look ahead again.
-            look_ahead(db, deploymentActions)
+            look_ahead(db)
     else:
         invoke_solver(db, zmq_socket, False)
 
@@ -246,7 +247,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                         # If lookahead update scenario then perform update lookahead.
                         if lookAheadUpdate:
                             print "Update lookahead mechanism"
-                            look_ahead(db, actions)
+                            look_ahead(db)
 
                     # If lookahead and initial then send action and perform initial lookahead.
                     if LOOK_AHEAD and initial:
@@ -260,7 +261,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                                 return
 
                         print "Initial lookahead mechanism"
-                        look_ahead(db, actions)
+                        look_ahead(db)
             elif dist == 0:
                 print "Same deployment as before. No need for any changes."
 
@@ -273,7 +274,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
 
                     # If lookahead update scenario then perform lookahead.
                     if lookAheadUpdate:
-                        look_ahead(db, list())
+                        look_ahead(db)
 
                 elapsedTime = time.time() - startTime
                 print "** Solver time: ", elapsedTime
@@ -307,7 +308,7 @@ def get_node_address(db, node):
     else:
         return None, None
 
-def look_ahead(db, actions):
+def look_ahead(db):
     startTime = time.time()
     # Empty all existing documents from LookAhead collection.
     laColl = db["LookAhead"]
@@ -331,15 +332,10 @@ def look_ahead(db, actions):
 
         tmpDb = client["LookAhead_"+node]
 
-        # Play actions in above created tmpDb so that it reflects what the config space should be after
-        # execution of deployment actions.
-        for action in actions:
-            handle_action(tmpDb, action)
-
         # Mark node as FAULTY and invoke solver.
         mark_node_failure(tmpDb, node)
 
-        # If solver found solution, query deployment actions to get solution.
+        # Invoke solver and store solution.
         recoveryActions = invoke_solver(tmpDb, None, False)
 
         if (recoveryActions is not None):

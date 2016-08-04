@@ -36,7 +36,8 @@ def invoke_management_engine(mongoServer, managementEngine, isUpdate):
     managementEnginePort = 7000
 
     # Find own IP.
-    myIP = socket.gethostbyname(socket.gethostname())
+    #myIP = socket.gethostbyname(socket.gethostname())
+    myIP = "localhost"
     myPort = 8888
 
     PING = "PING"

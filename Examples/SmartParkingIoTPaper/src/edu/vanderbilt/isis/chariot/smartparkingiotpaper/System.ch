@@ -11,6 +11,6 @@ package edu.vanderbilt.isis.chariot.smartparkingiotpaper {
 		replicate parking_client asPerNode 
 			for category TerminalNode
 		replicate occupancy_detector asCluster 
-			with [7,10] instances
+			with [1,2] instances
 	}
 }
