@@ -6,12 +6,18 @@ import socket, zmq, json
 import copy, re
 from SolverBackend import Serialize, SolverBackend
 
-def solver_loop (db, zmq_socket):
+def solver_loop (db, zmq_socket, mongoServer):
     print "Solver loop started"
 
     # Find own IP.
-    #myIP = socket.gethostbyname(socket.gethostname())
-    myIP = "localhost"
+    # NOTE: If mongoServer is running on localhost, we assume local deployment
+    # which only involves a single machine. As such, we set the RE's address to
+    # localhost as well.
+    if mongoServer == "localhost":
+        myIP = "localhost"
+    else:
+        myIP = socket.gethostbyname(socket.gethostname())
+
     myPort = 7000
 
     PING = "PING"
@@ -530,12 +536,8 @@ def main():
 
     # If no mongoServer given then use default.
     if (mongoServer is None):
-        #mongoServer = "mongo"
         mongoServer = "localhost"
         print "Using mongo server: ", mongoServer
-
-    client = None
-    db = None
 
     print "Connecting to mongo server:", mongoServer
     client = mongo_connect(mongoServer)
@@ -561,7 +563,7 @@ def main():
     if initialDeployment:
         invoke_solver(db, zmq_socket, True)
     else:
-        solver_loop(db, zmq_socket)
+        solver_loop(db, zmq_socket, mongoServer)
 
     # Close socket and terminate context.
     zmq_socket.close()
