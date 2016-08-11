@@ -5,7 +5,6 @@ import com.google.common.collect.Lists
 import com.google.common.collect.Multimap
 import com.mongodb.DB
 import com.mongodb.Mongo
-import com.mongodb.MongoException
 import edu.vanderbilt.isis.chariot.chariot.ActiveReplicationConstraint
 import edu.vanderbilt.isis.chariot.chariot.Artifact
 import edu.vanderbilt.isis.chariot.chariot.ArtifactRequirement
@@ -45,16 +44,49 @@ import java.util.ArrayList
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
-import org.slf4j.LoggerFactory
 import edu.vanderbilt.isis.chariot.chariot.PerNodeReplicationConstraint
 import edu.vanderbilt.isis.chariot.chariot.GoalDescription
 import edu.vanderbilt.isis.chariot.datamodel.GoalDescription.DM_GoalDescription
 import edu.vanderbilt.isis.chariot.datamodel.ReplicationConstraintKind
+import java.util.logging.Logger
 
 class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
 	
-	final val LOGGER= LoggerFactory.getLogger(typeof(ConfigSpaceGenerator))
+	// Declaring class variables.
+	private val Logger LOGGER = Logger.getLogger("ChariotGenerator")
+	private var String mongoAddr
+	private var int mongoPortNum
+	private var Mongo mongoClient
+	
+	/*
+	 * Constructor.
+	 */
+	new() {
+		// Get mongoDB server IP address and port from predefined environment variables.
+		this.mongoAddr = System.getenv("MONGO_ADDRESS")
+		var String mongoPort = System.getenv("MONGO_PORT")
+		
+		if (this.mongoAddr == null || this.mongoAddr == "localhost")
+			this.mongoAddr = "127.0.0.1"
+
+		if (mongoPort == null)
+			this.mongoPortNum = 27017
+		else
+			this.mongoPortNum = Integer.parseInt(mongoPort)
+		
+		this.mongoClient = new Mongo(this.mongoAddr, this.mongoPortNum)
+		
+		// Check mongoDB server connection.
+		try {
+			this.mongoClient.getConnector().getDBPortPool(this.mongoClient.getAddress()).get().ensureOpen();
+		} catch (Exception e) {
+			this.LOGGER.severe("Cannot reach MongoDb server at: " + mongoAddr + ", ignoring configuration space generator");
+		 	return;
+		} finally {
+			this.mongoClient.close()
+		}
+	}
 	
 	/*
 	 * 
@@ -62,34 +94,8 @@ class ConfigSpaceGenerator implements IGenerator {
 	override doGenerate(Resource input, IFileSystemAccess fsa){// throws MongoException {
 		//throw new UnsupportedOperationException("TODO: auto-generated method stub")
 
-		// Get mongoDB server IP address and port from predefined environment variables.
-		var String mongoAddr = System.getenv("MONGO_ADDRESS")
-		var String mongoPort = System.getenv("MONGO_PORT")
-		
-		var int mongoPortNum
-		
-		if (mongoAddr == null || mongoAddr == "localhost")
-			mongoAddr = "127.0.0.1"
-
-		if (mongoPort == null)
-			mongoPortNum = 27017
-		else
-			mongoPortNum = Integer.parseInt(mongoPort)
-		
-		val mongoClient = new Mongo(mongoAddr, mongoPortNum)
-		
-		// Check mongoDB server connection.
-		try {
-			mongoClient.getConnector().getDBPortPool(mongoClient.getAddress()).get().ensureOpen();
-		} catch (Exception e) {
-			LOGGER.error("Cannot reach MongoDb server at: " + mongoAddr + ", ignoring configuration space generator");
-		 	return;
-		} finally {
-			mongoClient.close()
-		}
-
 		// Get configuration space database.
-		val db = mongoClient.getDB('ConfigSpace') 
+		val db = this.mongoClient.getDB('ConfigSpace') 
 		
 		// Generate various design-time system description artifacts.
 		if ((input.allContents.toIterable.filter(ExternalComponent)).size() > 0)

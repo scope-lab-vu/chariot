@@ -16,7 +16,7 @@ import java.util.logging.Logger
  */
 class ChariotGenerator implements IGenerator {
 	@Inject ConfigSpaceGenerator configSpaceGenerator
-	private final static Logger LOGGER = Logger.getLogger("ChariotGenerator")
+	private val Logger LOGGER = Logger.getLogger("ChariotGenerator")
 
 	override doGenerate(Resource input, IFileSystemAccess fsa) {
 		try {
