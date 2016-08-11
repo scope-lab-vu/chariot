@@ -21,7 +21,6 @@ Require-Bundle: edu.vanderbilt.isis.chariot;visibility:=reexport,
  org.eclipse.xtend.standalone,
  org.eclipse.xtext.xbase.ui,
  org.eclipse.jdt.debug.ui
-Import-Package: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: edu.vanderbilt.isis.chariot.ui.quickfix,
  edu.vanderbilt.isis.chariot.ui.contentassist,
@@ -29,3 +28,4 @@ Export-Package: edu.vanderbilt.isis.chariot.ui.quickfix,
  edu.vanderbilt.isis.chariot.ui.internal,
  edu.vanderbilt.isis.chariot.ui.contentassist.antlr.internal
 Bundle-Activator: edu.vanderbilt.isis.chariot.ui.internal.ChariotActivator
+Import-Package: org.apache.log4j

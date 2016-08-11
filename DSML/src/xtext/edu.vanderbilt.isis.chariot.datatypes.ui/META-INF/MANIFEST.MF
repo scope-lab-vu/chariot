@@ -20,7 +20,6 @@ Require-Bundle: edu.vanderbilt.isis.chariot.datatypes;visibility:=reexport,
  org.eclipse.compare,
  org.eclipse.orbit.mongodb,
  org.eclipse.xtend.standalone
-Import-Package: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: edu.vanderbilt.isis.chariot.ui.quickfix,
  edu.vanderbilt.isis.chariot.ui.contentassist,
@@ -28,3 +27,4 @@ Export-Package: edu.vanderbilt.isis.chariot.ui.quickfix,
  edu.vanderbilt.isis.chariot.ui.contentassist.antlr,
  edu.vanderbilt.isis.chariot.ui.contentassist.antlr.internal
 Bundle-Activator: edu.vanderbilt.isis.chariot.ui.internal.DatatypesActivator
+Import-Package: org.apache.log4j

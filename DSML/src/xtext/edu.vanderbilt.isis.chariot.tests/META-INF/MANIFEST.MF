@@ -13,13 +13,12 @@ Require-Bundle: edu.vanderbilt.isis.chariot,
  org.objectweb.asm;bundle-version="[5.0.1,6.0.0)";resolution:=optional,
  org.eclipse.xtext.xbase.lib,
  org.eclipse.xtend.standalone
-Import-Package: org.apache.log4j,
+Import-Package: org.hamcrest.core,
  org.junit;version="4.5.0",
  org.junit.runner;version="4.5.0",
  org.junit.runner.manipulation;version="4.5.0",
  org.junit.runner.notification;version="4.5.0",
  org.junit.runners;version="4.5.0",
- org.junit.runners.model;version="4.5.0",
- org.hamcrest.core
+ org.junit.runners.model;version="4.5.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: edu.vanderbilt.isis.chariot

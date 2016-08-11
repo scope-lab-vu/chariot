@@ -20,14 +20,10 @@ import edu.vanderbilt.isis.chariot.datatypes.Message
 import edu.vanderbilt.isis.chariot.lib.IMongoBean
 import edu.vanderbilt.isis.chariot.datatypes.MessageElement
 import edu.vanderbilt.isis.chariot.datatypes.MessageOperation
-import org.eclipse.xtext.xbase.XExpression
 import edu.vanderbilt.isis.chariot.datatypes.Invariant
 import com.mongodb.DBCollection
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import java.util.Map
 import org.eclipse.xtext.common.types.JvmTypeReference
-import org.eclipse.xtext.common.types.util.Primitives.Primitive
+import java.util.logging.Logger
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -50,7 +46,7 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 
 	@Inject extension IJvmModelAssociations associations
 
-     final val logger= LoggerFactory.getLogger(typeof(DatatypesJvmModelInferrer))
+    val logger= Logger.getLogger("DatatypesJvmModelInferrer")
 	/**
 	 * The dispatch method {@code infer} is called for each instance of the
 	 * given element's type that is contained in a resource.
@@ -92,7 +88,7 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 					static = true
 					final = true
 					// initializer='''LoggerFactory.getLogger(«tasklet.name».class);'''
-					initializer = '''«LoggerFactory.typeName».getLogger(«bean.name».class)'''
+					initializer = '''«Logger.typeName».getLogger(«bean.name».class)'''
 				]
 				for (feature : bean.features) {
 					switch feature {
