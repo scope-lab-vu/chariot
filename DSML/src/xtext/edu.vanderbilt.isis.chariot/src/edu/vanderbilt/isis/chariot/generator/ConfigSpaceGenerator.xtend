@@ -55,57 +55,57 @@ class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
 	
 	final val LOGGER= LoggerFactory.getLogger(typeof(ConfigSpaceGenerator))
+	
 	/*
 	 * 
 	 */
 	override doGenerate(Resource input, IFileSystemAccess fsa){// throws MongoException {
 		//throw new UnsupportedOperationException("TODO: auto-generated method stub")
-		//var mongo = new Mongo("192.168.1.6")
-		//val mongo = new Mongo("127.0.0.1",7777)
-		val mongo = new Mongo()
-		try {
-		  mongo.getConnector().getDBPortPool(mongo.getAddress()).get().ensureOpen();
-		} catch (Exception e) {
-		  LOGGER.info("Cannot reach MongoDb, ignoring configspace generator");
-		  return;
-		}
+
+		// Get mongoDB server IP address and port from predefined environment variables.
+		var String mongoAddr = System.getenv("MONGO_ADDRESS")
+		var String mongoPort = System.getenv("MONGO_PORT")
 		
+		var int mongoPortNum
+		
+		if (mongoAddr == null || mongoAddr == "localhost")
+			mongoAddr = "127.0.0.1"
+
+		if (mongoPort == null)
+			mongoPortNum = 27017
+		else
+			mongoPortNum = Integer.parseInt(mongoPort)
+		
+		val mongoClient = new Mongo(mongoAddr, mongoPortNum)
+		
+		// Check mongoDB server connection.
 		try {
-			// Get database.
-			val db = mongo.getDB('ConfigSpace') 
-			
-			// Call get status to check remote connection. This will throw MongoException is
-			// Mongo server is unreachable.
-			db.getStats()
-			
-			if ((input.allContents.toIterable.filter(ExternalComponent)).size() > 0) {
-				generateExternalComponents (input.allContents.toIterable.filter(ExternalComponent), db)
-			}
-			if ((input.allContents.toIterable.filter(VoterServiceComponent)).size() > 0) {
-				generateVoterServiceComponents (input.allContents.toIterable.filter(VoterServiceComponent), db)
-			}
-			if ((input.allContents.toIterable.filter(ConsensusServiceComponent)).size() > 0) {
-				generateConsensusServiceComponents (input.allContents.toIterable.filter(ConsensusServiceComponent), db)
-			}
-			if ((input.allContents.toIterable.filter(NodesCategory)).size() > 0) {
-				generateNodeCategories (input.allContents.toIterable.filter(NodesCategory), db)
-			}
-			if ((input.allContents.toIterable.filter(GoalDescription).size() > 0)) {
-				generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription), db)
-				
-				// Call generate component instances in the solver. This call is placed here for now
-				// assuming everything else will be generated before system descriptions.
-				//val String[] commands = #[lcmpath, '--java', '--jpath', targetPath, fullname]
-				//var runTime = Runtime.getRuntime();
-			}
-		} catch (MongoException me) {
-			LOGGER.error("Caught MongoException. Cannot connect to Mongo server.")
+			mongoClient.getConnector().getDBPortPool(mongoClient.getAddress()).get().ensureOpen();
 		} catch (Exception e) {
-			LOGGER.error("Caught exception: " + e)
-			e.printStackTrace()
+			LOGGER.error("Cannot reach MongoDb server at: " + mongoAddr + ", ignoring configuration space generator");
+		 	return;
 		} finally {
-			mongo.close()
+			mongoClient.close()
 		}
+
+		// Get configuration space database.
+		val db = mongoClient.getDB('ConfigSpace') 
+		
+		// Generate various design-time system description artifacts.
+		if ((input.allContents.toIterable.filter(ExternalComponent)).size() > 0)
+			generateExternalComponents (input.allContents.toIterable.filter(ExternalComponent), db)
+		
+		if ((input.allContents.toIterable.filter(VoterServiceComponent)).size() > 0)
+			generateVoterServiceComponents (input.allContents.toIterable.filter(VoterServiceComponent), db)
+			
+		if ((input.allContents.toIterable.filter(ConsensusServiceComponent)).size() > 0)
+			generateConsensusServiceComponents (input.allContents.toIterable.filter(ConsensusServiceComponent), db)
+
+		if ((input.allContents.toIterable.filter(NodesCategory)).size() > 0)
+			generateNodeCategories (input.allContents.toIterable.filter(NodesCategory), db)
+			
+		if ((input.allContents.toIterable.filter(GoalDescription).size() > 0))
+			generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription), db)
 	}
 	
 	/*
