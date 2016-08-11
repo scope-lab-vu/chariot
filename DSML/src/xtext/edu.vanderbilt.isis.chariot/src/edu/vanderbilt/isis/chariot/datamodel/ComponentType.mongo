@@ -6,10 +6,10 @@ import com.mongodb.DB
 import java.util.ArrayList
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
-import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage
 import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
+import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
 
 package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 	DM_Time {
@@ -44,7 +44,6 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		// Period and deadline.
 		DM_Time period
 		DM_Time deadline
-		
 		/*
 		 * 
 		 */
@@ -107,14 +106,13 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		 * 
 		 */
 		void addRequiredArtifact (String artifact) {
-			val LOGGER = Logger.getLogger("DM_ComponentType")
 			if (this.requiredArtifacts == null)
 				this.requiredArtifacts = new ArrayList<String>()
 				
 			if (!this.requiredArtifacts.contains(artifact))
 				this.requiredArtifacts.add (artifact)
 			else
-				LOGGER.info (artifact + 
+				ConfigSpaceGenerator.LOGGER.info (artifact + 
 					" artifact already exists in component " + this.name)
 		}
 		
@@ -122,14 +120,13 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		 * 
 		 */
 		void addRequiredDevice (String device) {
-			val LOGGER = Logger.getLogger("DM_ComponentType")
 			if (this.requiredDevices == null)
 				this.requiredDevices = new ArrayList<String>()
 				
 			if (!this.requiredDevices.contains(device))
 				this.requiredDevices.add (device)
 			else
-				LOGGER.info (device + 
+				ConfigSpaceGenerator.LOGGER.info (device + 
 					" device already exists in component " + this.name)
 		}
 		
@@ -150,9 +147,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		/*
 		 * 
 		 */
-		void insert (DB database) {
-			val LOGGER = Logger.getLogger("DM_ComponentType")
-			
+		void insert (DB database) {			
 			val dbCollection = database.getCollection('ComponentTypes')
 
 			// Check if already exists. Store only if no existing
@@ -163,11 +158,11 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 				
 			if (result == null) {
 				dbCollection.save(this.getDbObject())
-				LOGGER.info (this.name + 
+				ConfigSpaceGenerator.LOGGER.info (this.name + 
 					" component type added to database")
 			}
 			else {
-				LOGGER.info (this.name + 
+				ConfigSpaceGenerator.LOGGER.info (this.name + 
 					" component type already exists. Trying to update")
 					
 				this.update(result, dbCollection)
@@ -177,14 +172,12 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		/*
 		 *
 		 */
-		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
-		 	val LOGGER = Logger.getLogger("DM_ComponentType")
-		 	
+		 void update (DBObject objectToUpdate, DBCollection targetCollection) {		 	
 		 	// Delete existing object and save current version.
 		 	targetCollection.remove(objectToUpdate)
 		 	targetCollection.save(this.getDbObject())
 		 	
-		 	LOGGER.info (this.name + 
+		 	ConfigSpaceGenerator.LOGGER.info (this.name + 
 				" component type has been updated.")
 		 }
 	}

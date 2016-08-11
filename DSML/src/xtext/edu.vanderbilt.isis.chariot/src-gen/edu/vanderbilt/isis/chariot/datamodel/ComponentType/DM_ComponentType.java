@@ -10,9 +10,9 @@ import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedOS;
+import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 import org.bson.types.ObjectId;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
@@ -216,7 +216,6 @@ public class DM_ComponentType implements IMongoBean {
   }
   
   public void addRequiredArtifact(final String artifact) {
-    final Logger LOGGER = Logger.getLogger("DM_ComponentType");
     List<String> _requiredArtifacts = this.getRequiredArtifacts();
     boolean _equals = Objects.equal(_requiredArtifacts, null);
     if (_equals) {
@@ -233,12 +232,11 @@ public class DM_ComponentType implements IMongoBean {
       String _name = this.getName();
       String _plus = ((artifact + 
         " artifact already exists in component ") + _name);
-      LOGGER.info(_plus);
+      ConfigSpaceGenerator.LOGGER.info(_plus);
     }
   }
   
   public void addRequiredDevice(final String device) {
-    final Logger LOGGER = Logger.getLogger("DM_ComponentType");
     List<String> _requiredDevices = this.getRequiredDevices();
     boolean _equals = Objects.equal(_requiredDevices, null);
     if (_equals) {
@@ -255,7 +253,7 @@ public class DM_ComponentType implements IMongoBean {
       String _name = this.getName();
       String _plus = ((device + 
         " device already exists in component ") + _name);
-      LOGGER.info(_plus);
+      ConfigSpaceGenerator.LOGGER.info(_plus);
     }
   }
   
@@ -272,7 +270,6 @@ public class DM_ComponentType implements IMongoBean {
   }
   
   public void insert(final DB database) {
-    final Logger LOGGER = Logger.getLogger("DM_ComponentType");
     final DBCollection dbCollection = database.getCollection("ComponentTypes");
     DM_ComponentType _dM_ComponentType = new DM_ComponentType();
     final Procedure1<DM_ComponentType> _function = (DM_ComponentType it) -> {
@@ -289,24 +286,23 @@ public class DM_ComponentType implements IMongoBean {
       String _name = this.getName();
       String _plus = (_name + 
         " component type added to database");
-      LOGGER.info(_plus);
+      ConfigSpaceGenerator.LOGGER.info(_plus);
     } else {
       String _name_1 = this.getName();
       String _plus_1 = (_name_1 + 
         " component type already exists. Trying to update");
-      LOGGER.info(_plus_1);
+      ConfigSpaceGenerator.LOGGER.info(_plus_1);
       this.update(result, dbCollection);
     }
   }
   
   public void update(final DBObject objectToUpdate, final DBCollection targetCollection) {
-    final Logger LOGGER = Logger.getLogger("DM_ComponentType");
     targetCollection.remove(objectToUpdate);
     DBObject _dbObject = this.getDbObject();
     targetCollection.save(_dbObject);
     String _name = this.getName();
     String _plus = (_name + 
       " component type has been updated.");
-    LOGGER.info(_plus);
+    ConfigSpaceGenerator.LOGGER.info(_plus);
   }
 }

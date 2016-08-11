@@ -4,8 +4,8 @@ import com.mongodb.DB
 import java.util.ArrayList
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
-import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.ReplicationConstraintKind
+import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
 
 package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 	DM_GoalDescription {
@@ -28,16 +28,17 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 */
 		void addReplicationConstraint ((DM_ReplicationConstraint)=>void initializer) {
 			val DM_ReplicationConstraint constraintToAdd = new DM_ReplicationConstraint => initializer
-			this.replicationConstraints.add (constraintToAdd) // @TODO: Check for duplicates.
+			this.replicationConstraints.add (constraintToAdd)
 		}
 		
 		/*
 		 * 
 		 */
 		void addObjective ((DM_Objective)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_GoalDescription")
 			val DM_Objective objectiveToAdd = new DM_Objective => initializer
 			this.objectives.add(objectiveToAdd)
+			
+			/* FOLLOWING PATTERN OF CODE CAN BE USED TO CHECK FOR DUPLICATES */
 			/*val List<String> tmp = this.objectives.map[name]
 			if (!tmp.contains (objectiveToAdd.name))
 				this.objectives += objectiveToAdd
@@ -49,9 +50,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		/*
 		 * 
 		 */
-		void insert (DB database) {
-			val LOGGER = Logger.getLogger("DM_GoalDescription")
-			
+		void insert (DB database) {			
 			val dbCollection = database.getCollection('GoalDescriptions')
 
 			// Check if already exists. Store only if no existing
@@ -62,11 +61,11 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 				
 			if (result == null) {
 				dbCollection.save(this.getDbObject())
-				LOGGER.info (this.name + 
+				ConfigSpaceGenerator.LOGGER.info (this.name + 
 					" goal description added to database")
 			}
 			else {
-				LOGGER.info (this.name + 
+				ConfigSpaceGenerator.LOGGER.info (this.name + 
 					" goal description type already exists")
 					
 				this.update(result, dbCollection)
@@ -76,14 +75,12 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		/*
 		 * 
 		 */
-		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
-		 	val LOGGER = Logger.getLogger("DM_GoalDescription")
-		 	
+		 void update (DBObject objectToUpdate, DBCollection targetCollection) {		 	
 		 	// Delete existing object and save current version.
 		 	targetCollection.remove(objectToUpdate)
 		 	targetCollection.save(this.getDbObject())
 		 	
-		 	LOGGER.info (this.name + 
+		 	ConfigSpaceGenerator.LOGGER.info (this.name + 
 				" goal has been updated.")
 		 }
 	} 
@@ -121,15 +118,13 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		void addNodeCategory(String nodeCategory) {
-			val LOGGER = Logger.getLogger("DM_ReplicationConstraint")
-			
 			if (this.nodeCategories == null)
 				this.nodeCategories = new ArrayList<String>
 			
 			if (!this.nodeCategories.contains(nodeCategory))
 				this.nodeCategories.add(nodeCategory)
 			else
-				LOGGER.info (nodeCategory + 
+				ConfigSpaceGenerator.LOGGER.info (nodeCategory + 
 					" node category already exists")
 		}
 	}
@@ -150,15 +145,8 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		void addFunctionality ((DM_Functionality)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_Objective")
 			val DM_Functionality functionalityToAdd = new DM_Functionality => initializer
-			this.functionalities.add(functionalityToAdd)	//@TODO: Check for duplicates.
-			/*val List<String> tmp = this.functionalities.map[name]
-			if (!tmp.contains (functionalityToAdd.name))
-				this.functionalities.add(functionalityToAdd)
-			else
-				LOGGER.info (functionalityToAdd.getName() + 
-					" functionality already exists in objective " + this.name)*/
+			this.functionalities.add(functionalityToAdd)
 		}
 	}
 	
@@ -178,15 +166,13 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 * 
 		 */
 		void addDependsOn (String dependsOn) {
-			val LOGGER = Logger.getLogger("DM_Functionality")
-			
 			if (this.dependsOn == null)
 				this.dependsOn = new ArrayList<String>
 			
 			if (!this.dependsOn.contains(dependsOn))
 				this.dependsOn.add(dependsOn)
 			else
-				LOGGER.info (dependsOn + 
+				ConfigSpaceGenerator.LOGGER.info (dependsOn + 
 					" functionality already exists as dependency for functionality " + this.name)
 		}
 	}

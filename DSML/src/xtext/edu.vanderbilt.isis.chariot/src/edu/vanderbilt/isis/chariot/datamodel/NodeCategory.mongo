@@ -6,8 +6,8 @@ import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware
 import com.mongodb.DB
 import com.mongodb.DBObject
 import com.mongodb.DBCollection
-import java.util.logging.Logger
 import edu.vanderbilt.isis.chariot.datamodel.Status
+import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
 
 package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 	DM_NodeCategory {
@@ -27,15 +27,8 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 * 
 		 */
 		void addNodeTemplate ((DM_NodeTemplate)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_NodeCategory")
 			val DM_NodeTemplate nodeTemplateToAdd = new DM_NodeTemplate => initializer
-			this.nodeTemplates.add (nodeTemplateToAdd)	//@TODO: Add code to check for duplicate.
-			/*val List<String> tmp = this.nodeTemplates.map[name]
-			if (!tmp.contains (nodeTemplateToAdd.name))
-				this.nodeTemplates.add (nodeToAdd)
-			else
-				LOGGER.info (nodeTemplateToAdd.getName() + 
-					" node template already exists in node category " + this.name)*/
+			this.nodeTemplates.add (nodeTemplateToAdd)
 		}
 		
 		/*
@@ -46,8 +39,6 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 * @param database - Name of the database.
 		 */
 		void insert (DB database) {
-			val LOGGER = Logger.getLogger("DM_NodeCategory")
-			
 			val dbCollection = database.getCollection('NodeCategories')
 
 			// Check if already exists. Store only if no existing
@@ -58,11 +49,11 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 				
 			if (result == null) {
 				dbCollection.save(this.getDbObject())
-				LOGGER.info (this.name + 
+				ConfigSpaceGenerator.LOGGER.info (this.name + 
 					" node category added to database")
 			}
 			else {
-				LOGGER.info (this.name + 
+				ConfigSpaceGenerator.LOGGER.info (this.name + 
 					" node category already exists. Trying to update.")
 					
 				this.update(result, dbCollection)
@@ -76,13 +67,11 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 * @param database - Name of the database.
 		 */
 		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
-		 	val LOGGER = Logger.getLogger("DM_NodeCategory")
-		 	
 		 	// Delete existing object and save current version.
 		 	targetCollection.remove(objectToUpdate)
 		 	targetCollection.save(this.getDbObject())
 		 	
-		 	LOGGER.info (this.name + 
+		 	ConfigSpaceGenerator.LOGGER.info (this.name + 
 				" node category has been updated.")
 		 }
 		 
@@ -92,8 +81,6 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 * @param nodeName - Name of node to be removed.
 		 */
 		 void removeNodeTemplate (String nodeTemplateName) {
-		 	val LOGGER = Logger.getLogger("DM_NodeCategory")
-		 	
 		 	var int index = -1;
 		 	var int count = 0;
 		 	for (DM_NodeTemplate nodeTemplate: this.getNodeTemplates()) {
@@ -105,11 +92,11 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 	if (index != -1)
 		 	{
 		 		this.nodeTemplates.remove (index)
-		 		LOGGER.info (nodeTemplateName + 
+		 		ConfigSpaceGenerator.LOGGER.info (nodeTemplateName + 
 		 			" node template removed from node category " + this.name)
 		 	}
 		 	else
-		 		LOGGER.info (nodeTemplateName + 
+		 		ConfigSpaceGenerator.LOGGER.info (nodeTemplateName + 
 		 			" node template does not exist in node category " + this.name)
 		 }
 	}
@@ -197,30 +184,16 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 * 
 		 */
 		void addArtifact ((DM_Artifact)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_NodeCategory")
 			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
-			this.artifacts.add (artifactToAdd)	//@TODO: Add code to check for duplicate.
-			/*val List<String> tmp = this.artifacts.map[name]
-			if (!tmp.contains (artifactToAdd.name))
-				this.artifacts.add (artifactToAdd)
-			else
-				LOGGER.info (artifactToAdd.getName() + 
-					" artifact already exists in node template " + this.name)*/
+			this.artifacts.add (artifactToAdd)
 		}
 		
 		/*
 		 * 
 		 */
 		void addDevice ((DM_Device)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_NodeCategory")
 			val DM_Device deviceToAdd = new DM_Device => initializer
-			this.devices.add (deviceToAdd)	//@TODO: Add code to check for duplicate.
-			/*val List<String> tmp = this.devices.map[name]
-			if (!tmp.contains (deviceToAdd.name))
-				this.devices.add (deviceToAdd)
-			else
-				LOGGER.info (deviceToAdd.getName() + 
-					" device already exists in node template " + this.name)*/
+			this.devices.add (deviceToAdd)
 		}
 	}
 	
@@ -255,15 +228,8 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 * 
 		 */
 		void addArtifact ((DM_Artifact)=>void initializer) {
-			//val LOGGER = Logger.getLogger("DM_NodeCategory")
 			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
-			this.artifacts.add (artifactToAdd)	//@TODO: Add code to check for duplicate.
-			/*val List<String> tmp = this.artifacts.map[name]
-			if (!tmp.contains (artifactToAdd.name))
-				this.artifacts.add (artifactToAdd)
-			else
-				LOGGER.info (artifactToAdd.getName() + 
-					" artifact already exists in device " + this.name)*/
+			this.artifacts.add (artifactToAdd)
 		}
 		
 		/*

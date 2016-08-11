@@ -54,7 +54,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	//@Inject extension IQualifiedNameProvider
 	
 	// Declaring class variables.
-	private val Logger LOGGER = Logger.getLogger("ChariotGenerator")
+	public static val Logger LOGGER = Logger.getLogger("ChariotGenerator")
 	private var String mongoAddr
 	private var int mongoPortNum
 	private var Mongo mongoClient
@@ -81,7 +81,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		try {
 			this.mongoClient.getConnector().getDBPortPool(this.mongoClient.getAddress()).get().ensureOpen();
 		} catch (Exception e) {
-			this.LOGGER.severe("Cannot reach MongoDb server at: " + mongoAddr + ", ignoring configuration space generator");
+			LOGGER.severe("Cannot reach MongoDb server at: " + mongoAddr + ", ignoring configuration space generator");
 			this.mongoClient.close()
 		 	return;
 		}
@@ -111,9 +111,6 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 		if ((input.allContents.toIterable.filter(GoalDescription).size() > 0))
 			generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription), db)
-		
-		// Close mongoDB connection once gone with generating artifacts.
-		this.mongoClient.close()
 	}
 	
 	/*

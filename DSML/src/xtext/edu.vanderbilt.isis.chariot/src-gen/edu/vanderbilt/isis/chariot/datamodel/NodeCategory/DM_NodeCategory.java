@@ -6,8 +6,8 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_NodeTemplate;
+import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator;
 import java.util.List;
-import java.util.logging.Logger;
 import org.bson.types.ObjectId;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
@@ -82,7 +82,6 @@ public class DM_NodeCategory implements IMongoBean {
    * @param database - Name of the database.
    */
   public void insert(final DB database) {
-    final Logger LOGGER = Logger.getLogger("DM_NodeCategory");
     final DBCollection dbCollection = database.getCollection("NodeCategories");
     DM_NodeCategory _dM_NodeCategory = new DM_NodeCategory();
     final Procedure1<DM_NodeCategory> _function = (DM_NodeCategory it) -> {
@@ -99,12 +98,12 @@ public class DM_NodeCategory implements IMongoBean {
       String _name = this.getName();
       String _plus = (_name + 
         " node category added to database");
-      LOGGER.info(_plus);
+      ConfigSpaceGenerator.LOGGER.info(_plus);
     } else {
       String _name_1 = this.getName();
       String _plus_1 = (_name_1 + 
         " node category already exists. Trying to update.");
-      LOGGER.info(_plus_1);
+      ConfigSpaceGenerator.LOGGER.info(_plus_1);
       this.update(result, dbCollection);
     }
   }
@@ -116,14 +115,13 @@ public class DM_NodeCategory implements IMongoBean {
    * @param database - Name of the database.
    */
   public void update(final DBObject objectToUpdate, final DBCollection targetCollection) {
-    final Logger LOGGER = Logger.getLogger("DM_NodeCategory");
     targetCollection.remove(objectToUpdate);
     DBObject _dbObject = this.getDbObject();
     targetCollection.save(_dbObject);
     String _name = this.getName();
     String _plus = (_name + 
       " node category has been updated.");
-    LOGGER.info(_plus);
+    ConfigSpaceGenerator.LOGGER.info(_plus);
   }
   
   /**
@@ -132,7 +130,6 @@ public class DM_NodeCategory implements IMongoBean {
    * @param nodeName - Name of node to be removed.
    */
   public void removeNodeTemplate(final String nodeTemplateName) {
-    final Logger LOGGER = Logger.getLogger("DM_NodeCategory");
     int index = (-1);
     int count = 0;
     List<DM_NodeTemplate> _nodeTemplates = this.getNodeTemplates();
@@ -152,12 +149,12 @@ public class DM_NodeCategory implements IMongoBean {
       String _name = this.getName();
       String _plus = ((nodeTemplateName + 
         " node template removed from node category ") + _name);
-      LOGGER.info(_plus);
+      ConfigSpaceGenerator.LOGGER.info(_plus);
     } else {
       String _name_1 = this.getName();
       String _plus_1 = ((nodeTemplateName + 
         " node template does not exist in node category ") + _name_1);
-      LOGGER.info(_plus_1);
+      ConfigSpaceGenerator.LOGGER.info(_plus_1);
     }
   }
 }
