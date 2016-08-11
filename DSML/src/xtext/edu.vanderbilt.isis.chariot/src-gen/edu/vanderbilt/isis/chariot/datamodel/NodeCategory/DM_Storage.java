@@ -5,6 +5,9 @@ import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.StorageUnit;
 import org.xtext.mongobeans.lib.IMongoBean;
 
+/**
+ * An entity to store storage.
+ */
 @SuppressWarnings("all")
 public class DM_Storage implements IMongoBean {
   /**
@@ -44,6 +47,11 @@ public class DM_Storage implements IMongoBean {
     _dbObject.put("unit", unit);
   }
   
+  /**
+   * Method to set storage unit.
+   * 
+   * @param unit	Unit of storage.
+   */
   public void setUnit(final StorageUnit unit) {
     String _string = unit.toString();
     this.setUnit(_string);

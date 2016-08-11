@@ -8,15 +8,19 @@ import com.mongodb.DBObject
 import com.mongodb.DBCollection
 import edu.vanderbilt.isis.chariot.datamodel.Status
 import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
+import java.util.List
 
 package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
+	/*
+	 * An entity to store node category.
+	 */
 	DM_NodeCategory {
 		ObjectId _id
 		String name
 		DM_NodeTemplate* nodeTemplates
 		
 		/*
-		 * 
+		 * Initialization method.
 		 */
 		void init () {
 			this.name = new String()
@@ -24,24 +28,33 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 		
 		/*
+		 * Method to add a node template.
 		 * 
+		 * @param initializer	DM_NodeTemplate entity to be added.
 		 */
 		void addNodeTemplate ((DM_NodeTemplate)=>void initializer) {
-			val DM_NodeTemplate nodeTemplateToAdd = new DM_NodeTemplate => initializer
-			this.nodeTemplates.add (nodeTemplateToAdd)
+			val DM_NodeTemplate nodeTemplateToAdd = 
+				new DM_NodeTemplate => initializer
+			
+			val List<String> curNodeTemplates = this.nodeTemplates.map[name]
+			
+			if (!curNodeTemplates.contains (nodeTemplateToAdd.getName()))
+				this.nodeTemplates.add (nodeTemplateToAdd)
+			else
+				ConfigSpaceGenerator.LOGGER.info (nodeTemplateToAdd.getName() + 
+					" node template already exists in node category " + this.name)
 		}
 		
 		/*
-		 * Insert new NodeCategory to 'NodeCategories' collection 
-		 * of the given database. Check if NodeCategory already 
-		 * exists using category name.
+		 * Method to insert node category entity into a database.
 		 * 
-		 * @param database - Name of the database.
+		 * @param database	Database where the node category entity should 
+		 * 					be inserted.
 		 */
 		void insert (DB database) {
 			val dbCollection = database.getCollection('NodeCategories')
 
-			// Check if already exists. Store only if no existing
+			// Check if already exists in database. Store only if no existing
 			// node category has the same name.
 			val result = dbCollection.findOne((new DM_NodeCategory => [
 				name = this.name
@@ -61,80 +74,72 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 		
 		/*
-		 * Update existing NodeCategory in 'NodeCategories' collection
-		 * of the given database.
+		 * Method to update an existing node category entity.
 		 * 
-		 * @param database - Name of the database.
+		 * @param objectToUpdate	Node category entity to update.
+		 * @param targetCollection	Collection where the node category entity
+		 * 							is located in the database.
 		 */
 		 void update (DBObject objectToUpdate, DBCollection targetCollection) {
-		 	// Delete existing object and save current version.
+		 	// NOTE: Naive update where we replace (remove old and store new)
+		 	// exiting entity.
+		 	
 		 	targetCollection.remove(objectToUpdate)
 		 	targetCollection.save(this.getDbObject())
 		 	
 		 	ConfigSpaceGenerator.LOGGER.info (this.name + 
 				" node category has been updated.")
 		 }
-		 
-		 /*
-		 * Remove node from an existing node category.
-		 * 
-		 * @param nodeName - Name of node to be removed.
-		 */
-		 void removeNodeTemplate (String nodeTemplateName) {
-		 	var int index = -1;
-		 	var int count = 0;
-		 	for (DM_NodeTemplate nodeTemplate: this.getNodeTemplates()) {
-		 		if (nodeTemplate.name.equals (nodeTemplateName))
-		 			index = count
-		 		count++
-		 	}
-		 	
-		 	if (index != -1)
-		 	{
-		 		this.nodeTemplates.remove (index)
-		 		ConfigSpaceGenerator.LOGGER.info (nodeTemplateName + 
-		 			" node template removed from node category " + this.name)
-		 	}
-		 	else
-		 		ConfigSpaceGenerator.LOGGER.info (nodeTemplateName + 
-		 			" node template does not exist in node category " + this.name)
-		 }
 	}
 	
+	/*
+	 * An entity to store memory.
+	 */
+	DM_Memory {
+		int memory
+		String unit
+			
+		/*
+		 * Method to set memory unit.
+		 * 
+		 * @param unit	Unit of memory.
+		 */
+		void setUnit (MemoryUnit unit) {
+			this.unit = unit.toString()
+		}
+	}
+	
+	/*
+	 * An entity to store storage.
+	 */
+	DM_Storage {
+		int storage
+		String unit
+			
+		/*
+		 * Method to set storage unit.
+		 * 
+		 * @param unit	Unit of storage. 
+		 */
+		void setUnit (StorageUnit unit) {
+			this.unit = unit.toString()
+		}
+	}
+	
+	/*
+	 * An entity to store node template.
+	 */
 	DM_NodeTemplate {
 		String name
-		
-		DM_Memory {
-			int memory
-			String unit
-			
-			/*
-			 * 
-			 */
-			void setUnit (MemoryUnit unit) {
-				this.unit = unit.toString()
-			}
-		} availableMemory
-
-		DM_Storage {
-			int storage
-			String unit
-			
-			/*
-			 * 
-			 */
-			void setUnit (StorageUnit unit) {
-				this.unit = unit.toString()
-			}
-		} availableStorage
-
+		DM_Memory availableMemory
+		DM_Storage availableStorage
 		String OS
 		String middleware
 		DM_Artifact* artifacts
 		DM_Device* devices
 		
 		/*
-		 * 
+		 * Initialization method.
 		 */
 		void init() {
 			this.name = new String()
@@ -153,56 +158,87 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 		
 		/*
+		 * Method to set memory availability.
 		 * 
+		 * @param initializer	The DM_Memory entity that should be used to
+		 * 						set available memory.
 		 */
 		void setAvailableMemory ((DM_Memory)=>void initializer) {
 			this.availableMemory = new DM_Memory => initializer
 		} 
 		
 		/*
+		 * Method to set storage availability.
 		 * 
+		 * @param initializer	The DM_Storage entity that should be used to
+		 * 						set available storage.
 		 */
 		void setAvailableStorage ((DM_Storage)=>void initializer) {
 			this.availableStorage = new DM_Storage => initializer
 		}
 		
 		/*
+		 * Method to set available OS.
 		 * 
+		 * @param os	The available OS.
 		 */
 		void setOS (SupportedOS os) {
 			this.OS = os.toString()
 		}
 		
 		/*
+		 * Method to set available middleware.
 		 * 
+		 * @param middleware The available middleware.
 		 */
 		void setMiddleware (SupportedMiddleware middleware) {
 			this.middleware = middleware.toString()
 		}
 		
 		/*
+		 * Method to add an available artifact.
 		 * 
+		 * @param initializer	DM_Artifact entity to be added.
 		 */
 		void addArtifact ((DM_Artifact)=>void initializer) {
 			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
-			this.artifacts.add (artifactToAdd)
+			
+			val List<String> curArtifacts = this.artifacts.map[name]
+			
+			if (!curArtifacts.contains (artifactToAdd.getName()))
+				this.artifacts.add (artifactToAdd)
+			else
+				ConfigSpaceGenerator.LOGGER.info (artifactToAdd.getName() + 
+					" artifact already exists in node template " + this.name)
 		}
 		
 		/*
+		 * Method to add a device.
 		 * 
+		 * @param initializer	DM_Device entity to be added. 
 		 */
 		void addDevice ((DM_Device)=>void initializer) {
 			val DM_Device deviceToAdd = new DM_Device => initializer
-			this.devices.add (deviceToAdd)
+			
+			val List<String> curDevices = this.devices.map[name]
+			
+			if (!curDevices.contains (deviceToAdd.getName()))
+				this.devices.add (deviceToAdd)
+			else
+				ConfigSpaceGenerator.LOGGER.info (deviceToAdd.getName() + 
+					" device already exists in node template " + this.name)
 		}
 	}
 	
+	/*
+	 * An entity to store artifact.
+	 */
 	DM_Artifact {
 		String name
 		String location
 		
 		/*
-		 * 
+		 * Initialization method.
 		 */
 		void init() {
 			this.name = new String()
@@ -210,13 +246,16 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 	}
 	
+	/*
+	 * An entity to store device.
+	 */
 	DM_Device {
 		String name
 		DM_Artifact* artifacts
 		String status
 		
 		/*
-		 * 
+		 * Initialization method.
 		 */
 		void init() {
 			this.name = new String()
@@ -225,15 +264,26 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 
 		/*
+		 * Method to add an artifact.
 		 * 
+		 * @param initializer	DM_Artifact entity to be added.
 		 */
 		void addArtifact ((DM_Artifact)=>void initializer) {
 			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
-			this.artifacts.add (artifactToAdd)
+			
+			val List<String> curArtifacts = this.artifacts.map[name]
+			
+			if (!curArtifacts.contains (artifactToAdd.getName()))
+				this.artifacts.add (artifactToAdd)
+			else
+				ConfigSpaceGenerator.LOGGER.info (artifactToAdd.getName() + 
+					" artifact already exists in device " + this.name)
 		}
 		
 		/*
+		 * Method to set device status.
 		 * 
+		 * @param status	Device status.
 		 */
 		void setStatus(Status status) {
 			this.status = status.toString()

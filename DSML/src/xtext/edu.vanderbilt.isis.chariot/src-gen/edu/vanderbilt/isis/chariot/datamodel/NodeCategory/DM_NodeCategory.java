@@ -9,11 +9,16 @@ import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_NodeTemplate;
 import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator;
 import java.util.List;
 import org.bson.types.ObjectId;
+import org.eclipse.xtext.xbase.lib.Functions.Function1;
+import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
 import org.xtext.mongobeans.lib.MongoBeanList;
 
+/**
+ * An entity to store node category.
+ */
 @SuppressWarnings("all")
 public class DM_NodeCategory implements IMongoBean {
   /**
@@ -61,25 +66,49 @@ public class DM_NodeCategory implements IMongoBean {
     return _nodeTemplates;
   }
   
+  /**
+   * Initialization method.
+   */
   public void init() {
     String _string = new String();
     this.setName(_string);
     this.getNodeTemplates();
   }
   
+  /**
+   * Method to add a node template.
+   * 
+   * @param initializer	DM_NodeTemplate entity to be added.
+   */
   public void addNodeTemplate(final Procedure1<? super DM_NodeTemplate> initializer) {
     DM_NodeTemplate _dM_NodeTemplate = new DM_NodeTemplate();
     final DM_NodeTemplate nodeTemplateToAdd = ObjectExtensions.<DM_NodeTemplate>operator_doubleArrow(_dM_NodeTemplate, initializer);
     List<DM_NodeTemplate> _nodeTemplates = this.getNodeTemplates();
-    _nodeTemplates.add(nodeTemplateToAdd);
+    final Function1<DM_NodeTemplate, String> _function = (DM_NodeTemplate it) -> {
+      return it.getName();
+    };
+    final List<String> curNodeTemplates = ListExtensions.<DM_NodeTemplate, String>map(_nodeTemplates, _function);
+    String _name = nodeTemplateToAdd.getName();
+    boolean _contains = curNodeTemplates.contains(_name);
+    boolean _not = (!_contains);
+    if (_not) {
+      List<DM_NodeTemplate> _nodeTemplates_1 = this.getNodeTemplates();
+      _nodeTemplates_1.add(nodeTemplateToAdd);
+    } else {
+      String _name_1 = nodeTemplateToAdd.getName();
+      String _plus = (_name_1 + 
+        " node template already exists in node category ");
+      String _name_2 = this.getName();
+      String _plus_1 = (_plus + _name_2);
+      ConfigSpaceGenerator.LOGGER.info(_plus_1);
+    }
   }
   
   /**
-   * Insert new NodeCategory to 'NodeCategories' collection
-   * of the given database. Check if NodeCategory already
-   * exists using category name.
+   * Method to insert node category entity into a database.
    * 
-   * @param database - Name of the database.
+   * @param database	Database where the node category entity should
+   * 					be inserted.
    */
   public void insert(final DB database) {
     final DBCollection dbCollection = database.getCollection("NodeCategories");
@@ -109,10 +138,11 @@ public class DM_NodeCategory implements IMongoBean {
   }
   
   /**
-   * Update existing NodeCategory in 'NodeCategories' collection
-   * of the given database.
+   * Method to update an existing node category entity.
    * 
-   * @param database - Name of the database.
+   * @param objectToUpdate	Node category entity to update.
+   * @param targetCollection	Collection where the node category entity
+   * 							is located in the database.
    */
   public void update(final DBObject objectToUpdate, final DBCollection targetCollection) {
     targetCollection.remove(objectToUpdate);
@@ -122,39 +152,5 @@ public class DM_NodeCategory implements IMongoBean {
     String _plus = (_name + 
       " node category has been updated.");
     ConfigSpaceGenerator.LOGGER.info(_plus);
-  }
-  
-  /**
-   * Remove node from an existing node category.
-   * 
-   * @param nodeName - Name of node to be removed.
-   */
-  public void removeNodeTemplate(final String nodeTemplateName) {
-    int index = (-1);
-    int count = 0;
-    List<DM_NodeTemplate> _nodeTemplates = this.getNodeTemplates();
-    for (final DM_NodeTemplate nodeTemplate : _nodeTemplates) {
-      {
-        String _name = nodeTemplate.getName();
-        boolean _equals = _name.equals(nodeTemplateName);
-        if (_equals) {
-          index = count;
-        }
-        count++;
-      }
-    }
-    if ((index != (-1))) {
-      List<DM_NodeTemplate> _nodeTemplates_1 = this.getNodeTemplates();
-      _nodeTemplates_1.remove(index);
-      String _name = this.getName();
-      String _plus = ((nodeTemplateName + 
-        " node template removed from node category ") + _name);
-      ConfigSpaceGenerator.LOGGER.info(_plus);
-    } else {
-      String _name_1 = this.getName();
-      String _plus_1 = ((nodeTemplateName + 
-        " node template does not exist in node category ") + _name_1);
-      ConfigSpaceGenerator.LOGGER.info(_plus_1);
-    }
   }
 }

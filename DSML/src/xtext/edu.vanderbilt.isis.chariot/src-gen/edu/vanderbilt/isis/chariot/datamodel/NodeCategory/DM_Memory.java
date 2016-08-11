@@ -5,6 +5,9 @@ import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.MemoryUnit;
 import org.xtext.mongobeans.lib.IMongoBean;
 
+/**
+ * An entity to store memory.
+ */
 @SuppressWarnings("all")
 public class DM_Memory implements IMongoBean {
   /**
@@ -44,6 +47,11 @@ public class DM_Memory implements IMongoBean {
     _dbObject.put("unit", unit);
   }
   
+  /**
+   * Method to set memory unit.
+   * 
+   * @param unit	Unit of memory.
+   */
   public void setUnit(final MemoryUnit unit) {
     String _string = unit.toString();
     this.setUnit(_string);

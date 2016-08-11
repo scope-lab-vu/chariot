@@ -19,6 +19,9 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
 import org.xtext.mongobeans.lib.WrappingUtil;
 
+/**
+ * An entity to store component type information.
+ */
 @SuppressWarnings("all")
 public class DM_ComponentType implements IMongoBean {
   /**
@@ -146,6 +149,9 @@ public class DM_ComponentType implements IMongoBean {
     _dbObject.put("deadline", WrappingUtil.unwrap(deadline));
   }
   
+  /**
+   * Initialization method.
+   */
   public void init() {
     String _string = new String();
     this.setName(_string);
@@ -193,41 +199,62 @@ public class DM_ComponentType implements IMongoBean {
     this.setDeadline(_doubleArrow_3);
   }
   
+  /**
+   * Method to set memory requirement.
+   * 
+   * @param initializer	The DM_Memory entity that should be used to
+   * 						set required memory.
+   */
   public void setRequiredMemory(final Procedure1<? super DM_Memory> initializer) {
     DM_Memory _dM_Memory = new DM_Memory();
     DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, initializer);
     this.setRequiredMemory(_doubleArrow);
   }
   
+  /**
+   * Method to set storage requirement.
+   * 
+   * @param initializer	The DM_Storage entity that should be used to
+   * 						set required storage.
+   */
   public void setRequiredStorage(final Procedure1<? super DM_Storage> initializer) {
     DM_Storage _dM_Storage = new DM_Storage();
     DM_Storage _doubleArrow = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, initializer);
     this.setRequiredStorage(_doubleArrow);
   }
   
+  /**
+   * Method to set required OS.
+   * 
+   * @param os	The required OS.
+   */
   public void setRequiredOS(final SupportedOS os) {
     String _string = os.toString();
     this.setRequiredOS(_string);
   }
   
+  /**
+   * Method to set required middleware.
+   * 
+   * @param middleware	The required middleware.
+   */
   public void setRequiredMiddleware(final SupportedMiddleware middleware) {
     String _string = middleware.toString();
     this.setRequiredMiddleware(_string);
   }
   
+  /**
+   * Method to add a required artifact.
+   * 
+   * @param artifact	Artifact to be added to the artifact requirement list.
+   */
   public void addRequiredArtifact(final String artifact) {
     List<String> _requiredArtifacts = this.getRequiredArtifacts();
-    boolean _equals = Objects.equal(_requiredArtifacts, null);
-    if (_equals) {
-      ArrayList<String> _arrayList = new ArrayList<String>();
-      this.setRequiredArtifacts(_arrayList);
-    }
-    List<String> _requiredArtifacts_1 = this.getRequiredArtifacts();
-    boolean _contains = _requiredArtifacts_1.contains(artifact);
+    boolean _contains = _requiredArtifacts.contains(artifact);
     boolean _not = (!_contains);
     if (_not) {
-      List<String> _requiredArtifacts_2 = this.getRequiredArtifacts();
-      _requiredArtifacts_2.add(artifact);
+      List<String> _requiredArtifacts_1 = this.getRequiredArtifacts();
+      _requiredArtifacts_1.add(artifact);
     } else {
       String _name = this.getName();
       String _plus = ((artifact + 
@@ -236,19 +263,18 @@ public class DM_ComponentType implements IMongoBean {
     }
   }
   
+  /**
+   * Method to add a required device.
+   * 
+   * @param device	Device to be added to the device requirement list.
+   */
   public void addRequiredDevice(final String device) {
     List<String> _requiredDevices = this.getRequiredDevices();
-    boolean _equals = Objects.equal(_requiredDevices, null);
-    if (_equals) {
-      ArrayList<String> _arrayList = new ArrayList<String>();
-      this.setRequiredDevices(_arrayList);
-    }
-    List<String> _requiredDevices_1 = this.getRequiredDevices();
-    boolean _contains = _requiredDevices_1.contains(device);
+    boolean _contains = _requiredDevices.contains(device);
     boolean _not = (!_contains);
     if (_not) {
-      List<String> _requiredDevices_2 = this.getRequiredDevices();
-      _requiredDevices_2.add(device);
+      List<String> _requiredDevices_1 = this.getRequiredDevices();
+      _requiredDevices_1.add(device);
     } else {
       String _name = this.getName();
       String _plus = ((device + 
@@ -257,18 +283,34 @@ public class DM_ComponentType implements IMongoBean {
     }
   }
   
+  /**
+   * Method to set period.
+   * 
+   * @param initializer	DM_Time entity that should be used to set period.
+   */
   public void setPeriod(final Procedure1<? super DM_Time> initializer) {
     DM_Time _dM_Time = new DM_Time();
     DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, initializer);
     this.setPeriod(_doubleArrow);
   }
   
+  /**
+   * Method to set deadline.
+   * 
+   * @param initializer	DM_Time entity that should be used to set deadline.
+   */
   public void setDeadline(final Procedure1<? super DM_Time> initializer) {
     DM_Time _dM_Time = new DM_Time();
     DM_Time _doubleArrow = ObjectExtensions.<DM_Time>operator_doubleArrow(_dM_Time, initializer);
     this.setDeadline(_doubleArrow);
   }
   
+  /**
+   * Method to insert a component type entity into a database.
+   * 
+   * @param database	Database where the component type entity should
+   * 					be inserted.
+   */
   public void insert(final DB database) {
     final DBCollection dbCollection = database.getCollection("ComponentTypes");
     DM_ComponentType _dM_ComponentType = new DM_ComponentType();
@@ -296,6 +338,13 @@ public class DM_ComponentType implements IMongoBean {
     }
   }
   
+  /**
+   * Method to update an existing component type entity.
+   * 
+   * @param objectToUpdate	Component type entity to update.
+   * @param targetCollection	Collection where the component type entity
+   * 							is located in the database.
+   */
   public void update(final DBObject objectToUpdate, final DBCollection targetCollection) {
     targetCollection.remove(objectToUpdate);
     DBObject _dbObject = this.getDbObject();

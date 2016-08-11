@@ -30,7 +30,6 @@ import org.eclipse.xtext.scoping.Scopes
  */
 public class ChariotScopeProvider extends AbstractDeclarativeScopeProvider {
 
-
 //    def IScope scope_ActionMessageInParameter_activityParam(ActionMessageInParameter spec, EReference ref) {
 //		val activity = (spec.eContainer as StartAction).activity;
 //		if (activity != null) {

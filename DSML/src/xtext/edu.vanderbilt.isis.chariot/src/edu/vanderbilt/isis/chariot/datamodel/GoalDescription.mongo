@@ -8,6 +8,9 @@ import edu.vanderbilt.isis.chariot.datamodel.ReplicationConstraintKind
 import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
 
 package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
+	/*
+	 * An entity to store goal description.
+	 */
 	DM_GoalDescription {
 		ObjectId _id
 		String name
@@ -15,7 +18,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		DM_Objective* objectives
 		
 		/*
-		 * 
+		 * Initialization method.
 		 */
 		void init() {
 			this.name = new String()
@@ -24,36 +27,55 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 		
 		/*
+		 * Method to add a replication constraint.
 		 * 
+		 * @param initializer	DM_ReplicationConstraint entity to be added.
 		 */
 		void addReplicationConstraint ((DM_ReplicationConstraint)=>void initializer) {
-			val DM_ReplicationConstraint constraintToAdd = new DM_ReplicationConstraint => initializer
-			this.replicationConstraints.add (constraintToAdd)
+			val DM_ReplicationConstraint constraintToAdd = 
+				new DM_ReplicationConstraint => initializer
+			
+			val List<String> curConstraintKinds = 
+				this.replicationConstraints.map[kind]
+			val List<String> curConstraintFunctionalities = 
+				this.replicationConstraints.map[functionality]
+			
+			if (!curConstraintKinds.contains(constraintToAdd.getKind()) &&
+				!curConstraintFunctionalities.contains(constraintToAdd.getFunctionality()))
+				this.replicationConstraints.add (constraintToAdd)
+			else
+				ConfigSpaceGenerator.LOGGER.info(constraintToAdd.getKind() + " replication 
+					constraint for functionality " + constraintToAdd.getFunctionality() + 
+					" already exists in goal " + this.name)
 		}
 		
 		/*
+		 * Method to add an objective.
 		 * 
+		 * @param initializer	DM_Objective entity to be added.
 		 */
 		void addObjective ((DM_Objective)=>void initializer) {
 			val DM_Objective objectiveToAdd = new DM_Objective => initializer
-			this.objectives.add(objectiveToAdd)
 			
-			/* FOLLOWING PATTERN OF CODE CAN BE USED TO CHECK FOR DUPLICATES */
-			/*val List<String> tmp = this.objectives.map[name]
-			if (!tmp.contains (objectiveToAdd.name))
-				this.objectives += objectiveToAdd
+			val List<String> curObjectives = this.objectives.map[name]
+			
+			if (!curObjectives.contains (objectiveToAdd.getName()))
+				this.objectives.add(objectiveToAdd)
 			else
-				LOGGER.info (objectiveToAdd.getName() + 
-					" objective already exists in goal " + this.name)*/
+				ConfigSpaceGenerator.LOGGER.info (objectiveToAdd.getName() + 
+					" objective already exists in goal " + this.name)
 		}
 		
 		/*
+		 * Method to insert a goal description entity into a database.
 		 * 
+		 * @param database	Database where the goal description entity should 
+		 * 					be inserted.
 		 */
 		void insert (DB database) {			
 			val dbCollection = database.getCollection('GoalDescriptions')
 
-			// Check if already exists. Store only if no existing
+			// Check if already exists in database. Store only if no existing
 			// goal has the same name.
 			val result = dbCollection.findOne((new DM_GoalDescription => [
 				name = this.name
@@ -73,10 +95,16 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 		
 		/*
+		 * Method to update an existing goal description entity.
 		 * 
+		 * @param objectToUpdate	Goal description entity to update.
+		 * @param targetCollection	Collection where the goal description entity
+		 * 							is located in the database.
 		 */
 		 void update (DBObject objectToUpdate, DBCollection targetCollection) {		 	
-		 	// Delete existing object and save current version.
+		 	// NOTE: Naive update where we replace (remove old and store new)
+		 	// exiting entity.
+		 	
 		 	targetCollection.remove(objectToUpdate)
 		 	targetCollection.save(this.getDbObject())
 		 	
@@ -85,6 +113,9 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 }
 	} 
 	
+	/*
+	 * An entity to store replication constraint.
+	 */
 	DM_ReplicationConstraint {
 		String kind
 		String functionality
@@ -95,7 +126,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		List<String> nodeCategories
 		
 		/*
-		 * 
+		 * Initialization method.
 		 */
 		void init() {
 			this.kind = new String()
@@ -108,19 +139,20 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 		
 		/*
+		 * Method to set constraint kind.
 		 * 
+		 * @param kind	Constraint kind.
 		 */
 		void setKind (ReplicationConstraintKind kind) {
 			this.kind = kind.toString()
 		}
 		
 		/*
+		 * Method to add a node category.
 		 * 
+		 * @param nodeCategory	Node category to add.
 		 */
-		void addNodeCategory(String nodeCategory) {
-			if (this.nodeCategories == null)
-				this.nodeCategories = new ArrayList<String>
-			
+		void addNodeCategory(String nodeCategory) {			
 			if (!this.nodeCategories.contains(nodeCategory))
 				this.nodeCategories.add(nodeCategory)
 			else
@@ -129,12 +161,15 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 	}
 	
+	/*
+	 * An entity to store objective.
+	 */
 	DM_Objective {
 		String name
 		DM_Functionality* functionalities
 		
 		/*
-		 * 
+		 * Initialization method. 
 		 */
 		void init() {
 			this.name = new String()
@@ -142,20 +177,26 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 		
 		/*
+		 * Method to add functionality.
 		 * 
+		 * @param initializer	DM_Functionality entity to be added.
 		 */
 		void addFunctionality ((DM_Functionality)=>void initializer) {
-			val DM_Functionality functionalityToAdd = new DM_Functionality => initializer
+			val DM_Functionality functionalityToAdd = 
+				new DM_Functionality => initializer
 			this.functionalities.add(functionalityToAdd)
 		}
 	}
 	
+	/*
+	 * An entity to store functionality.
+	 */
 	DM_Functionality {
 		String name
 		List<String> dependsOn
 		
 		/*
-		 * 
+		 * Initialization method.
 		 */
 		void init() {
 			this.name = new String()
@@ -163,12 +204,12 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 		
 		/*
+		 * Method to add functionality dependency.
 		 * 
+		 * @param dependsOn	Name of the functionality on which this
+		 * 					functionality depends on.
 		 */
-		void addDependsOn (String dependsOn) {
-			if (this.dependsOn == null)
-				this.dependsOn = new ArrayList<String>
-			
+		void addDependsOn (String dependsOn) {			
 			if (!this.dependsOn.contains(dependsOn))
 				this.dependsOn.add(dependsOn)
 			else

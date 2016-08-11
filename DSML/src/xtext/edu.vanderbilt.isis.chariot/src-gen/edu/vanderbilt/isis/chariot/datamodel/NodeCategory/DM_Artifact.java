@@ -4,6 +4,9 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.xtext.mongobeans.lib.IMongoBean;
 
+/**
+ * An entity to store artifact.
+ */
 @SuppressWarnings("all")
 public class DM_Artifact implements IMongoBean {
   /**
@@ -43,6 +46,9 @@ public class DM_Artifact implements IMongoBean {
     _dbObject.put("location", location);
   }
   
+  /**
+   * Initialization method.
+   */
   public void init() {
     String _string = new String();
     this.setName(_string);

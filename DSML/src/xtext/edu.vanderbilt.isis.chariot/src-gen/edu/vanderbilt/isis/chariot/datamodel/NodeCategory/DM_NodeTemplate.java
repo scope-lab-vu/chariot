@@ -8,13 +8,19 @@ import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Memory;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Storage;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedMiddleware;
 import edu.vanderbilt.isis.chariot.datamodel.SupportedOS;
+import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator;
 import java.util.List;
+import org.eclipse.xtext.xbase.lib.Functions.Function1;
+import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
 import org.xtext.mongobeans.lib.MongoBeanList;
 import org.xtext.mongobeans.lib.WrappingUtil;
 
+/**
+ * An entity to store node template.
+ */
 @SuppressWarnings("all")
 public class DM_NodeTemplate implements IMongoBean {
   /**
@@ -94,6 +100,9 @@ public class DM_NodeTemplate implements IMongoBean {
     return _devices;
   }
   
+  /**
+   * Initialization method.
+   */
   public void init() {
     String _string = new String();
     this.setName(_string);
@@ -119,39 +128,105 @@ public class DM_NodeTemplate implements IMongoBean {
     this.getDevices();
   }
   
+  /**
+   * Method to set memory availability.
+   * 
+   * @param initializer	The DM_Memory entity that should be used to
+   * 						set available memory.
+   */
   public void setAvailableMemory(final Procedure1<? super DM_Memory> initializer) {
     DM_Memory _dM_Memory = new DM_Memory();
     DM_Memory _doubleArrow = ObjectExtensions.<DM_Memory>operator_doubleArrow(_dM_Memory, initializer);
     this.setAvailableMemory(_doubleArrow);
   }
   
+  /**
+   * Method to set storage availability.
+   * 
+   * @param initializer	The DM_Storage entity that should be used to
+   * 						set available storage.
+   */
   public void setAvailableStorage(final Procedure1<? super DM_Storage> initializer) {
     DM_Storage _dM_Storage = new DM_Storage();
     DM_Storage _doubleArrow = ObjectExtensions.<DM_Storage>operator_doubleArrow(_dM_Storage, initializer);
     this.setAvailableStorage(_doubleArrow);
   }
   
+  /**
+   * Method to set available OS.
+   * 
+   * @param os	The available OS.
+   */
   public void setOS(final SupportedOS os) {
     String _string = os.toString();
     this.setOS(_string);
   }
   
+  /**
+   * Method to set available middleware.
+   * 
+   * @param middleware The available middleware.
+   */
   public void setMiddleware(final SupportedMiddleware middleware) {
     String _string = middleware.toString();
     this.setMiddleware(_string);
   }
   
+  /**
+   * Method to add an available artifact.
+   * 
+   * @param initializer	DM_Artifact entity to be added.
+   */
   public void addArtifact(final Procedure1<? super DM_Artifact> initializer) {
     DM_Artifact _dM_Artifact = new DM_Artifact();
     final DM_Artifact artifactToAdd = ObjectExtensions.<DM_Artifact>operator_doubleArrow(_dM_Artifact, initializer);
     List<DM_Artifact> _artifacts = this.getArtifacts();
-    _artifacts.add(artifactToAdd);
+    final Function1<DM_Artifact, String> _function = (DM_Artifact it) -> {
+      return it.getName();
+    };
+    final List<String> curArtifacts = ListExtensions.<DM_Artifact, String>map(_artifacts, _function);
+    String _name = artifactToAdd.getName();
+    boolean _contains = curArtifacts.contains(_name);
+    boolean _not = (!_contains);
+    if (_not) {
+      List<DM_Artifact> _artifacts_1 = this.getArtifacts();
+      _artifacts_1.add(artifactToAdd);
+    } else {
+      String _name_1 = artifactToAdd.getName();
+      String _plus = (_name_1 + 
+        " artifact already exists in node template ");
+      String _name_2 = this.getName();
+      String _plus_1 = (_plus + _name_2);
+      ConfigSpaceGenerator.LOGGER.info(_plus_1);
+    }
   }
   
+  /**
+   * Method to add a device.
+   * 
+   * @param initializer	DM_Device entity to be added.
+   */
   public void addDevice(final Procedure1<? super DM_Device> initializer) {
     DM_Device _dM_Device = new DM_Device();
     final DM_Device deviceToAdd = ObjectExtensions.<DM_Device>operator_doubleArrow(_dM_Device, initializer);
     List<DM_Device> _devices = this.getDevices();
-    _devices.add(deviceToAdd);
+    final Function1<DM_Device, String> _function = (DM_Device it) -> {
+      return it.getName();
+    };
+    final List<String> curDevices = ListExtensions.<DM_Device, String>map(_devices, _function);
+    String _name = deviceToAdd.getName();
+    boolean _contains = curDevices.contains(_name);
+    boolean _not = (!_contains);
+    if (_not) {
+      List<DM_Device> _devices_1 = this.getDevices();
+      _devices_1.add(deviceToAdd);
+    } else {
+      String _name_1 = deviceToAdd.getName();
+      String _plus = (_name_1 + 
+        " device already exists in node template ");
+      String _name_2 = this.getName();
+      String _plus_1 = (_plus + _name_2);
+      ConfigSpaceGenerator.LOGGER.info(_plus_1);
+    }
   }
 }
