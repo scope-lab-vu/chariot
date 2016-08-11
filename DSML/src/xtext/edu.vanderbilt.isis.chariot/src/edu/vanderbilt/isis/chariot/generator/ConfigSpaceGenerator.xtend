@@ -82,9 +82,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			this.mongoClient.getConnector().getDBPortPool(this.mongoClient.getAddress()).get().ensureOpen();
 		} catch (Exception e) {
 			this.LOGGER.severe("Cannot reach MongoDb server at: " + mongoAddr + ", ignoring configuration space generator");
-		 	return;
-		} finally {
 			this.mongoClient.close()
+		 	return;
 		}
 	}
 	
@@ -112,6 +111,9 @@ class ConfigSpaceGenerator implements IGenerator {
 			
 		if ((input.allContents.toIterable.filter(GoalDescription).size() > 0))
 			generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription), db)
+		
+		// Close mongoDB connection once gone with generating artifacts.
+		this.mongoClient.close()
 	}
 	
 	/*
