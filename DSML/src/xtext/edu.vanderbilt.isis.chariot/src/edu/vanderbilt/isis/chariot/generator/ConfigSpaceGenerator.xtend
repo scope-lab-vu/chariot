@@ -58,6 +58,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	private var String mongoAddr
 	private var int mongoPortNum
 	private var Mongo mongoClient
+	private var DB db
 	
 	/*
 	 * Constructor.
@@ -85,38 +86,43 @@ class ConfigSpaceGenerator implements IGenerator {
 			this.mongoClient.close()
 		 	return;
 		}
+		
+		// Get configuration space database.
+		this.db = this.mongoClient.getDB('ConfigSpace') 
 	}
 	
 	/*
+	 * Method that performs configuration space generation.
 	 * 
+	 * @param input	Input resource on which generation must be performed.
+	 * @param fsa	File system accessor.
 	 */
-	override doGenerate(Resource input, IFileSystemAccess fsa){// throws MongoException {
+	override doGenerate(Resource input, IFileSystemAccess fsa){
 		//throw new UnsupportedOperationException("TODO: auto-generated method stub")
 
-		// Get configuration space database.
-		val db = this.mongoClient.getDB('ConfigSpace') 
-		
 		// Generate various design-time system description artifacts.
 		if ((input.allContents.toIterable.filter(ExternalComponent)).size() > 0)
-			generateExternalComponents (input.allContents.toIterable.filter(ExternalComponent), db)
+			generateExternalComponents (input.allContents.toIterable.filter(ExternalComponent))
 		
 		if ((input.allContents.toIterable.filter(VoterServiceComponent)).size() > 0)
-			generateVoterServiceComponents (input.allContents.toIterable.filter(VoterServiceComponent), db)
+			generateVoterServiceComponents (input.allContents.toIterable.filter(VoterServiceComponent))
 			
 		if ((input.allContents.toIterable.filter(ConsensusServiceComponent)).size() > 0)
-			generateConsensusServiceComponents (input.allContents.toIterable.filter(ConsensusServiceComponent), db)
+			generateConsensusServiceComponents (input.allContents.toIterable.filter(ConsensusServiceComponent))
 
 		if ((input.allContents.toIterable.filter(NodesCategory)).size() > 0)
-			generateNodeCategories (input.allContents.toIterable.filter(NodesCategory), db)
+			generateNodeCategories (input.allContents.toIterable.filter(NodesCategory))
 			
 		if ((input.allContents.toIterable.filter(GoalDescription).size() > 0))
-			generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription), db)
+			generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription))
 	}
 	
 	/*
+	 * Method to generate voter service components.
 	 * 
+	 * @param voterServiceComponents	List of voter service components in a model resource.
 	 */
-	def generateVoterServiceComponents (Iterable<VoterServiceComponent> voterServiceComponents, DB db) {
+	def generateVoterServiceComponents (Iterable<VoterServiceComponent> voterServiceComponents) {
 		// Loop through each voter service component.
 		for (c : voterServiceComponents) {
 			var DM_ComponentType componentType = new DM_ComponentType ()
@@ -177,14 +183,16 @@ class ConfigSpaceGenerator implements IGenerator {
 				]
 			}
 			
-			componentType.insert (db)
+			componentType.insert (this.db)
 		}
 	}
 	
 	/*
+	 * Method to generate consensus service components.
 	 * 
+	 * @param consensusServiceComponents	List of consensus service components in a model resource.
 	 */
-	def generateConsensusServiceComponents (Iterable<ConsensusServiceComponent> consensusServiceComponents, DB db) {
+	def generateConsensusServiceComponents (Iterable<ConsensusServiceComponent> consensusServiceComponents) {
 		// Loop through each consensus service component.
 		for (c : consensusServiceComponents) {
 			var DM_ComponentType componentType = new DM_ComponentType ()
@@ -245,15 +253,17 @@ class ConfigSpaceGenerator implements IGenerator {
 				]
 			}
 			
-			componentType.insert (db)
+			componentType.insert (this.db)
 		}
 	}
 	
 	
 	/*
+	 * Method to generate external components.
 	 * 
+	 * @param externalComponents	List of external components in a model resource.
 	 */
-	def generateExternalComponents (Iterable<ExternalComponent> externalComponents, DB db) {
+	def generateExternalComponents (Iterable<ExternalComponent> externalComponents) {
 		// Loop through each external component.
 		for (c : externalComponents) {
 			var DM_ComponentType componentType = new DM_ComponentType ()
@@ -264,7 +274,8 @@ class ConfigSpaceGenerator implements IGenerator {
 			componentType.setName (c.getName())
 			
 			// Filter and store functionality provision.
-			componentType.setProvidedFunctionality (c.parts.filter(ExternalFunctionalityProvision).get(0).getFunctionality().getName())
+			componentType.setProvidedFunctionality (c.parts.filter(ExternalFunctionalityProvision).
+														get(0).getFunctionality().getName())
 			
 			// Store component requirements.
 			generateComponentRequirements (c, componentType)
@@ -314,14 +325,18 @@ class ConfigSpaceGenerator implements IGenerator {
 				]
 			}
 			
-			componentType.insert (db)
+			componentType.insert (this.db)
 		}
 	}
 	
 	/*
+	 * Method to generate requirements of a component.
 	 * 
+	 * @param comp		Component for which requirements must be generated.
+	 * @param compBean	Mongo bean corresponding to the component for which requirements
+	 * 					must be generated.	
 	 */
-	def generateComponentRequirements (Component c, DM_ComponentType ct) {
+	def generateComponentRequirements (Component comp, DM_ComponentType compBean) {
 		var ArrayList<MemoryRequirement> memoryRequirements
 		var ArrayList<StorageRequirement> storageRequirements
 		var ArrayList<OSRequirement> osRequirements
@@ -345,29 +360,29 @@ class ConfigSpaceGenerator implements IGenerator {
 				Lists.newArrayList ((c as ChariotComponent).parts.filter(DeviceRequirement))
 		}
 		else*/ 
-		if (c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ExternalComponentImpl")) {
-			memoryRequirements = Lists.newArrayList ((c as ExternalComponent).parts.filter(MemoryRequirement))
-			storageRequirements = Lists.newArrayList ((c as ExternalComponent).parts.filter(StorageRequirement))
-			osRequirements = Lists.newArrayList ((c as ExternalComponent).parts.filter(OSRequirement))
-			middlewareRequirements = Lists.newArrayList ((c as ExternalComponent).parts.filter(MiddlewareRequirement))
-			artifactRequirements = Lists.newArrayList ((c as ExternalComponent).parts.filter(ArtifactRequirement))
-			deviceRequirements = Lists.newArrayList ((c as ExternalComponent).parts.filter(DeviceRequirement))
+		if (comp.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ExternalComponentImpl")) {
+			memoryRequirements = Lists.newArrayList ((comp as ExternalComponent).parts.filter(MemoryRequirement))
+			storageRequirements = Lists.newArrayList ((comp as ExternalComponent).parts.filter(StorageRequirement))
+			osRequirements = Lists.newArrayList ((comp as ExternalComponent).parts.filter(OSRequirement))
+			middlewareRequirements = Lists.newArrayList ((comp as ExternalComponent).parts.filter(MiddlewareRequirement))
+			artifactRequirements = Lists.newArrayList ((comp as ExternalComponent).parts.filter(ArtifactRequirement))
+			deviceRequirements = Lists.newArrayList ((comp as ExternalComponent).parts.filter(DeviceRequirement))
 		}
-		else if (c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.VoterServiceComponentImpl")) {
-			memoryRequirements = Lists.newArrayList ((c as VoterServiceComponent).parts.filter(MemoryRequirement))
-			storageRequirements = Lists.newArrayList ((c as VoterServiceComponent).parts.filter(StorageRequirement))
-			osRequirements = Lists.newArrayList ((c as VoterServiceComponent).parts.filter(OSRequirement))
-			middlewareRequirements = Lists.newArrayList ((c as VoterServiceComponent).parts.filter(MiddlewareRequirement))
-			artifactRequirements = Lists.newArrayList ((c as VoterServiceComponent).parts.filter(ArtifactRequirement))
-			deviceRequirements = Lists.newArrayList ((c as VoterServiceComponent).parts.filter(DeviceRequirement))
+		else if (comp.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.VoterServiceComponentImpl")) {
+			memoryRequirements = Lists.newArrayList ((comp as VoterServiceComponent).parts.filter(MemoryRequirement))
+			storageRequirements = Lists.newArrayList ((comp as VoterServiceComponent).parts.filter(StorageRequirement))
+			osRequirements = Lists.newArrayList ((comp as VoterServiceComponent).parts.filter(OSRequirement))
+			middlewareRequirements = Lists.newArrayList ((comp as VoterServiceComponent).parts.filter(MiddlewareRequirement))
+			artifactRequirements = Lists.newArrayList ((comp as VoterServiceComponent).parts.filter(ArtifactRequirement))
+			deviceRequirements = Lists.newArrayList ((comp as VoterServiceComponent).parts.filter(DeviceRequirement))
 		}
-		else if (c.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ConsensusServiceComponentImpl")) {
-			memoryRequirements = Lists.newArrayList ((c as ConsensusServiceComponent).parts.filter(MemoryRequirement))
-			storageRequirements = Lists.newArrayList ((c as ConsensusServiceComponent).parts.filter(StorageRequirement))
-			osRequirements = Lists.newArrayList ((c as ConsensusServiceComponent).parts.filter(OSRequirement))
-			middlewareRequirements = Lists.newArrayList ((c as ConsensusServiceComponent).parts.filter(MiddlewareRequirement))
-			artifactRequirements = Lists.newArrayList ((c as ConsensusServiceComponent).parts.filter(ArtifactRequirement))
-			deviceRequirements = Lists.newArrayList ((c as ConsensusServiceComponent).parts.filter(DeviceRequirement))
+		else if (comp.class.name.equals("edu.vanderbilt.isis.chariot.chariot.impl.ConsensusServiceComponentImpl")) {
+			memoryRequirements = Lists.newArrayList ((comp as ConsensusServiceComponent).parts.filter(MemoryRequirement))
+			storageRequirements = Lists.newArrayList ((comp as ConsensusServiceComponent).parts.filter(StorageRequirement))
+			osRequirements = Lists.newArrayList ((comp as ConsensusServiceComponent).parts.filter(OSRequirement))
+			middlewareRequirements = Lists.newArrayList ((comp as ConsensusServiceComponent).parts.filter(MiddlewareRequirement))
+			artifactRequirements = Lists.newArrayList ((comp as ConsensusServiceComponent).parts.filter(ArtifactRequirement))
+			deviceRequirements = Lists.newArrayList ((comp as ConsensusServiceComponent).parts.filter(DeviceRequirement))
 		}
 		
 		// Store memory requirements.
@@ -375,7 +390,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (memoryRequirements.size() > 0) {
 			val memory = memoryRequirements.get(0).getMemory()
 			val memUnit = memoryRequirements.get(0).getUnit()
-			ct.setRequiredMemory [
+			compBean.setRequiredMemory [
 				setMemory (memory)
 				if (memUnit.gb)
 					setUnit (MemoryUnit::GB)
@@ -391,7 +406,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (storageRequirements.size() > 0) {
 			val storage = storageRequirements.get(0).getStorage()
 			val storageUnit = storageRequirements.get(0).getUnit()
-			ct.setRequiredStorage [
+			compBean.setRequiredStorage [
 				setStorage (storage)
 				if (storageUnit.gb)
 					setUnit (StorageUnit::GB)
@@ -407,9 +422,9 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (osRequirements.size() > 0) {
 			var osRequirement = osRequirements.get(0)
 			if (osRequirement.linux)
-				ct.setRequiredOS (SupportedOS.LINUX)
+				compBean.setRequiredOS (SupportedOS.LINUX)
 			else if (osRequirement.android)
-				ct.setRequiredOS (SupportedOS.ANDROID)
+				compBean.setRequiredOS (SupportedOS.ANDROID)
 		}
 				
 		// Store middleware requirement.
@@ -417,28 +432,30 @@ class ConfigSpaceGenerator implements IGenerator {
 		if (middlewareRequirements.size() > 0) {
 			var middlewareRequirement = middlewareRequirements.get(0)
 			if (middlewareRequirement.rtidds)
-				ct.setRequiredMiddleware (SupportedMiddleware.RTIDDS)
+				compBean.setRequiredMiddleware (SupportedMiddleware.RTIDDS)
 			else if (middlewareRequirement.alljoyn)
-				ct.setRequiredMiddleware (SupportedMiddleware.ALLJOYN)
+				compBean.setRequiredMiddleware (SupportedMiddleware.ALLJOYN)
 			else if (middlewareRequirement.lcm)
-				ct.setRequiredMiddleware (SupportedMiddleware.LCM)
+				compBean.setRequiredMiddleware (SupportedMiddleware.LCM)
 		}
 		
 		// Store artifact requirements.
 		// NOTE: Artifacts could be more than one.
 		for (a : artifactRequirements)
-			ct.addRequiredArtifact (a.getArtifact().getName())
+			compBean.addRequiredArtifact (a.getArtifact().getName())
 			
 		// Store device requirements.
 		// NOTE: Devices could be more than one.
 		for (d: deviceRequirements)
-			ct.addRequiredDevice (d.getDevice().getName())
+			compBean.addRequiredDevice (d.getDevice().getName())
 	}
 	
 	/*
+	 * Method to generate node categories.
 	 * 
+	 * @param nodeCategories	List of node categories in a model resource.
 	 */
-	def generateNodeCategories (Iterable<NodesCategory> nodeCategories, DB db) {
+	def generateNodeCategories (Iterable<NodesCategory> nodeCategories) {
 		// Loop through each node category.
 		for (nc : nodeCategories) {
 			var DM_NodeCategory nodeCategory = new DM_NodeCategory()
@@ -532,14 +549,16 @@ class ConfigSpaceGenerator implements IGenerator {
 					}
 				]
 			}
-			nodeCategory.insert (db)	
+			nodeCategory.insert (this.db)	
 		}
 	}
 	
 	/*
+	 * Method to generate goal descriptions.
 	 * 
+	 * @param goalDescriptions	List of goal descriptions in a model resource.
 	 */
-	def generateGoalDescriptions (Iterable<GoalDescription> goalDescriptions, DB db) {
+	def generateGoalDescriptions (Iterable<GoalDescription> goalDescriptions) {
 		// Loop through each goal description.
 		for (g : goalDescriptions) {
 			var DM_GoalDescription goalDescription = new DM_GoalDescription()
@@ -629,20 +648,24 @@ class ConfigSpaceGenerator implements IGenerator {
 				]
 			}
 			
-			goalDescription.insert(db)
+			goalDescription.insert(this.db)
 		}
 	}
 	
 	/*
+	 * Method to get functionalities associated with a composition.
 	 * 
+	 * @param composition	Composition for which functionalities must be determined.
 	 */
-	def Multimap<String, String> getFunctionalities (Composition c) {
+	def Multimap<String, String> getFunctionalities (Composition composition) {
 		var Multimap<String, String> retval = HashMultimap.create()
-		for (fe : c.getFunctionedges()) {
+		for (fe : composition.getFunctionedges()) {
 			var toFunctionality = 
-				findFunctionalityWithInput (fe.getToPort().getName(), fe.eResource.allContents.toIterable.filter(Functionality))
+				findFunctionalityWithInput (fe.getToPort().getName(), 
+											fe.eResource.allContents.toIterable.filter(Functionality))
 			var fromFunctionality = 
-				findFunctionalityWithOutput (fe.getFromPort().getName(), fe.eResource.allContents.toIterable.filter(Functionality))
+				findFunctionalityWithOutput (fe.getFromPort().getName(), 
+											 fe.eResource.allContents.toIterable.filter(Functionality))
 						
 			retval.put(toFunctionality, fromFunctionality)
 		}
@@ -650,9 +673,13 @@ class ConfigSpaceGenerator implements IGenerator {
 	}
 	
 	/*
+	 * Method to find functionality with given input parameter.
 	 * 
+	 * @param functionalityParam	Functionality input parameter to find.
+	 * @param functionalities		List of functionalities to search.
 	 */
-	def String findFunctionalityWithInput (String functionalityParam, Iterable<Functionality> functionalities) {
+	def String findFunctionalityWithInput (String functionalityParam, 
+										   Iterable<Functionality> functionalities) {
 		for (f : functionalities) {
 			if (f.getInputFunctionalityParam() != null) {
 				for (i : f.getInputFunctionalityParam().getInputParams()) {
@@ -664,9 +691,13 @@ class ConfigSpaceGenerator implements IGenerator {
 	}
 	
 	/*
+	 * Method to find functionality with given output parameter.
 	 * 
+	 * @param functionalityParam	Functionality output parameter to find.
+	 * @param functionalities		List of functionalities to search.
 	 */
-	def String findFunctionalityWithOutput (String functionalityParam, Iterable<Functionality> functionalities) {
+	def String findFunctionalityWithOutput (String functionalityParam, 
+											Iterable<Functionality> functionalities) {
 		for (f : functionalities) {
 			if (f.getOutputFunctionalityParam() != null) {
 				for (o : f.getOutputFunctionalityParam().getOutputParams()) {
