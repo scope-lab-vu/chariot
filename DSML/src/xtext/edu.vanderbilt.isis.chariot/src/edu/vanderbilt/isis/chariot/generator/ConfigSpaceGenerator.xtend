@@ -656,6 +656,11 @@ class ConfigSpaceGenerator implements IGenerator {
 	 * Method to get functionalities associated with a composition.
 	 * 
 	 * @param composition	Composition for which functionalities must be determined.
+	 * 
+	 * @returns Multimap consisting of functionalities belonging to a composition. These
+	 * 			functionalities are returned as a pair <String, String> where the first
+	 * 			string is a functionality with input port and the second string is a
+	 * 			functionality with output port.
 	 */
 	def Multimap<String, String> getFunctionalities (Composition composition) {
 		var Multimap<String, String> retval = HashMultimap.create()
@@ -677,6 +682,8 @@ class ConfigSpaceGenerator implements IGenerator {
 	 * 
 	 * @param functionalityParam	Functionality input parameter to find.
 	 * @param functionalities		List of functionalities to search.
+	 * 
+	 * @returns Name of the functionality with given input parameter.
 	 */
 	def String findFunctionalityWithInput (String functionalityParam, 
 										   Iterable<Functionality> functionalities) {
@@ -695,6 +702,8 @@ class ConfigSpaceGenerator implements IGenerator {
 	 * 
 	 * @param functionalityParam	Functionality output parameter to find.
 	 * @param functionalities		List of functionalities to search.
+	 * 
+	 * @returns Name of the functionality with given output parameter.
 	 */
 	def String findFunctionalityWithOutput (String functionalityParam, 
 											Iterable<Functionality> functionalities) {

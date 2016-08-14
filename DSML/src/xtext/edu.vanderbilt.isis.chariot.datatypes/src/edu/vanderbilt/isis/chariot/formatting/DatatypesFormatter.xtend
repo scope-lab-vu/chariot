@@ -24,12 +24,17 @@ class DatatypesFormatter extends AbstractDeclarativeFormatter {
 
 	@Inject extension DatatypesGrammarAccess  
 	
-@Override override protected void configureFormatting(FormattingConfig v) {
+	/**
+	 * Method that overrides configureFormatting from AbstractDeclarativeFormatter.
+	 */
+	@Override override protected void configureFormatting(FormattingConfig v) {
 		v.setWrappedLineIndentation(2)
 		v.setAutoLinewrap(150)
+		
 		v.setLinewrap(1).after(messageElementRule)
 		v.setLinewrap(1).after(XImportDeclarationRule)
 		v.setLinewrap(1).after(XExpressionOrVarDeclarationRule)
+		
 		findKeywordPairs("{", "}").forEach(p|formatCurlyBraces(v,p.first, p.second))
 		findKeywordPairs("(", ")").forEach(p|formatParentheses(v,p.first, p.second))
 		findKeywordPairs("<", ">").forEach(p|formatParentheses(v,p.first, p.second))
@@ -42,27 +47,39 @@ class DatatypesFormatter extends AbstractDeclarativeFormatter {
 		v.setLinewrap(0, 1, 2).before(ML_COMMENTRule)
 		v.setLinewrap(0, 1, 1).after(ML_COMMENTRule)
 	}
+	
+	/**
+	 * Method to format semicolons by removing space before a semicolon and adding
+	 * a new line after a semicolon.
+	 */
 	def formatSemicolon(FormattingConfig it, Keyword semicolon) {
 		setNoSpace().before(semicolon);
 		setLinewrap().after(semicolon);
 	}
 
+	/**
+	 * Method to format dots by ensuring no spaces around a dot.
+	 */
 	def formatDot(FormattingConfig it, Keyword dot) {
 		setNoSpace().around(dot);
-
 	}
 
+	/**
+	 * Method to format curly braces by ensuring proper indentation of contents
+	 * inside a pair of curly braces and new lines after each curly brace.
+	 */
 	def formatCurlyBraces(FormattingConfig it, Keyword kw1, Keyword kw2) {
-		// setIndentation(kw1, kw2)
 		setIndentationIncrement.after(kw1)
 		setIndentationDecrement.before(kw2)
 		setLinewrap.after(kw1)
-		// setLinewrap.around(kw2)
 		setLinewrap(1).after(kw2)
 	}
 
+	/**
+	 * Method to format parentheses by ensuring no spaces around them.
+	 */
 	def formatParentheses(FormattingConfig it, Keyword kw1, Keyword kw2) {
 		setNoSpace().around(kw1)
-		setNoSpace().before(kw2)
+		setNoSpace().around(kw2)
 	}
 }

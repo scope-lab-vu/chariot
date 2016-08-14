@@ -9,7 +9,7 @@ import edu.vanderbilt.isis.chariot.services.ChariotGrammarAccess
 class ChariotFormatter extends AbstractDeclarativeFormatter {
 	@Inject extension ChariotGrammarAccess
 
-	/*
+	/**
 	 * Method that overrides configureFormatting from AbstractDeclarativeFormatter.
 	 */
 	@Override override protected void configureFormatting(FormattingConfig it) {
@@ -39,7 +39,7 @@ class ChariotFormatter extends AbstractDeclarativeFormatter {
 		setLinewrap(0, 1, 1).after(ML_COMMENTRule)
 	}
 
-	/*
+	/**
 	 * Method to format semicolons by removing space before a semicolon and adding
 	 * a new line after a semicolon.
 	 */
@@ -48,14 +48,14 @@ class ChariotFormatter extends AbstractDeclarativeFormatter {
 		setLinewrap().after(semicolon);
 	}
 
-	/*
+	/**
 	 * Method to format dots by ensuring no spaces around a dot.
 	 */
 	def formatDot(FormattingConfig it, Keyword dot) {
 		setNoSpace().around(dot);
 	}
 
-	/*
+	/**
 	 * Method to format curly braces by ensuring proper indentation of contents
 	 * inside a pair of curly braces and new lines after each curly brace.
 	 */
@@ -66,7 +66,7 @@ class ChariotFormatter extends AbstractDeclarativeFormatter {
 		setLinewrap(1).after(kw2)
 	}
 
-	/*
+	/**
 	 * Method to format parentheses by ensuring no spaces around them.
 	 */
 	def formatParentheses(FormattingConfig it, Keyword kw1, Keyword kw2) {

@@ -8,7 +8,7 @@ import edu.vanderbilt.isis.chariot.datamodel.ReplicationConstraintKind
 import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
 
 package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
-	/*
+	/**
 	 * An entity to store goal description.
 	 */
 	DM_GoalDescription {
@@ -17,7 +17,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		DM_ReplicationConstraint* replicationConstraints
 		DM_Objective* objectives
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init() {
@@ -26,7 +26,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			this.getObjectives()				// This initializes objectives.
 		}
 		
-		/*
+		/**
 		 * Method to add a replication constraint.
 		 * 
 		 * @param initializer	DM_ReplicationConstraint entity to be added.
@@ -49,7 +49,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 					" already exists in goal " + this.name)
 		}
 		
-		/*
+		/**
 		 * Method to add an objective.
 		 * 
 		 * @param initializer	DM_Objective entity to be added.
@@ -66,7 +66,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 					" objective already exists in goal " + this.name)
 		}
 		
-		/*
+		/**
 		 * Method to insert a goal description entity into a database.
 		 * 
 		 * @param database	Database where the goal description entity should 
@@ -94,7 +94,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			}
 		}
 		
-		/*
+		/**
 		 * Method to update an existing goal description entity.
 		 * 
 		 * @param objectToUpdate	Goal description entity to update.
@@ -113,7 +113,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 }
 	} 
 	
-	/*
+	/**
 	 * An entity to store replication constraint.
 	 */
 	DM_ReplicationConstraint {
@@ -125,7 +125,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		String serviceComponentType
 		List<String> nodeCategories
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init() {
@@ -138,7 +138,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			this.nodeCategories = new ArrayList<String>()
 		}
 		
-		/*
+		/**
 		 * Method to set constraint kind.
 		 * 
 		 * @param kind	Constraint kind.
@@ -147,7 +147,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			this.kind = kind.toString()
 		}
 		
-		/*
+		/**
 		 * Method to add a node category.
 		 * 
 		 * @param nodeCategory	Node category to add.
@@ -161,14 +161,14 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 	}
 	
-	/*
+	/**
 	 * An entity to store objective.
 	 */
 	DM_Objective {
 		String name
 		DM_Functionality* functionalities
 		
-		/*
+		/**
 		 * Initialization method. 
 		 */
 		void init() {
@@ -176,7 +176,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			this.getFunctionalities()	// This initializes functionalities.
 		}
 		
-		/*
+		/**
 		 * Method to add functionality.
 		 * 
 		 * @param initializer	DM_Functionality entity to be added.
@@ -188,14 +188,14 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		}
 	}
 	
-	/*
+	/**
 	 * An entity to store functionality.
 	 */
 	DM_Functionality {
 		String name
 		List<String> dependsOn
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init() {
@@ -203,7 +203,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			this.dependsOn = new ArrayList<String>()
 		}
 		
-		/*
+		/**
 		 * Method to add functionality dependency.
 		 * 
 		 * @param dependsOn	Name of the functionality on which this

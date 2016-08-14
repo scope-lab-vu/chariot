@@ -4,7 +4,7 @@ import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 import "http://www.vanderbilt.edu/isis/chariot/Datatypes" as ChariotMessage
 generate chariot "http://www.vanderbilt.edu/isis/chariot/Chariot"
 
-/*
+/**
  * Entry/start rule that supports one or more imports as well
  * as package declaration.
  */
@@ -12,7 +12,7 @@ DomainModel:
 	(imports += Import)*
 	package = PackageDeclaration;
 	
-/*
+/**
  * Rules that allows importing of elements from different files.
  */
 Import:

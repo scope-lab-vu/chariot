@@ -10,14 +10,14 @@ import edu.vanderbilt.isis.chariot.datatypes.MessageElement
 import edu.vanderbilt.isis.chariot.AllowableTypes
 import java.util.HashSet
 
-/*
+/**
  * Class for IDL generation from data type descriptions.
  */
 class IDLGenerator implements IGenerator {
 	@Inject extension IQualifiedNameProvider
 	@Inject extension AllowableTypes allowableTypes
 
-	/*
+	/**
 	 * Static class that represents sequence definition.
 	 */
 	static class SequenceDefinition {
@@ -25,7 +25,7 @@ class IDLGenerator implements IGenerator {
 		long quantity
 		String suffix
 
-		/*
+		/**
 		 * Constructor.
 		 * 
 		 * @param name		Name of the sequence.
@@ -38,7 +38,7 @@ class IDLGenerator implements IGenerator {
 		    typename = 	type
 		}
 	
-		/*
+		/**
 		 * Method to get unique identifier.
 		 * 
 		 * @returns Unique identifier as a string.
@@ -47,7 +47,7 @@ class IDLGenerator implements IGenerator {
 			return typename + '_' + suffix + quantity.toString
 		}
 
-		/*
+		/**
 		 * Method to get sequence name.
 		 * 
 		 * @returns Unique sequence name as a string.
@@ -61,7 +61,7 @@ class IDLGenerator implements IGenerator {
 		'''
 	}
 
-	/*
+	/**
 	 * Method that performs IDL generation.
 	 * 
 	 * @param input	Input resource on which generation must be performed.
@@ -80,7 +80,7 @@ class IDLGenerator implements IGenerator {
 		}
 	}
 
-	/*
+	/**
 	 * Method to indent (beautify) generated IDL file.
 	 * 
 	 * @param code	IDL code to indent as a single string.
@@ -119,7 +119,7 @@ class IDLGenerator implements IGenerator {
 		return temp.toString
 	}
 
-	/*
+	/**
 	 * Method to compile a message (data type) into a string.
 	 * 
 	 * @param msg	Message (data type) that needs to be compiled to a string.

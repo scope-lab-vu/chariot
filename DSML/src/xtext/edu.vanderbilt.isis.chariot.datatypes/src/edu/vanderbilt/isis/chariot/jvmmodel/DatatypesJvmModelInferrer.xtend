@@ -73,21 +73,18 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 	 *            <code>true</code>.
 	 */
 	def dispatch void infer(DomainModel file, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-		for (bean : file.eAllOfType(Message)) {
-			
-			//logger.info("Generating message for bean {} ",bean.name)
-			acceptor.accept(bean.toClass(bean.fullyQualifiedName)) [
-				documentation = bean.documentation
+		for (msg : file.eAllOfType(Message)) {
+			acceptor.accept(msg.toClass(msg.fullyQualifiedName)) [
+				documentation = msg.documentation
 				superTypes += typeRef(IMongoBean)
-				addConstructors(bean)
-				addDbObjectProperty(bean)
-				members += bean.toField('log', typeRef(Logger)) [
+				addConstructors(msg)
+				addDbObjectProperty(msg)
+				members += msg.toField('log', typeRef(Logger)) [
 					static = true
 					final = true
-					// initializer='''LoggerFactory.getLogger(«tasklet.name».class);'''
-					initializer = '''«Logger.typeName».getLogger(«bean.name».class)'''
+					initializer = '''«Logger.typeName».getLogger(«msg.name».class)'''
 				]
-				for (feature : bean.features) {
+				for (feature : msg.features) {
 					switch feature {
 						MessageElement: {
 							if (feature.isArray) 
@@ -99,29 +96,35 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 							addMethod(feature)
 					}
 				}
-				for (invariant:bean.invariants){
+				for (invariant:msg.invariants){
 					addInvariant(invariant)
 				}
 			] 
 		}
 	}
 
-	def protected addConstructors(JvmDeclaredType inferredType, Message bean) {
+	/**
+	 * Method to add constructor of a message (data type).
+	 * 
+	 * @param inferredType	Type of the message (data type).
+	 * @param msg			Message for which a constructor should be added.
+	 */
+	def protected addConstructors(JvmDeclaredType inferredType, Message msg) {
 		val typeRef1 = typeRef(DBObject)
-		inferredType.members += bean.toConstructor [
-			documentation = '''Creates a new «bean.name» wrapping the given {@link «DBObject.name»}.'''
-			parameters += bean.toParameter("dbObject", typeRef1)
+		inferredType.members += msg.toConstructor [
+			documentation = '''Creates a new «msg.name» wrapping the given {@link «DBObject.name»}.'''
+			parameters += msg.toParameter("dbObject", typeRef1)
 
 			body = '''
 				this._dbObject = dbObject;
 			'''
 		]
-		inferredType.members += bean.toConstructor [
-			documentation = '''Creates a new «bean.name» wrapping a new {@link «BasicDBObject.name»}.'''
+		inferredType.members += msg.toConstructor [
+			documentation = '''Creates a new «msg.name» wrapping a new {@link «BasicDBObject.name»}.'''
 			body = '''
 				_dbObject = new «BasicDBObject»();
 				_dbObject.put(JAVA_CLASS_KEY, "«inferredType.identifier»");
-				«FOR feature : bean.features»
+				«FOR feature : msg.features»
 				«IF feature instanceof MessageElement»
 				«feature.getInitializer»
 				«ENDIF»
@@ -131,8 +134,15 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 		]
 	}
 	
-	
-	
+	/**
+	 * Method to get initializer method of the given message (date type) element.
+	 * 
+	 * @param element	Message (data type) element for which a initializer must
+	 * 					be retrieved.
+	 * 
+	 * @returns	Initializer method declaration for the given message (data type)
+	 * 			element.
+	 */
 	def String getInitializer(MessageElement element) {
 		if (element.isIsArray)
 			return ""
@@ -155,11 +165,17 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 
 	}
 
-	def protected addDbObjectProperty(JvmDeclaredType inferredType, Message bean) {
-		inferredType.members += bean.toField('_dbObject', typeRef(DBObject))
-		inferredType.members += bean.toGetter('dbObject', '_dbObject', typeRef(DBObject))
+	/**
+	 * 
+	 */
+	def protected addDbObjectProperty(JvmDeclaredType inferredType, Message msg) {
+		inferredType.members += msg.toField('_dbObject', typeRef(DBObject))
+		inferredType.members += msg.toGetter('dbObject', '_dbObject', typeRef(DBObject))
 	}
 
+	/**
+	 * 
+	 */
 	def protected addListAccessor(JvmDeclaredType inferredType, MessageElement property) {
 		val propertyType = property.jvmType.asWrapperTypeIfPrimitive
 		if (propertyType.isMongoPrimitiveType) {
@@ -191,6 +207,9 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 		}
 	}
 
+	/**
+	 * 
+	 */
 	def protected addDelegateAccessors(JvmDeclaredType inferredType, MessageElement property) {
 		inferredType.members += property.toMethod('get' + property.name.toFirstUpper, property.jvmType) [
 			documentation = property.documentation
@@ -215,6 +234,9 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 		]
 	}
 	
+	/**
+	 * 
+	 */
 	def String getInitalValue(JvmTypeReference primitiveType){
 		var String name = primitiveType.getIdentifier();
 		logger.info(name+' and '+Long.TYPE.getName() );
@@ -245,6 +267,9 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 		}
 	}
 
+	/**
+	 * 
+	 */
 	def protected addMethod(JvmDeclaredType inferredType, MessageOperation operation) {
 		inferredType.members += operation.toMethod(operation.name, operation.returnType) [
 			documentation = operation.documentation
@@ -253,6 +278,9 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 		]
 	}
 
+	/**
+	 * 
+	 */
 	def protected addInvariant(JvmDeclaredType inferredType, Invariant operation) {
 		inferredType.members += operation.toMethod(operation.name, typeRef(Boolean.TYPE)) [
 			documentation = operation.documentation
@@ -260,6 +288,9 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 		]
 	}
 	
+	/**
+	 * 
+	 */
 	def protected addCheckpoint(JvmDeclaredType inferredType, Message bean) {
 		val typeRef1 = typeRef(DBCollection)
 		inferredType.members += bean.toMethod ("checkpoint",typeRef(Void.TYPE)) [
@@ -272,6 +303,9 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 		]
 	}
 
+	/**
+	 * 
+	 */
 	def protected getJvmType(MessageElement property) {
 		property.type
 	}

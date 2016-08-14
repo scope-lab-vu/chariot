@@ -12,14 +12,14 @@ import edu.vanderbilt.isis.chariot.datamodel.TimeUnit
 import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
 
 package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
-	/*
+	/**
 	 * An entity to store time and unit.
 	 */
 	DM_Time {
 		double time
 		String unit
 			
-		/*
+		/**
 		 * Method to set unit of time.
 		 * 
 		 * @param unit	Unit of time.
@@ -29,7 +29,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		}
 	}
 	
-	/*
+	/**
 	 * An entity to store component type information.
 	 */
 	DM_ComponentType {
@@ -52,7 +52,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 		DM_Time period
 		DM_Time deadline
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init () {
@@ -82,7 +82,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			]
 		}
 		
-		/*
+		/**
 		 * Method to set memory requirement.
 		 * 
 		 * @param initializer	The DM_Memory entity that should be used to
@@ -92,7 +92,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.requiredMemory = new DM_Memory => initializer
 		}
 		
-		/*
+		/**
 		 * Method to set storage requirement.
 		 * 
 		 * @param initializer	The DM_Storage entity that should be used to 
@@ -102,7 +102,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.requiredStorage = new DM_Storage => initializer
 		}
 		
-		/*
+		/**
 		 * Method to set required OS.
 		 * 
 		 * @param os	The required OS.
@@ -111,7 +111,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.setRequiredOS (os.toString())
 		}
 		
-		/*
+		/**
 		 * Method to set required middleware.
 		 * 
 		 * @param middleware	The required middleware.
@@ -120,7 +120,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.setRequiredMiddleware (middleware.toString())
 		}
 		
-		/*
+		/**
 		 * Method to add a required artifact.
 		 * 
 		 * @param artifact	Artifact to be added to the artifact requirement list.
@@ -133,7 +133,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 					" artifact already exists in component " + this.name)
 		}
 		
-		/*
+		/**
 		 * Method to add a required device.
 		 * 
 		 * @param device	Device to be added to the device requirement list.
@@ -146,7 +146,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 					" device already exists in component " + this.name)
 		}
 		
-		/*
+		/**
 		 * Method to set period.
 		 * 
 		 * @param initializer	DM_Time entity that should be used to set period.
@@ -155,7 +155,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.period = new DM_Time => initializer
 		}
 		
-		/*
+		/**
 		 * Method to set deadline.
 		 * 
 		 * @param initializer	DM_Time entity that should be used to set deadline.
@@ -164,7 +164,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			this.deadline = new DM_Time => initializer
 		}
 		
-		/*
+		/**
 		 * Method to insert a component type entity into a database.
 		 * 
 		 * @param database	Database where the component type entity should 
@@ -192,7 +192,7 @@ package edu.vanderbilt.isis.chariot.datamodel.ComponentType {
 			}
 		}
 		
-		/*
+		/**
 		 * Method to update an existing component type entity.
 		 * 
 		 * @param objectToUpdate	Component type entity to update.

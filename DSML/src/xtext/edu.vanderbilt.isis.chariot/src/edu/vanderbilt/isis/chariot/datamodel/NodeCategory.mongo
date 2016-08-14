@@ -11,7 +11,7 @@ import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator
 import java.util.List
 
 package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
-	/*
+	/**
 	 * An entity to store node category.
 	 */
 	DM_NodeCategory {
@@ -19,7 +19,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		String name
 		DM_NodeTemplate* nodeTemplates
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init () {
@@ -27,7 +27,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			this.getNodeTemplates()	// This initializes nodeTemplates.
 		}
 		
-		/*
+		/**
 		 * Method to add a node template.
 		 * 
 		 * @param initializer	DM_NodeTemplate entity to be added.
@@ -45,7 +45,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 					" node template already exists in node category " + this.name)
 		}
 		
-		/*
+		/**
 		 * Method to insert node category entity into a database.
 		 * 
 		 * @param database	Database where the node category entity should 
@@ -73,7 +73,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			}
 		}
 		
-		/*
+		/**
 		 * Method to update an existing node category entity.
 		 * 
 		 * @param objectToUpdate	Node category entity to update.
@@ -92,14 +92,14 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 }
 	}
 	
-	/*
+	/**
 	 * An entity to store memory.
 	 */
 	DM_Memory {
 		int memory
 		String unit
 			
-		/*
+		/**
 		 * Method to set memory unit.
 		 * 
 		 * @param unit	Unit of memory.
@@ -109,14 +109,14 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 	}
 	
-	/*
+	/**
 	 * An entity to store storage.
 	 */
 	DM_Storage {
 		int storage
 		String unit
 			
-		/*
+		/**
 		 * Method to set storage unit.
 		 * 
 		 * @param unit	Unit of storage. 
@@ -126,7 +126,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 	}
 	
-	/*
+	/**
 	 * An entity to store node template.
 	 */
 	DM_NodeTemplate {
@@ -138,7 +138,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		DM_Artifact* artifacts
 		DM_Device* devices
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init() {
@@ -157,7 +157,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			this.getDevices		// This initializes the devices list.
 		}
 		
-		/*
+		/**
 		 * Method to set memory availability.
 		 * 
 		 * @param initializer	The DM_Memory entity that should be used to
@@ -167,7 +167,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			this.availableMemory = new DM_Memory => initializer
 		} 
 		
-		/*
+		/**
 		 * Method to set storage availability.
 		 * 
 		 * @param initializer	The DM_Storage entity that should be used to
@@ -177,7 +177,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			this.availableStorage = new DM_Storage => initializer
 		}
 		
-		/*
+		/**
 		 * Method to set available OS.
 		 * 
 		 * @param os	The available OS.
@@ -186,7 +186,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			this.OS = os.toString()
 		}
 		
-		/*
+		/**
 		 * Method to set available middleware.
 		 * 
 		 * @param middleware The available middleware.
@@ -195,7 +195,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			this.middleware = middleware.toString()
 		}
 		
-		/*
+		/**
 		 * Method to add an available artifact.
 		 * 
 		 * @param initializer	DM_Artifact entity to be added.
@@ -212,7 +212,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 					" artifact already exists in node template " + this.name)
 		}
 		
-		/*
+		/**
 		 * Method to add a device.
 		 * 
 		 * @param initializer	DM_Device entity to be added. 
@@ -230,14 +230,14 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 	}
 	
-	/*
+	/**
 	 * An entity to store artifact.
 	 */
 	DM_Artifact {
 		String name
 		String location
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init() {
@@ -246,7 +246,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		}
 	}
 	
-	/*
+	/**
 	 * An entity to store device.
 	 */
 	DM_Device {
@@ -254,7 +254,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		DM_Artifact* artifacts
 		String status
 		
-		/*
+		/**
 		 * Initialization method.
 		 */
 		void init() {
@@ -263,7 +263,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 			this.status = new String()
 		}
 
-		/*
+		/**
 		 * Method to add an artifact.
 		 * 
 		 * @param initializer	DM_Artifact entity to be added.
@@ -280,7 +280,7 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 					" artifact already exists in device " + this.name)
 		}
 		
-		/*
+		/**
 		 * Method to set device status.
 		 * 
 		 * @param status	Device status.
