@@ -73,9 +73,6 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 	 *            <code>true</code>.
 	 */
 	def dispatch void infer(DomainModel file, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-        
-        
-        
 		for (bean : file.eAllOfType(Message)) {
 			
 			//logger.info("Generating message for bean {} ",bean.name)

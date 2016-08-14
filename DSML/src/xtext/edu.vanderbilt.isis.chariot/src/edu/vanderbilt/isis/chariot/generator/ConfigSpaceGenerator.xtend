@@ -60,7 +60,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	private var Mongo mongoClient
 	private var DB db
 	
-	/*
+	/**
 	 * Constructor.
 	 */
 	new() {
@@ -91,7 +91,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		this.db = this.mongoClient.getDB('ConfigSpace') 
 	}
 	
-	/*
+	/**
 	 * Method that performs configuration space generation.
 	 * 
 	 * @param input	Input resource on which generation must be performed.
@@ -117,7 +117,7 @@ class ConfigSpaceGenerator implements IGenerator {
 			generateGoalDescriptions (input.allContents.toIterable.filter(GoalDescription))
 	}
 	
-	/*
+	/**
 	 * Method to generate voter service components.
 	 * 
 	 * @param voterServiceComponents	List of voter service components in a model resource.
@@ -187,7 +187,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		}
 	}
 	
-	/*
+	/**
 	 * Method to generate consensus service components.
 	 * 
 	 * @param consensusServiceComponents	List of consensus service components in a model resource.
@@ -258,7 +258,7 @@ class ConfigSpaceGenerator implements IGenerator {
 	}
 	
 	
-	/*
+	/**
 	 * Method to generate external components.
 	 * 
 	 * @param externalComponents	List of external components in a model resource.
@@ -329,7 +329,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		}
 	}
 	
-	/*
+	/**
 	 * Method to generate requirements of a component.
 	 * 
 	 * @param comp		Component for which requirements must be generated.
@@ -450,7 +450,7 @@ class ConfigSpaceGenerator implements IGenerator {
 			compBean.addRequiredDevice (d.getDevice().getName())
 	}
 	
-	/*
+	/**
 	 * Method to generate node categories.
 	 * 
 	 * @param nodeCategories	List of node categories in a model resource.
@@ -553,7 +553,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		}
 	}
 	
-	/*
+	/**
 	 * Method to generate goal descriptions.
 	 * 
 	 * @param goalDescriptions	List of goal descriptions in a model resource.
@@ -652,7 +652,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		}
 	}
 	
-	/*
+	/**
 	 * Method to get functionalities associated with a composition.
 	 * 
 	 * @param composition	Composition for which functionalities must be determined.
@@ -672,7 +672,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		return retval
 	}
 	
-	/*
+	/**
 	 * Method to find functionality with given input parameter.
 	 * 
 	 * @param functionalityParam	Functionality input parameter to find.
@@ -690,7 +690,7 @@ class ConfigSpaceGenerator implements IGenerator {
 		}
 	}
 	
-	/*
+	/**
 	 * Method to find functionality with given output parameter.
 	 * 
 	 * @param functionalityParam	Functionality output parameter to find.

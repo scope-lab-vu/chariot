@@ -8,62 +8,86 @@ import com.google.inject.Inject
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import edu.vanderbilt.isis.chariot.datatypes.MessageElement
 import edu.vanderbilt.isis.chariot.AllowableTypes
-import org.eclipse.jdt.internal.formatter.DefaultCodeFormatter
-import org.eclipse.text.edits.TextEdit
-import org.eclipse.jdt.core.formatter.CodeFormatter
-import org.eclipse.jface.text.Document
-import org.eclipse.text.edits.MalformedTreeException
-import org.eclipse.jface.text.BadLocationException
-import java.util.HashMap
-import java.util.Set
 import java.util.HashSet
 
+/*
+ * Class for IDL generation from data type descriptions.
+ */
 class IDLGenerator implements IGenerator {
 	@Inject extension IQualifiedNameProvider
 	@Inject extension AllowableTypes allowableTypes
 
+	/*
+	 * Static class that represents sequence definition.
+	 */
 	static class SequenceDefinition {
 		String typename
 		long quantity
 		String suffix
 
-		new(Message y, long maxbound,String type) {
-			
+		/*
+		 * Constructor.
+		 * 
+		 * @param name		Name of the sequence.
+		 * @param maxbound	Maximum number of elements.
+		 * @param type		Type of elements in the sequence.
+		 */
+		new(String name, long maxbound,String type) {
 			quantity = maxbound
-			suffix = y.name
-			
+			suffix = name
 		    typename = 	type
 		}
 	
+		/*
+		 * Method to get unique identifier.
+		 * 
+		 * @returns Unique identifier as a string.
+		 */
 		def String uniqueIdentifier() {
-			typename + '_' + suffix + quantity.toString
+			return typename + '_' + suffix + quantity.toString
 		}
 
+		/*
+		 * Method to get sequence name.
+		 * 
+		 * @returns Unique sequence name as a string.
+		 */
 		def String sequenceName() '''
 		    «IF typename=="string"»
 		    typedef string<«quantity»> «uniqueIdentifier»;
 		    «ELSE»
-			typedef sequence<«typename»,«quantity»> «uniqueIdentifier»;
+		    typedef sequence<«typename»,«quantity»> «uniqueIdentifier»;
 			«ENDIF»
 		'''
 	}
 
-	static var typedefs = new HashMap<String, SequenceDefinition>
-
+	/*
+	 * Method that performs IDL generation.
+	 * 
+	 * @param input	Input resource on which generation must be performed.
+	 * @param fsa	File system accessor.
+	 */
 	override doGenerate(Resource input, IFileSystemAccess fsa) {
 		// throw new UnsupportedOperationException("TODO: auto-generated method stub")
 		for (e : input.allContents.toIterable.filter(Message)) {
 
-			var messageString = e.compileToString
+			var messageString = compileToString(e)	//e.compileToString
 
 			fsa.generateFile(
 				e.fullyQualifiedName.toString("/") + ".idl",
-				messageString.beautify
+				beautify(messageString)	//messageString.beautify
 			)
 		}
 	}
 
-	def beautify(String code) {
+	/*
+	 * Method to indent (beautify) generated IDL file.
+	 * 
+	 * @param code	IDL code to indent as a single string.
+	 * 
+	 * @returns Indented (beautified) version of the input IDL code.
+	 */
+	def String beautify(String code) {
 		var indent = 0;
 		var temp = new StringBuilder
 		var contents = code.split("\n")
@@ -93,43 +117,21 @@ class IDLGenerator implements IGenerator {
 			}
 		}
 		return temp.toString
-
-//		var  cf = new DefaultCodeFormatter();
-//		var te = cf.format(CodeFormatter.K_UNKNOWN, code, 0,code.length(),0,null);
-//		
-//		var dc = new Document(code);
-//		try{
-//			te.apply(dc)
-//			return dc.get
-//		}
-//		catch (MalformedTreeException e) {
-//			// TODO Auto-generated catch block
-//			return code
-//		} catch (BadLocationException e) {
-//			// TODO Auto-generated catch block
-//			return code
-//		}
 	}
 
 	/*
-	 * public static val mongoPrimitiveTypes = #{
-	 * 	'double',
-	 * 	'java.lang.Double',
-	 * 	'java.lang.String',
-	 * 	'boolean', 
-	 * 	'char',
-	 * 	'java.lang.Boolean',
-	 * 	'long',
-	 * 	'java.lang.Long'
-	 * }«FOR n:0..<jsegmentsize-1» «j.type.fullyQualifiedName.getSegment(n)»/«ENDFOR»
-	 * 					«var jsegmentsize=j.type.fullyQualifiedName.getSegmentCount()»
+	 * Method to compile a message (data type) into a string.
+	 * 
+	 * @param msg	Message (data type) that needs to be compiled to a string.
+	 * 
+	 * @return	The provided message (data type) converted to a single string.
 	 */
-	def String compileToString(Message message) ''' 
+	def String compileToString(Message msg) ''' 
 			«var z= new HashSet<String>»
-			«var x= message.fullyQualifiedName»
+			«var x= msg.fullyQualifiedName»
 			«var s = x.getSegmentCount»
 			
-			«FOR j : message.features.filter(MessageElement)»
+			«FOR j : msg.features.filter(MessageElement)»
 				«IF j.type.type.isMongoBean»
 					«var result=z.add(j.type.qualifiedName)»
 					«IF (result)»
@@ -142,19 +144,19 @@ class IDLGenerator implements IGenerator {
 			module «x.getSegment(i)»
 			{
 			«ENDFOR»
-			«FOR j : message.features.filter(MessageElement)»
+			«FOR j : msg.features.filter(MessageElement)»
 				«IF j.isIsArray»
-					«var temp= new SequenceDefinition(message,j.maxbound,j.idlType)»
+					«var temp= new SequenceDefinition(msg.name,j.maxbound,j.idlType)»
 					«temp.sequenceName»
 				«ENDIF»
 			«ENDFOR»
-			struct «message.name»
+			struct «msg.name»
 			{
-			«FOR j : message.features.filter(MessageElement)»
+			«FOR j : msg.features.filter(MessageElement)»
 			«IF !j.isIsArray»
 				«j.idlType»  «j.name»;«IF j.iskey»//@key«ENDIF»
 			«ELSE»
-				«var temp= new SequenceDefinition(message,j.maxbound,j.idlType)»
+				«var temp= new SequenceDefinition(msg.name,j.maxbound,j.idlType)»
 				«temp.uniqueIdentifier»  «j.name» ;
 			«ENDIF»
 			«ENDFOR»
@@ -164,7 +166,4 @@ class IDLGenerator implements IGenerator {
 			«ENDFOR»
 			
 	'''
-
 }
-	
-	
