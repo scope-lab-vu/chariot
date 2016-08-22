@@ -13,6 +13,7 @@ def main():
     solutionFoundDurations.append("Solution Finding")
     reconfigDurations = list()
     reconfigDurations.append("Reconfiguration")
+
     for re in findResult:
         reconfigEvent = Serialize(**re)
         detectionTime = reconfigEvent.detectionTime

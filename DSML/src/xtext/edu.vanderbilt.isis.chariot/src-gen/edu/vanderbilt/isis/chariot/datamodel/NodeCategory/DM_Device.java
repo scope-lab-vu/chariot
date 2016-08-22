@@ -4,10 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_Artifact;
 import edu.vanderbilt.isis.chariot.datamodel.Status;
-import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator;
 import java.util.List;
-import org.eclipse.xtext.xbase.lib.Functions.Function1;
-import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
@@ -83,24 +80,7 @@ public class DM_Device implements IMongoBean {
     DM_Artifact _dM_Artifact = new DM_Artifact();
     final DM_Artifact artifactToAdd = ObjectExtensions.<DM_Artifact>operator_doubleArrow(_dM_Artifact, initializer);
     List<DM_Artifact> _artifacts = this.getArtifacts();
-    final Function1<DM_Artifact, String> _function = (DM_Artifact it) -> {
-      return it.getName();
-    };
-    final List<String> curArtifacts = ListExtensions.<DM_Artifact, String>map(_artifacts, _function);
-    String _name = artifactToAdd.getName();
-    boolean _contains = curArtifacts.contains(_name);
-    boolean _not = (!_contains);
-    if (_not) {
-      List<DM_Artifact> _artifacts_1 = this.getArtifacts();
-      _artifacts_1.add(artifactToAdd);
-    } else {
-      String _name_1 = artifactToAdd.getName();
-      String _plus = (_name_1 + 
-        " artifact already exists in device ");
-      String _name_2 = this.getName();
-      String _plus_1 = (_plus + _name_2);
-      ConfigSpaceGenerator.LOGGER.info(_plus_1);
-    }
+    _artifacts.add(artifactToAdd);
   }
   
   /**

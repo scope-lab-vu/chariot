@@ -34,8 +34,10 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		void addReplicationConstraint ((DM_ReplicationConstraint)=>void initializer) {
 			val DM_ReplicationConstraint constraintToAdd = 
 				new DM_ReplicationConstraint => initializer
+				
+			this.replicationConstraints.add (constraintToAdd)
 			
-			val List<String> curConstraintKinds = 
+			/*val List<String> curConstraintKinds = 
 				this.replicationConstraints.map[kind]
 			val List<String> curConstraintFunctionalities = 
 				this.replicationConstraints.map[functionality]
@@ -46,7 +48,7 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 			else
 				ConfigSpaceGenerator.LOGGER.info(constraintToAdd.getKind() + " replication 
 					constraint for functionality " + constraintToAdd.getFunctionality() + 
-					" already exists in goal " + this.name)
+					" already exists in goal " + this.name)*/
 		}
 		
 		/**
@@ -56,14 +58,15 @@ package edu.vanderbilt.isis.chariot.datamodel.GoalDescription {
 		 */
 		void addObjective ((DM_Objective)=>void initializer) {
 			val DM_Objective objectiveToAdd = new DM_Objective => initializer
+			this.objectives.add(objectiveToAdd)
 			
-			val List<String> curObjectives = this.objectives.map[name]
+			/*val List<String> curObjectives = this.objectives.map[name]
 			
 			if (!curObjectives.contains (objectiveToAdd.getName()))
 				this.objectives.add(objectiveToAdd)
 			else
 				ConfigSpaceGenerator.LOGGER.info (objectiveToAdd.getName() + 
-					" objective already exists in goal " + this.name)
+					" objective already exists in goal " + this.name)*/
 		}
 		
 		/**

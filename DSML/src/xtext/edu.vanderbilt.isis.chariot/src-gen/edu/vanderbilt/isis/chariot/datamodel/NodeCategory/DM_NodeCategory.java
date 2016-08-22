@@ -9,8 +9,6 @@ import edu.vanderbilt.isis.chariot.datamodel.NodeCategory.DM_NodeTemplate;
 import edu.vanderbilt.isis.chariot.generator.ConfigSpaceGenerator;
 import java.util.List;
 import org.bson.types.ObjectId;
-import org.eclipse.xtext.xbase.lib.Functions.Function1;
-import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.xtext.mongobeans.lib.IMongoBean;
@@ -84,24 +82,7 @@ public class DM_NodeCategory implements IMongoBean {
     DM_NodeTemplate _dM_NodeTemplate = new DM_NodeTemplate();
     final DM_NodeTemplate nodeTemplateToAdd = ObjectExtensions.<DM_NodeTemplate>operator_doubleArrow(_dM_NodeTemplate, initializer);
     List<DM_NodeTemplate> _nodeTemplates = this.getNodeTemplates();
-    final Function1<DM_NodeTemplate, String> _function = (DM_NodeTemplate it) -> {
-      return it.getName();
-    };
-    final List<String> curNodeTemplates = ListExtensions.<DM_NodeTemplate, String>map(_nodeTemplates, _function);
-    String _name = nodeTemplateToAdd.getName();
-    boolean _contains = curNodeTemplates.contains(_name);
-    boolean _not = (!_contains);
-    if (_not) {
-      List<DM_NodeTemplate> _nodeTemplates_1 = this.getNodeTemplates();
-      _nodeTemplates_1.add(nodeTemplateToAdd);
-    } else {
-      String _name_1 = nodeTemplateToAdd.getName();
-      String _plus = (_name_1 + 
-        " node template already exists in node category ");
-      String _name_2 = this.getName();
-      String _plus_1 = (_plus + _name_2);
-      ConfigSpaceGenerator.LOGGER.info(_plus_1);
-    }
+    _nodeTemplates.add(nodeTemplateToAdd);
   }
   
   /**

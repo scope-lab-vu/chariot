@@ -35,14 +35,15 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		void addNodeTemplate ((DM_NodeTemplate)=>void initializer) {
 			val DM_NodeTemplate nodeTemplateToAdd = 
 				new DM_NodeTemplate => initializer
+			this.nodeTemplates.add (nodeTemplateToAdd)
 			
-			val List<String> curNodeTemplates = this.nodeTemplates.map[name]
+			/*val List<String> curNodeTemplates = this.nodeTemplates.map[name]
 			
 			if (!curNodeTemplates.contains (nodeTemplateToAdd.getName()))
 				this.nodeTemplates.add (nodeTemplateToAdd)
 			else
 				ConfigSpaceGenerator.LOGGER.info (nodeTemplateToAdd.getName() + 
-					" node template already exists in node category " + this.name)
+					" node template already exists in node category " + this.name)*/
 		}
 		
 		/**
@@ -202,14 +203,15 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 */
 		void addArtifact ((DM_Artifact)=>void initializer) {
 			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
+			this.artifacts.add (artifactToAdd)
 			
-			val List<String> curArtifacts = this.artifacts.map[name]
+			/*val List<String> curArtifacts = this.artifacts.map[name]
 			
 			if (!curArtifacts.contains (artifactToAdd.getName()))
 				this.artifacts.add (artifactToAdd)
 			else
 				ConfigSpaceGenerator.LOGGER.info (artifactToAdd.getName() + 
-					" artifact already exists in node template " + this.name)
+					" artifact already exists in node template " + this.name)*/
 		}
 		
 		/**
@@ -219,14 +221,15 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 */
 		void addDevice ((DM_Device)=>void initializer) {
 			val DM_Device deviceToAdd = new DM_Device => initializer
+			this.devices.add (deviceToAdd)
 			
-			val List<String> curDevices = this.devices.map[name]
+			/*val List<String> curDevices = this.devices.map[name]
 			
 			if (!curDevices.contains (deviceToAdd.getName()))
 				this.devices.add (deviceToAdd)
 			else
 				ConfigSpaceGenerator.LOGGER.info (deviceToAdd.getName() + 
-					" device already exists in node template " + this.name)
+					" device already exists in node template " + this.name)*/
 		}
 	}
 	
@@ -270,14 +273,15 @@ package edu.vanderbilt.isis.chariot.datamodel.NodeCategory {
 		 */
 		void addArtifact ((DM_Artifact)=>void initializer) {
 			val DM_Artifact artifactToAdd = new DM_Artifact => initializer
+			this.artifacts.add (artifactToAdd)
 			
-			val List<String> curArtifacts = this.artifacts.map[name]
+			/*val List<String> curArtifacts = this.artifacts.map[name]
 			
 			if (!curArtifacts.contains (artifactToAdd.getName()))
 				this.artifacts.add (artifactToAdd)
 			else
 				ConfigSpaceGenerator.LOGGER.info (artifactToAdd.getName() + 
-					" artifact already exists in device " + this.name)
+					" artifact already exists in device " + this.name)*/
 		}
 		
 		/**
