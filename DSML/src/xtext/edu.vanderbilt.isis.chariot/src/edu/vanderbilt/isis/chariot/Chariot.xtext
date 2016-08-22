@@ -427,7 +427,7 @@ NodeTemplateInfo:
 DeviceSupported:
 	'device' name = ID ('{'
 		(artifacts += DeviceArtifact)*
-	'}') ;
+	'}')? ;
 
 /*
  * Rule to create device specific artifact.
