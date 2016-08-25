@@ -130,9 +130,6 @@ class ConfigurationSolver(object):
         #                            for j in range(self.NO_OF_NODES)])
         #                        for i in range(self.NO_OF_COMPONENTS)]) >= self.reliabilityThreshold]
 
-        #rel_const = [(1 * RealVal(0.2) > RealVal(0.6))]
-        #print rel_const
-
         self.solver.add(perf_c2n + com_const)
         #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rel_const)
         #self.solver.add(val_c2n + assignment_c2n + perf_c2n + com_const + rms_c2n)

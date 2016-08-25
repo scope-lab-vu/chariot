@@ -48,7 +48,7 @@ def solver_loop (db, zmq_socket, mongoServer):
                     sock.sendto(SOLVE_RESPONSE_OK, addr)
                     find_solution(db, zmq_socket)
                     inComputation = False
-            else: # ID
+            else:
                 if addr is not None:
                     sock.sendto(data, addr)
                 inComputation = False
@@ -61,6 +61,7 @@ def solver_loop (db, zmq_socket, mongoServer):
         #   sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
+# Helper for mongo connection.
 def mongo_connect(serverName):
     try:
         client = pymongo.MongoClient(serverName)
@@ -556,10 +557,13 @@ def main():
     zmq_context = zmq.Context()
     zmq_socket = zmq_context.socket(zmq.REQ)
 
-    # Set receive timeout of 3 seconds and set linger for clean termination.
+    # Set receive timeout of 3 seconds.
     zmq_socket.setsockopt(zmq.RCVTIMEO, 3000)
+
+    # Set linger for clean termination.
     zmq_socket.setsockopt(zmq.LINGER, 0)
 
+    # If initial deployment, invoke solver. If not, start solver loop.
     if initialDeployment:
         invoke_solver(db, zmq_socket, True)
     else:

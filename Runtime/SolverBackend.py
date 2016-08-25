@@ -833,9 +833,9 @@ class SolverBackend:
                     objectiveIndex = self.objectiveName2Index[constraint[4]]
                     constraintToAdd = solver.ForceAtleast(objectiveIndex, compIndexes, constraint[1])
                 else:
-                #    print "** No previous deployedment so using maximum"
+                    #print "** No previous deployedment so using maximum"
                     # This atleast group has not been deployed before so using maximum optimization.
-                #    solver.Maximize(compIndexes)
+                    #solver.Maximize(compIndexes)
                     print "** No previous deployment so assigning must deploy"
                     objectiveIndex = self.objectiveName2Index[constraint[4]]
                     constraintToAdd = solver.ForceExactly(objectiveIndex, compIndexes, constraint[2])
