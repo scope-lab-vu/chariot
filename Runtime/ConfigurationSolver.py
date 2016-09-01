@@ -226,10 +226,17 @@ class ConfigurationSolver(object):
     # Output: a constraints that makes sure that there is a link between the nodes
     # the components are deployed on. If the  two components are on the same node
     # the constraint is still satisfied.
+    #def Communicates(self, i, j):
+    #    c2n = self.c2n
+    #    c2l = [ Implies(And(c2n[i][n1]*c2n[j][n2]!=0, n1!=n2), self.links[n1][n2] >=self.communicationWeights[i][j])
+    #    for n1 in range(self.NO_OF_NODES) for n2 in range(self.NO_OF_NODES) ]
+    #    return c2l
+    #    #return And(c2l)
+
     def Communicates(self, i, j):
         c2n = self.c2n
-        c2l = [ Implies(And(c2n[i][n1]*c2n[j][n2]!=0, n1!=n2), self.links[n1][n2] >=self.communicationWeights[i][j])
-        for n1 in range(self.NO_OF_NODES) for n2 in range(self.NO_OF_NODES) ]
+        c2l = [ Implies(And(c2n[i][n1]*c2n[j][n2]!=0, n1!=n2), self.links[n1][n2] == 1)
+            for n1 in range(self.NO_OF_NODES) for n2 in range(self.NO_OF_NODES) ]
         return c2l
         #return And(c2l)
 
