@@ -79,8 +79,8 @@ class GoalDescription:
 
                 # For each functionality in above collected functionality dependencies, find and store corresponding
                 # functionality instances in retVal.
-                voterDependencyHandled = False
                 for funcDependency in functionalityDependencies:
+                    voterDependencyHandled = False
                     for funcInst in self.functionalityInstances:
                         if funcInst.functionalityName == funcDependency:
                             # Handle scenario where the functionality dependency is a voter. In this case the
