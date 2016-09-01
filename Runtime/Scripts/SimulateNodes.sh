@@ -7,7 +7,7 @@ case "$1" in
 		do
 			NodeName="node""$i"
 			PortNumber=$((7000+$i))
-			python ../SimulateNodeActivity.py --nodeName $NodeName --nodeTemplate "SimpleNodeTemplate" --port $PortNumber --action "start" &
+			python ../SimulateNodeActivity.py --nodeName $NodeName --nodeTemplate "SimpleNodeTemplate" --port $PortNumber --action "start"
 		done
 		;;
 	stop)
@@ -16,7 +16,7 @@ case "$1" in
 		do
 			NodeName="node""$i"
 			PortNumber=$((7000+$i))
-			python ../SimulateNodeActivity.py --nodeName $NodeName --nodeTemplate "SimpleNodeTemplate" --port $PortNumber --action "stop" &
+			python ../SimulateNodeActivity.py --nodeName $NodeName --nodeTemplate "SimpleNodeTemplate" --port $PortNumber --action "stop"
 		done
 		;;
 	*)

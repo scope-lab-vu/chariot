@@ -146,6 +146,7 @@ def find_solution(db, zmq_socket):
 
 # Returns true if send succeeds, false otherwise.
 def send_action (db, action, zmq_socket):
+    return True
     # Get address of node to send action to.
     addr, port = get_node_address(db, action["node"])
     zmq_addr = None

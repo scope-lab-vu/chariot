@@ -85,6 +85,9 @@ class NewConfigurationSolver(ConfigurationSolver):
     def get_next_configuration(self, initial):
         s= self.solver
         s.push() # Save solver state
+        print "Stats: ", s.statistics()
+        #print s.assertions()
+        print "Number of assertions: ", len(s.assertions())
 
         # Here, c2n is a list of Z3 int variables that will be assigned values by the solver.
         # c2n_old is a CxN matrix of integers that represents CURRENT (will be 0's during initial deployment)
@@ -118,13 +121,16 @@ class NewConfigurationSolver(ConfigurationSolver):
         s.add(absNorm == absNormFormula)
 
         last_model = None
+        count = 0
         while True:
+            count += 1
             r = s.check()
             if r == unsat:
                 s.pop()
                 if last_model is None:
                     return [None, None]
                 else:
+                    print "Number of least dist iteration: ", count
                     return [last_model[absNorm].as_long(), last_model]
 
             elif r == unknown:
@@ -133,7 +139,6 @@ class NewConfigurationSolver(ConfigurationSolver):
             else:
                 last_model = s.model()
                 s.add(absNorm < last_model[absNorm])
-
 
     # Check if current state (represented by c2n_old) is valid.
     def check_valid(self):
