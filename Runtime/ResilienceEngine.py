@@ -172,6 +172,7 @@ def send_action (db, action, zmq_socket):
 # This function returns list of deployment actions if solution found.
 def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
     startTime = time.time()
+
     backend = SolverBackend()
 
     print "Loading ConfigSpace."
@@ -182,7 +183,10 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
     backend.dump_component_instances(db)
     print "Successfully populated ConfigSpace with component instances."
 
-    print "Computing new deployment."
+    elapsedTime = time.time() - startTime
+    print "** Problem setup time (Phase 1 - Instance Computation Phase): ", elapsedTime
+
+    startTime = time.time()
 
     from NewConfigurationSolverBound import NewConfigurationSolverBound
     solver = NewConfigurationSolverBound(backend)
@@ -191,7 +195,12 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
     solver.c2n_old = backend.c2n
 
     # Add component instance dependencies.
-    backend.add_component_instance_dependencies(solver)
+    dependencyAdditionTime = time.time()
+
+    backend.add_dependency_constraints(solver)
+
+    dependencyAdditionElapsedTime = time.time() - dependencyAdditionTime
+    print "** Dependency constraint addition time: ", dependencyAdditionElapsedTime
 
     # Add failure constraints.
     backend.add_failure_constraints(solver)
@@ -201,8 +210,11 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
 
     # TODO: Check if current deployment is valid. If valid, no need to invoke solver.
     #solver.check_valid()
+
     elapsedTime = time.time() - startTime
-    print "** Problem setup time: ", elapsedTime
+    print "** Problem setup time (Phase 2 - Constraint Encoding Phase) : ", elapsedTime
+
+    print "Computing new deployment."
 
     startTime = time.time() 
 
@@ -218,12 +230,12 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
         if (dist == None):
             print "No deployment found!"
 
+            elapsedTime = time.time() - startTime
+            print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
+
             if not LOOK_AHEAD or lookAheadUpdate:
                 reColl.update({"completed":False},
                               {"$set":{"completed":True}})
-                                
-            elapsedTime = time.time() - startTime
-            print "** Solver time: ", elapsedTime
             
             return None
         else:
@@ -232,6 +244,9 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                 if (model is not None):
                     print "Computing new deployment actions and populating DeploymentActions collection."
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
+
+                    elapsedTime = time.time() - startTime
+                    print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
 
                     # Perform steps needed for non-lookahead or lookahead but update scenario.
                     if not LOOK_AHEAD or lookAheadUpdate:
@@ -248,8 +263,6 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                         # Send actions using zeromq if not lookahead.
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
-                                elapsedTime = time.time() - startTime
-                                print "** Solver time: ", elapsedTime
                                 return
 
                         # If lookahead update scenario then perform update lookahead.
@@ -264,14 +277,15 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
 
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
-                                elapsedTime = time.time() - startTime
-                                print "** Solver time: ", elapsedTime
                                 return
 
                         print "Initial lookahead mechanism"
                         look_ahead(db)
             elif dist == 0:
                 print "Same deployment as before. No need for any changes."
+
+                elapsedTime = time.time() - startTime
+                print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
 
                 # No action so update reconfiguration event if non-lookahead or if lookahead and update scenario.
                 if not LOOK_AHEAD or lookAheadUpdate:
@@ -283,16 +297,15 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                     # If lookahead update scenario then perform lookahead.
                     if lookAheadUpdate:
                         look_ahead(db)
-
-                elapsedTime = time.time() - startTime
-                print "** Solver time: ", elapsedTime
                     
                 # Here we return empty list to distinguish returns for scenarios where no action is required and where
                 # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
                 return list()
+    else:
+        print "New deployment could not be computed."
 
-    elapsedTime = time.time() - startTime
-    print "** Solver time: ", elapsedTime
+        elapsedTime = time.time() - startTime
+        print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
 
     return actions
 
