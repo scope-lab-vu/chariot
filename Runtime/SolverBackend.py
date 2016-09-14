@@ -3,6 +3,7 @@ __author__ = "Subhav Pradhan"
 import operator
 from operator import attrgetter
 import datetime
+import copy
 
 class Serialize:
     def __init__(self, **entries):
@@ -10,18 +11,19 @@ class Serialize:
 
 class GoalDescription:
     name = None
-    replicationConstraints = None       # List of constraints read from the database.
+    replicationConstraints = None           # List of constraints read from the database.
     objectives = None
-    functionalityInstances = None       # List of functionality instances.
-    computedFunctionalities = None      # List of functionalities for which instances have been computed.
-    compTypesToFuncInstances = None     # List of tuple <list of component type name,
-                                        #                list of functionality instance names>.
-    componentInstances = None           # List of component instances.
-    functionalityConstraints = None     # List of constraints in terms of functionality instances. This list
-                                        # will be used to generate solver constraints, which should be in terms
-                                        # of component instances
-    funcInstancesToCompInstances = None # Dictionary with key = functionality instance name, and value = component
-                                        # instance name.
+    functionalityInstances = None           # List of functionality instances.
+    computedFunctionalities = None          # List of functionalities for which instances have been computed.
+    compTypesToFuncInstances = None         # List of tuple <list of component type name,
+                                            #                list of functionality instance names>.
+    componentInstances = None               # List of component instances.
+    componentInstanceDependencies = None
+    functionalityConstraints = None         # List of constraints in terms of functionality instances. This list
+                                            # will be used to generate solver constraints, which should be in terms
+                                            # of component instances
+    funcInstancesToCompInstances = None     # Dictionary with key = functionality instance name, and value = component
+                                            # instance name.
 
     # TODO: Some notion of componentConstraints will also be required to store constraints related to multiple
     # TODO: components providing same functionality.
@@ -34,6 +36,7 @@ class GoalDescription:
         self.computedFunctionalities = list()
         self.compTypesToFuncInstances = list()
         self.componentInstances = list()
+        self.componentInstanceDependencies = dict()
         self.functionalityConstraints = list()
         self.funcInstancesToCompInstances = dict()
 
@@ -52,10 +55,15 @@ class GoalDescription:
     def get_replication_constraints(self):
         return self.replicationConstraints
 
+    def get_component_instance_dependencies(self):
+        return self.componentInstanceDependencies
+
     # This function computes dependencies for each component instance and returns a dictionary in which each
     # entry is a tuple <component instance name, list of names of component instances it depends on>.
-    def get_component_instances_dependencies(self):
-        retVal = dict()
+    def compute_component_instance_dependencies(self):
+        if len(self.componentInstanceDependencies) > 0:
+            print "Recomputing component instance dependencies"
+            self.componentInstanceDependencies.clear()  # Emptying component instances list.
 
         for compInst in self.componentInstances:
             compInstDependencies = list()
@@ -102,9 +110,7 @@ class GoalDescription:
                     if functionalityInstance.name != funcInst.name and functionalityInstance.name[:-8] in funcInst.name:
                         compInstDependencies.append(self.funcInstancesToCompInstances[funcInst.name])
 
-            retVal[compInst.name] = compInstDependencies
-
-        return retVal
+            self.componentInstanceDependencies[compInst.name] = compInstDependencies
 
     # This function returns name of the voter functionality instance corresponding to the given functionality.
     def find_voter_functionality_instance_name(self, functionality):
@@ -598,6 +604,7 @@ class SolverBackend:
     functionalityInstances = None
     functionalityConstraints = None
     componentInstances = None
+    componentInstanceDependencies = None
     constraints = None
 
     # Deployment representation as an adjacency matrix (NUM_OF_COMPONENTS X NUM_OF_NODES).
@@ -652,6 +659,7 @@ class SolverBackend:
         self.functionalityInstances = list()
         self.functionalityConstraints = list()
         self.componentInstances = list()
+        self.componentInstanceDependencies = dict()
 
         self.c2n = list(list())
 
@@ -747,16 +755,17 @@ class SolverBackend:
         #self.load_node_reliability()
         #self.load_comparative_resource_reliability()
 
-    # This function communicates constraint for each component instance using the component instance's dependencies.
-    def add_component_instance_dependencies(self, solver):
-        for goalDesc in self.goalDescriptions:
-            dependencies = goalDesc.get_component_instances_dependencies().items()
-            for dependency in dependencies:
-                if len(dependency[1]) > 0:
-                    for dependencySource in dependency[1]:
-                        srcCompIndex = self.componentInstName2Index[dependencySource]
-                        destCompIndex = self.componentInstName2Index[dependency[0]]
-                        solver.solver.add(solver.Communicates(srcCompIndex, destCompIndex))
+    # This function adds communicates constraint for component instance dependencies.
+    def add_dependency_constraints(self, solver):
+        dependencies = self.componentInstanceDependencies.items()
+        for dependency in dependencies:
+            if len(dependency[1]) > 0:
+                for dependencySource in dependency[1]:
+                    srcCompIndex = self.componentInstName2Index[dependencySource]
+                    destCompIndex = self.componentInstName2Index[dependency[0]]
+                    solver.solver.add(solver.Communicates(srcCompIndex, destCompIndex))
+                    #print "** Added communicates constraint for source component: ", self.componentInstances[srcCompIndex].name, \
+                    #      " and destination component: ", self.componentInstances[destCompIndex].name
 
     # This function adds node, process, and component failures as constraints to the given solver.
     def add_failure_constraints(self, solver):
@@ -1442,6 +1451,9 @@ class SolverBackend:
             goalDescriptionToAdd.compute_functionality_instances(self.nodes, self.nodeTemplates)
             goalDescriptionToAdd.compute_component_instances(self.componentTypes)
 
+            # Compute dependencies between component instances.
+            goalDescriptionToAdd.compute_component_instance_dependencies()
+
             # Retrieve and store objectives.
             for objective in goalDescriptionToAdd.get_objectives():
                 self.objectives.append(objective)
@@ -1465,6 +1477,10 @@ class SolverBackend:
 
             # Sort above component instances using name.
             self.componentInstances = sorted(self.componentInstances, key = attrgetter("name"))
+
+            # Retrieve and store dependencies between component instances.
+            self.componentInstanceDependencies = \
+                copy.deepcopy(goalDescriptionToAdd.get_component_instance_dependencies())
 
             # Add goal description to collection.
             self.goalDescriptions.append(goalDescriptionToAdd)
