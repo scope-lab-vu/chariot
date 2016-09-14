@@ -12,11 +12,8 @@ package edu.vanderbilt.isis.chariot.smartpowergrid {
 		output breaker_action
 	}
 	
-	composition sensing {
+	composition protection{
 		pmu.pmu_data to relay.pmu_data
-	}
-	
-	composition actuating {
 		relay.breaker_action to breaker.breaker_action
 	}
 }
