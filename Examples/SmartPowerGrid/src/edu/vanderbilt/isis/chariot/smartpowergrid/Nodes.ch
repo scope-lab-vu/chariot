@@ -28,14 +28,20 @@ package edu.vanderbilt.isis.chariot.smartpowergrid {
 	
 	// Node categories for different IEDs.
 	nodeCategory IED_Z1 {
-		nodeTemplate default_ied_z1{}
+		nodeTemplate default_ied_z1{
+			memory 128 MB
+		}
 	}
 	
 	nodeCategory IED_Z2 {
-		nodeTemplate default_ied_z2{}
+		nodeTemplate default_ied_z2{
+			memory 128 MB
+		}
 	}
 	
 	nodeCategory IED_Z3 {
-		nodeTemplate default_ied_z3{}
+		nodeTemplate default_ied_z3{
+			memory 128 MB
+		}
 	}
 }
