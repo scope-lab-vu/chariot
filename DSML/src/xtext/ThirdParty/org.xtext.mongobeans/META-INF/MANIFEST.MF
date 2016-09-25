@@ -34,4 +34,5 @@ Export-Package: org.xtext.mongobeans,
  org.xtext.mongobeans.parser.antlr.internal,
  org.xtext.mongobeans.serializer,
  org.xtext.mongobeans.services,
- org.xtext.mongobeans.validation
+ org.xtext.mongobeans.validation,
+ org.xtext.mongobeans.formatting

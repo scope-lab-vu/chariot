@@ -11,16 +11,36 @@ import org.eclipse.emf.mwe.utils.*
 import org.eclipse.xtext.generator.*
 import org.eclipse.xtext.ui.generator.*
 
-var grammarURI = "classpath:/org/xtext/mongobeans/MongoBeans.xtext"
-var fileExtensions = "mongo"
 var projectName = "org.xtext.mongobeans"
-var runtimeProject = "../${projectName}"
-var generateStub = false
+var grammarURI = "platform:/resource/${projectName}/src/org/xtext/mongobeans/MongoBeans.xtext"
+var fileExtensions = "mongo"
+var runtimeProject = "../ThirdParty/${projectName}"
+var generateXtendStub = true
+var encoding = "UTF-8"
 
 Workflow {
     bean = StandaloneSetup {
-    	scanClassPath = true
+    	// use an XtextResourceset throughout the process, which is able to resolve classpath:/ URIs.
+    	resourceSet = org.eclipse.xtext.resource.XtextResourceSet:theResourceSet {}
+    	
+    	// add mappings from platform:/resource to classpath:/
+    	uriMap = {
+    		from = "platform:/resource/org.eclipse.xtext.xbase/"
+    		to = "classpath:/"
+    	}
+    	uriMap = {
+    		from = "platform:/resource/org.eclipse.xtext.common.types/"
+    		to = "classpath:/"
+    	}
+
+    	// for builds without .project file
+    	projectMapping = {
+    		projectName = '${projectName}'
+    		path = '${runtimeProject}'
+    	}
+    	
     	platformUri = "${runtimeProject}/.."
+    	
     	// The following two lines can be removed, if Xbase is not used.
     	registerGeneratedEPackage = "org.eclipse.xtext.xbase.XbasePackage"
     	registerGenModelFile = "platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel"
@@ -41,14 +61,17 @@ Workflow {
     	projectNameRt = projectName
     	projectNameUi = "${projectName}.ui"
     	language = auto-inject {
+    		// make sure we use the resourceSet created during standalone setup.
+    		forcedResourceSet = theResourceSet
+    		
     		uri = grammarURI
     
     		// Java API to access grammar elements (required by several other fragments)
     		fragment = grammarAccess.GrammarAccessFragment auto-inject {}
     
     		// generates Java API for the generated EPackages
-    		fragment = ecore.EMFGeneratorFragment auto-inject {
-    			emfRuntimeVersion = "2.10"
+			fragment = ecore.EMFGeneratorFragment auto-inject {
+    			javaModelDirectory = "/${projectName}/src-gen"
     		}
     
     		// the old serialization component
@@ -64,14 +87,12 @@ Workflow {
     
     		// The antlr parser generator fragment.
     		fragment = parser.antlr.XtextAntlrGeneratorFragment auto-inject {
-    		//  options = {
-    		//      backtrack = true
-    		//  }
+    			// For the very slow servers
+    			antlrParam = "-Xconversiontimeout" antlrParam = "5000"
     		}
     
     		// Xtend-based API for validation
     		fragment = validation.ValidatorFragment auto-inject {
-    			generateStub = true
     		//    composedCheck = "org.eclipse.xtext.validation.ImportUriValidator"
     		//    composedCheck = "org.eclipse.xtext.validation.NamesAreUniqueValidator"
     		}
@@ -89,7 +110,7 @@ Workflow {
     		fragment = generator.GeneratorFragment auto-inject {}
     
     		// formatter API
-    		// fragment = formatting.FormatterFragment auto-inject {}
+    		fragment = formatting.FormatterFragment auto-inject {}
     
     		// labeling API
     		fragment = labeling.LabelProviderFragment auto-inject {}
@@ -102,20 +123,13 @@ Workflow {
     		fragment = quickfix.QuickfixProviderFragment auto-inject {}
     
     		// content assist API
-    		fragment = contentAssist.ContentAssistFragment auto-inject {
-    			generateStub = false
-    		}
+    		fragment = contentAssist.ContentAssistFragment auto-inject {}
     
     		// generates a more lightweight Antlr parser and lexer tailored for content assist
     		fragment = parser.antlr.XtextAntlrUiGeneratorFragment auto-inject {}
     
     		// generates junit test support classes into Generator#pathTestProject
-    	//	fragment = junit.Junit4Fragment auto-inject {}
-    
-    		// project wizard (optional)
-    		// fragment = projectWizard.SimpleProjectWizardFragment auto-inject {
-    		//      generatorProjectName = "${projectName}"
-    		// }
+    		fragment = junit.Junit4Fragment auto-inject {}
     
     		// rename refactoring
     		fragment = refactoring.RefactorElementNameFragment auto-inject {}
@@ -132,7 +146,7 @@ Workflow {
     		// provides a compare view
     		fragment = compare.CompareFragment auto-inject {}
     	}
-    }
+   	}
 }
 
 
