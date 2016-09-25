@@ -1,31 +1,27 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: edu.vanderbilt.isis.chariot.ui
-Bundle-Vendor: Institute for Software Integrated Systems, Vanderbilt University
+Bundle-Vendor: My Company
 Bundle-Version: 1.0.0.qualifier
 Bundle-SymbolicName: edu.vanderbilt.isis.chariot.ui; singleton:=true
 Bundle-ActivationPolicy: lazy
-Require-Bundle: edu.vanderbilt.isis.chariot;visibility:=reexport,
+Require-Bundle: edu.vanderbilt.isis.chariot,
  org.eclipse.xtext.ui,
+ org.eclipse.xtext.ui.shared,
+ org.eclipse.xtext.ui.codetemplates.ui,
  org.eclipse.ui.editors;bundle-version="3.5.0",
  org.eclipse.ui.ide;bundle-version="3.5.0",
- org.eclipse.xtext.ui.shared,
  org.eclipse.ui,
  org.eclipse.xtext.builder,
  org.eclipse.xtext.xbase.lib,
- org.antlr.runtime,
  org.eclipse.xtext.common.types.ui,
- org.eclipse.xtext.ui.codetemplates.ui,
  org.eclipse.compare,
- edu.vanderbilt.isis.chariot.datatypes.ui;bundle-version="1.0.0",
- org.eclipse.xtend.standalone,
- org.eclipse.xtext.xbase.ui,
- org.eclipse.jdt.debug.ui
+ org.eclipse.xtend.lib;resolution:=optional
+Import-Package: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-Activator: edu.vanderbilt.isis.chariot.ui.internal.ChariotActivator
 Export-Package: edu.vanderbilt.isis.chariot.ui.quickfix,
  edu.vanderbilt.isis.chariot.ui.contentassist,
- edu.vanderbilt.isis.chariot.ui.contentassist.antlr,
  edu.vanderbilt.isis.chariot.ui.internal,
+ edu.vanderbilt.isis.chariot.ui.contentassist.antlr,
  edu.vanderbilt.isis.chariot.ui.contentassist.antlr.internal
-Bundle-Activator: edu.vanderbilt.isis.chariot.ui.internal.ChariotActivator
-Import-Package: org.apache.log4j

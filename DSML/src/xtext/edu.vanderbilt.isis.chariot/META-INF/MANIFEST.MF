@@ -22,10 +22,12 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.equinox.common;bundle-version="3.6.200",
  edu.vanderbilt.isis.chariot.datatypes;bundle-version="1.0.0",
  org.eclipse.xtend.standalone,
- org.eclipse.orbit.mongodb;bundle-version="1.0.0",
  org.junit,
+ org.eclipse.xtend.lib,
+ org.eclipse.orbit.mongodb;bundle-version="1.0.0",
  org.xtext.mongobeans.lib;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: org.apache.log4j
 Export-Package: edu.vanderbilt.isis.chariot,
  edu.vanderbilt.isis.chariot.services,
  edu.vanderbilt.isis.chariot.chariot,
@@ -38,4 +40,4 @@ Export-Package: edu.vanderbilt.isis.chariot,
  edu.vanderbilt.isis.chariot.scoping,
  edu.vanderbilt.isis.chariot.generator,
  edu.vanderbilt.isis.chariot.formatting
-Import-Package: org.apache.log4j
+
