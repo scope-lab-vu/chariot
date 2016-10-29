@@ -29,7 +29,7 @@ class AllowableTypes {
 	}
 
 	def isMongoBean(JvmType type) {
-		return type.collectNames.contains('edu.vanderbilt.isis.chariot.lib.IMongoBean')
+		return type.collectNames.contains('org.xtext.mongobeans.lib.IMongoBean')
 	}
 
 	def getLCMType(MessageElement message) {

@@ -4,53 +4,77 @@ import org.eclipse.emf.mwe.utils.*
 import org.eclipse.xtext.generator.*
 import org.eclipse.xtext.ui.generator.*
 
-var grammarURI = "classpath:/edu/vanderbilt/isis/chariot/Datatypes.xtext"
-var fileExtensions = "dt"
 var projectName = "edu.vanderbilt.isis.chariot.datatypes"
+var grammarURI = "platform:/resource/${projectName}/src/edu/vanderbilt/isis/chariot/Datatypes.xtext"
+var fileExtensions = "dt"
 var runtimeProject = "../${projectName}"
 var generateXtendStub = true
 var encoding = "UTF-8"
 
 Workflow {
     bean = StandaloneSetup {
-    	scanClassPath = true
+    	// use an XtextResourceset throughout the process, which is able to resolve classpath:/ URIs.
+    	resourceSet = org.eclipse.xtext.resource.XtextResourceSet:theResourceSet {}
+    	
+    	// add mappings from platform:/resource to classpath:/
+    	uriMap = {
+    		from = "platform:/resource/org.eclipse.xtext.xbase/"
+    		to = "classpath:/"
+    	}
+    	uriMap = {
+    		from = "platform:/resource/org.eclipse.xtext.common.types/"
+    		to = "classpath:/"
+    	}
+
+    	// for builds without .project file
+    	projectMapping = {
+    		projectName = '${projectName}'
+    		path = '${runtimeProject}'
+    	}
+    	
     	platformUri = "${runtimeProject}/.."
+    	
     	// The following two lines can be removed, if Xbase is not used.
     	registerGeneratedEPackage = "org.eclipse.xtext.xbase.XbasePackage"
     	registerGenModelFile = "platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel"
     }
     
-    component = DirectoryCleaner {
-    	directory = "${runtimeProject}/src-gen/edu"
-    }
+   component = DirectoryCleaner {
+    	directory = "${runtimeProject}/src-gen"
+   }
     
     component = DirectoryCleaner {
     	directory = "${runtimeProject}/model/generated"
     }
     
     component = DirectoryCleaner {
-    	directory = "${runtimeProject}.ui/src-gen/edu"
+    	directory = "${runtimeProject}.ui/src-gen"
     }
     
-//    component = DirectoryCleaner {
-//    	directory = "${runtimeProject}.tests/src-gen"
-//    }
+    component = DirectoryCleaner {
+    	directory = "${runtimeProject}.tests/src-gen"
+    }
     
     component = Generator {
     	pathRtProject = runtimeProject
     	pathUiProject = "${runtimeProject}.ui"
-    	//pathTestProject = "${runtimeProject}.tests"
+    	pathTestProject = "${runtimeProject}.tests"
     	projectNameRt = projectName
     	projectNameUi = "${projectName}.ui"
     	encoding = encoding
     	language = auto-inject {
+    		// make sure we use the resourceSet created during standalone setup.
+    		forcedResourceSet = theResourceSet
+    		
     		uri = grammarURI
     
     		// Java API to access grammar elements (required by several other fragments)
     		fragment = grammarAccess.GrammarAccessFragment auto-inject {}
     
     		// generates Java API for the generated EPackages
-    		fragment = ecore.EMFGeneratorFragment auto-inject {}
+			fragment = ecore.EMFGeneratorFragment auto-inject {
+    			javaModelDirectory = "/${projectName}/src-gen"
+    		}
     
     		// the old serialization component
     		// fragment = parseTreeConstructor.ParseTreeConstructorFragment auto-inject {}    
@@ -65,9 +89,8 @@ Workflow {
     
     		// The antlr parser generator fragment.
     		fragment = parser.antlr.XtextAntlrGeneratorFragment auto-inject {
-    		//  options = {
-    		//      backtrack = true
-    		//  }
+    			// For the very slow servers
+    			antlrParam = "-Xconversiontimeout" antlrParam = "5000"
     		}
     
     		// Xtend-based API for validation
@@ -107,9 +130,9 @@ Workflow {
     		// generates a more lightweight Antlr parser and lexer tailored for content assist
     		fragment = parser.antlr.XtextAntlrUiGeneratorFragment auto-inject {}
     
-//    		// generates junit test support classes into Generator#pathTestProject
-//    		fragment = junit.Junit4Fragment auto-inject {}
-//    
+    		// generates junit test support classes into Generator#pathTestProject
+    		fragment = junit.Junit4Fragment auto-inject {}
+    
     		// rename refactoring
     		fragment = refactoring.RefactorElementNameFragment auto-inject {}
     
@@ -118,9 +141,6 @@ Workflow {
     
     		// generates the required bindings only if the grammar inherits from Xbase
     		fragment = xbase.XbaseGeneratorFragment auto-inject {}
-    		
-    		// generates the required bindings only if the grammar inherits from Xtype
-    		fragment = xbase.XtypeGeneratorFragment auto-inject {}
     
     		// provides a preference page for template proposals
     		fragment = templates.CodetemplatesGeneratorFragment auto-inject {}
@@ -130,4 +150,3 @@ Workflow {
     	}
     }
 }
-

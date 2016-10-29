@@ -13,11 +13,11 @@ import com.mongodb.DBObject
 import java.util.List
 import static extension org.eclipse.xtext.EcoreUtil2.*
 import org.eclipse.xtext.common.types.JvmDeclaredType
-import edu.vanderbilt.isis.chariot.lib.MongoBeanList
-import edu.vanderbilt.isis.chariot.lib.WrappingUtil
+import org.xtext.mongobeans.lib.MongoBeanList
+import org.xtext.mongobeans.lib.WrappingUtil
+import org.xtext.mongobeans.lib.IMongoBean
 import edu.vanderbilt.isis.chariot.datatypes.DomainModel
 import edu.vanderbilt.isis.chariot.datatypes.Message
-import edu.vanderbilt.isis.chariot.lib.IMongoBean
 import edu.vanderbilt.isis.chariot.datatypes.MessageElement
 import edu.vanderbilt.isis.chariot.datatypes.MessageOperation
 import edu.vanderbilt.isis.chariot.datatypes.Invariant
