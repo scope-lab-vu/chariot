@@ -13,20 +13,6 @@
 	<packaging>eclipse-plugin</packaging>
 
 	<name>CHARIOT Language Core</name>
-	
-	<dependencies>
-		<dependency>
-			<groupId>org.mongodb</groupId>
-			<artifactId>mongo-java-driver</artifactId>
-			<version>3.3.0</version>
-		</dependency>
-	</dependencies>
-	<repositories>
-		<repository>
-			<id>org.mongodb</id>
-			<url>https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver</url>
-		</repository>
-	</repositories>
 
 	<build>
 		<plugins>
@@ -40,9 +26,9 @@
 						<!-- Clean up generated files in all projects -->
 						<configuration>
 							<filesets combine.children="append">
-								<fileset>
+								<!--<fileset>
 									<directory>${basedir}/src-gen/</directory>
-								</fileset>
+								</fileset>-->
 								<fileset>
 									<directory>${basedir}/model/generated/</directory>
 								</fileset>

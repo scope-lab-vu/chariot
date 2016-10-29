@@ -80,10 +80,10 @@ class ConfigSpaceGenerator implements IGenerator {
 		
 		// Check mongoDB server connection.
 		try {
-			this.mongoClient.getConnector().getDBPortPool(this.mongoClient.getAddress()).get().ensureOpen();
+			//this.mongoClient.getConnector().getDBPortPool(this.mongoClient.getAddress()).get().ensureOpen();
 		} catch (Exception e) {
 			LOGGER.severe("Cannot reach MongoDb server at: " + mongoAddr + ", ignoring configuration space generator");
-			this.mongoClient.close()
+			//this.mongoClient.close()
 		 	return;
 		}
 		
