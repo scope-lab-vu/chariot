@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/visor-vu/chariot.svg?branch=master)](https://travis-ci.org/visor-vu/chariot)
+
 # Chariot
 
 Cyber-pHysical Aapplication aRchItecture with Objective-based reconfiguraTion (CHARIOT) is a tool-suite that facilitates design, development, and management of extensible CPS. CHARIOT comprises of design-time and runtime aspects; different entities that constitutes CHARIOT are described below:
