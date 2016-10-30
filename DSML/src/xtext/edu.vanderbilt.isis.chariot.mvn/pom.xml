@@ -11,10 +11,13 @@
 		<module>../ThirdParty/org.xtext.mongobeans</module>
 		<module>../ThirdParty/org.xtext.mongobeans.lib</module>
 		<module>../ThirdParty/org.xtext.mongobeans.ui</module>
+		<module>../ThirdParty/org.xtext.mongobeans.tests</module>
 		<module>../edu.vanderbilt.isis.chariot.datatypes</module>
 		<module>../edu.vanderbilt.isis.chariot.datatypes.ui</module>
+		<!--<module>../edu.vanderbilt.isis.chariot.datatypes.tests</module>-->
 		<module>../edu.vanderbilt.isis.chariot</module>
 		<module>../edu.vanderbilt.isis.chariot.ui</module>
+		<!--<module>../edu.vanderbilt.isis.chariot.tests</module>-->
 		<module>../edu.vanderbilt.isis.chariot.sdk</module>
 	</modules>
 
