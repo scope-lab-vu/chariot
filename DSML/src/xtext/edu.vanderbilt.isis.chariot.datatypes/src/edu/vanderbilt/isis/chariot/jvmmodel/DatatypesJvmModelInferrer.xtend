@@ -82,7 +82,8 @@ class DatatypesJvmModelInferrer extends AbstractModelInferrer {
 				members += msg.toField('log', typeRef(Logger)) [
 					static = true
 					final = true
-					initializer = '''«Logger.typeName».getLogger(«msg.name».class)'''
+					//initializer = '''«Logger.typeName».getLogger(«msg.name».class)'''
+					initializer = '''«Logger».getLogger(«msg.name».class)'''
 				]
 				for (feature : msg.features) {
 					switch feature {
