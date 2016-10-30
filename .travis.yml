@@ -1,0 +1,4 @@
+language: java
+script: cd DSML/src/xtext/edu.vanderbilt.isis.chariot.mvn && mvn clean install
+notifications:
+  email: false
