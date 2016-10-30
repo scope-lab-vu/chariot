@@ -14,7 +14,7 @@ import org.eclipse.xtext.ui.generator.*
 var projectName = "org.xtext.mongobeans"
 var grammarURI = "platform:/resource/${projectName}/src/org/xtext/mongobeans/MongoBeans.xtext"
 var fileExtensions = "mongo"
-var runtimeProject = "../ThirdParty/${projectName}"
+var runtimeProject = "../${projectName}"
 var generateXtendStub = true
 var encoding = "UTF-8"
 

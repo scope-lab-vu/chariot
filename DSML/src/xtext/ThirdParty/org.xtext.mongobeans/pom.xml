@@ -35,9 +35,9 @@
 								<fileset>
 									<directory>${basedir}/../${project.artifactId}.ui/src-gen/</directory>
 								</fileset>
-								<fileset>
+								<!-- <fileset>
 									<directory>${basedir}/../${project.artifactId}.tests/src-gen/</directory>
-								</fileset>
+								</fileset>-->
 							</filesets>
 						</configuration>
 					</execution>
