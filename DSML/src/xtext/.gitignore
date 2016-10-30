@@ -8,4 +8,6 @@ edu.vanderbilt.isis.chariot.datatypes/src-gen
 edu.vanderbilt.isis.chariot.datatypes/xtend-gen
 edu.vanderbilt.isis.chariot.datatypes.ui/src-gen
 edu.vanderbilt.isis.chariot.datatypes.ui/xtend-gen
+edu.vanderbilt.isis.chariot.datatypes.tests/src-gen
+edu.vanderbilt.isis.chariot.datatypes.tests/xtend-gen
 edu.vanderbilt.isis.chariot.lib/xtend-gen
