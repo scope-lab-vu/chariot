@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/edu.vanderbilt.isis.chariot.sdk_1.0.0.qualifier.jar" id="edu.vanderbilt.isis.chariot.sdk" version="1.0.0.qualifier">
+      <category name="edu.vanderbilt.isis.chariot"/>
+   </feature>
+   <category-def name="edu.vanderbilt.isis.chariot" label="CHARIOT Language"/>
+</site>
