@@ -1,6 +1,6 @@
 import edu.vanderbilt.isis.chariot.smartparkingbasic.*
 package edu.vanderbilt.isis.chariot.smartparkingbasic {
-	externalComponent ParkingManager{
+	component ParkingManager{
  		provides parking_manager{
  			parking_request_t as parking_manager.parking_request
  			parking_response_t as parking_manager.parking_response

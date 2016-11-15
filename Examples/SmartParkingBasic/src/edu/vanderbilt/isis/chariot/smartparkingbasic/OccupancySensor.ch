@@ -1,6 +1,7 @@
 import edu.vanderbilt.isis.chariot.smartparkingbasic.*
 package edu.vanderbilt.isis.chariot.smartparkingbasic {
-	externalComponent OccupancySensor {
+	
+	component OccupancySensor {
  		provides occupancy_sensor{
  			occupancy_status_t as occupancy_sensor.occupancy_status
  		}
@@ -8,7 +9,7 @@ package edu.vanderbilt.isis.chariot.smartparkingbasic {
  		requires 64 MB memory
  		requires Linux
  		requires LCM
- 		requires Edison.ultrasonic_ranger device
+ 		requires EdgeNode.Edison.ultrasonic_ranger device
  		
  		period 5 seconds
  		deadline 3 seconds
