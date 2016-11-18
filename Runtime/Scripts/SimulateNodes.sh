@@ -2,11 +2,12 @@
 
 case "$1" in
     start)
-		echo "Starting " "$2" " nodes of template $3"
+		echo "Starting $2 nodes of template $3 with port numbers starting from $4"
 		for ((i=1; i<=$2; i++))
 		do
 			NodeName="$3_$i"
-			python ../SimulateNodeActivity.py --nodeName $NodeName --nodeTemplate $3 --port 0 --action "start"
+			PortNum=$(($4+$i-1))
+			python ../SimulateNodeActivity.py --nodeName $NodeName --nodeTemplate $3 --port $PortNum --action "start"
 		done
 		;;
 	stop)

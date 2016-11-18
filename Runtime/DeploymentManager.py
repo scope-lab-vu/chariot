@@ -201,7 +201,8 @@ def main():
     # Connect to given address(stored in database) or default port.
     if (addr is not None and port is not None):
         print "Using address: ", str(addr), " and port: ", int(port)
-        zmq_socket.bind("tcp://%s:%d"%(str(addr), int(port)))
+        t = zmq_socket.bind("tcp://%s:%d"%(str(addr), int(port)))
+        print t
     elif (addr is not None and port is None):
         # If port is none, use default ZMQ_PORT.
         print "Using address: ", str(addr)
