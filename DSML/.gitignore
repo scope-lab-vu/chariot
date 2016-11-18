@@ -13,7 +13,3 @@ hs_err_pid*
 
 
 *.java._trace
-*.ChariotDescriptionLabelProvider.java._trace
-*.ChariotLabelProvider.java._trace
-*.ChariotOutlineTreeProvider.java._trace
-*.ChariotQuickfixProvider.java._trace
