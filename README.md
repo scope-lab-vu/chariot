@@ -2,7 +2,7 @@
 
 # Introduction
 
-This repsotiory contains examples for the CHARIOT plugin (https://github.com/visor-vu/chariot)
+This repository contains examples for the CHARIOT plugin (https://github.com/visor-vu/chariot)
 
 For further inforamtion please see http://chariot.isis.vanderbilt.edu/
 
