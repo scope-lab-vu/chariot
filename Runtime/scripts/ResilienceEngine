@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+__author__ = "Subhav Pradhan"
+
+import sys, getopt
+import zmq, json
+from chariot_runtime_libs import mongo_connect, invoke_solver, solver_loop
+
+def print_usage():
+    print "USAGE:"
+    print "ResilienceEngine --mongoServer <mongo server address> [--initialDeployment] [--lookAhead]"
+
+def main():
+    global LOOK_AHEAD
+    global ZMQ_PORT
+    global INITIAL_DEPLOYMENT
+
+    LOOK_AHEAD = False
+    ZMQ_PORT = 8000
+    INITIAL_DEPLOYMENT = False
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hmil",
+                                   ["help", "mongoServer=", "initialDeployment", "lookAhead"])
+    except getopt.GetoptError:
+        print "Cannot retrieve passed parameters."
+        print_usage()
+        sys.exit()
+
+    mongoServer = None
+    initialDeployment = False
+
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print_usage()
+            sys.exit()
+        elif opt in ("-m", "--mongoServer"):
+            print "Mongo server address:", arg
+            mongoServer = arg
+        elif opt in ("-i", "--initialDeployment"):
+            print "Initial deployment"
+            initialDeployment = True
+        elif opt in ("-l", "--lookAhead"):
+            print "Lookahead enabled"
+            LOOK_AHEAD = True
+        else:
+            print "Invalid command line argument."
+            print_usage()
+            sys.exit()
+
+    # If no mongoServer given then use default.
+    if (mongoServer is None):
+        mongoServer = "localhost"
+        print "Using mongo server: ", mongoServer
+
+    print "Connecting to mongo server:", mongoServer
+    client = mongo_connect(mongoServer)
+
+    if client is not None:
+        if "ConfigSpace" in client.database_names():
+            db = client["ConfigSpace"]
+        else:
+            print "ConfigSpace collection does not exists in database"
+            sys.exit()
+    else:
+        print "MongoClient not constructed correctly"
+        sys.exit()
+
+    # Creating ZeroMQ context and client socket.
+    zmq_context = zmq.Context()
+    zmq_socket = zmq_context.socket(zmq.REQ)
+
+    # Set receive timeout of 3 seconds.
+    zmq_socket.setsockopt(zmq.RCVTIMEO, 3000)
+
+    # Set linger for clean termination.
+    zmq_socket.setsockopt(zmq.LINGER, 0)
+
+    # If initial deployment, invoke solver. If not, start solver loop.
+    if initialDeployment:
+        invoke_solver(db, zmq_socket, True)
+    else:
+        solver_loop(db, zmq_socket, mongoServer)
+
+    # Close socket and terminate context.
+    zmq_socket.close()
+    zmq_context.term()
+
+if __name__ == "__main__":
+    main()
