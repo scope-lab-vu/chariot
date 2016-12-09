@@ -142,6 +142,9 @@ def send_action (db, action, zmq_socket):
         zmq_addr = "tcp://%s:%d"%(str(addr), int(port))
     elif (addr is not None and port is None):
         zmq_addr = "tcp://%s:%d"%(str(addr), ZMQ_PORT)
+    elif (addr is None and port is None):
+        print "Error: Cannot retrieve address of target node to send action to."
+        return False
 
     print "Sending action to DeploymentManager in node: ", str(action["node"])
 
