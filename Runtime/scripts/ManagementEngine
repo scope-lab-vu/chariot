@@ -8,7 +8,7 @@ from chariot_runtime_libs import mongo_connect, invoke_solver, solver_loop
 
 def print_usage():
     print "USAGE:"
-    print "ResilienceEngine --mongoServer <mongo server address> [--initialDeployment] [--lookAhead]"
+    print "ManagementEngine --mongoServer <mongo server address> [--initialDeployment] [--lookAhead]"
 
 def main():
     global LOOK_AHEAD
