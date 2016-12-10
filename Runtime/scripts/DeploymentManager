@@ -20,8 +20,7 @@ def main():
     
     parserGroup.add_argument("-s", 
                              "--simulatedDMName", 
-                             help="Indicates simulated Deployment Manager (DM). 
-                                   Value represents unique DM/node name.")
+                             help="Indicates simulated Deployment Manager (DM). Value represents unique DM/node name.")
 
     args = argParser.parse_args()
 
@@ -39,8 +38,8 @@ def main():
         nodeName = args.simulateDMName
         mongoServer = "localhost"
     else:
-        print "Non simulated usage so using configuration file: ", args.configFile
         if (os.path.isfile(args.configFile)):
+            print "Non simulated usage so using configuration file: ", args.configFile
             configParser = ConfigParser.ConfigParser()
             configParser.read(args.configFile)
             

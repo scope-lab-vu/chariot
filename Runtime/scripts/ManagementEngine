@@ -22,7 +22,7 @@ def main():
     argParser.add_argument("-l",
                            "--lookAhead",
                            action="store_true",
-                           help)
+                           help="Flag to indicate look-ahead mode.")
 
     args = argParser.parse_args()
 
