@@ -2,66 +2,67 @@
 
 __author__ = "Subhav Pradhan"
 
-import sys, getopt
+import os, sys
+import argparse, ConfigParser
 import zmq, json
 from chariot_runtime_libs import mongo_connect, invoke_solver, solver_loop
 
-def print_usage():
-    print "USAGE:"
-    print "ManagementEngine --mongoServer <mongo server address> [--initialDeployment] [--lookAhead]"
-
 def main():
-    global LOOK_AHEAD
-    global ZMQ_PORT
-    global INITIAL_DEPLOYMENT
+    argParser = argparse.ArgumentParser()
 
-    LOOK_AHEAD = False
-    ZMQ_PORT = 8000
-    INITIAL_DEPLOYMENT = False
+    argParser.add_argument("-c",
+                           "--configFile",
+                           help="CHARIOT configuration file to use.")
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hmil",
-                                   ["help", "mongoServer=", "initialDeployment", "lookAhead"])
-    except getopt.GetoptError:
-        print "Cannot retrieve passed parameters."
-        print_usage()
-        sys.exit()
+    argParser.add_argument("-i",
+                           "--initialDeployment",
+                           action="store_true",
+                           help="Flag to indicate initial deployment.")
+
+    argParser.add_argument("-l",
+                           "--lookAhead",
+                           action="store_true",
+                           help)
+
+    args = argParser.parse_args()
 
     mongoServer = None
     initialDeployment = False
+    lookAhead = False
 
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print_usage()
-            sys.exit()
-        elif opt in ("-m", "--mongoServer"):
-            print "Mongo server address:", arg
-            mongoServer = arg
-        elif opt in ("-i", "--initialDeployment"):
-            print "Initial deployment"
-            initialDeployment = True
-        elif opt in ("-l", "--lookAhead"):
-            print "Lookahead enabled"
-            LOOK_AHEAD = True
-        else:
-            print "Invalid command line argument."
-            print_usage()
-            sys.exit()
+    # Set initialDeployment and lookAhead flag based on arguments.
+    if args.initialDeployment is not None:
+        print "Management Engine will compute initial deployment."
+        initialDeployment = args.initialDeployment
+    if args.lookAhead is not None:
+        print "Management Engine will run on look-ahead mode."
+        lookAhead = args.lookAhead
 
-    # If no mongoServer given then use default.
-    if (mongoServer is None):
+    # Set mongoServer information based on configFile information.
+    if args.configFile is None:
+        print "Configuration file not provided. Using default (localhost) mongo server."
         mongoServer = "localhost"
-        print "Using mongo server: ", mongoServer
+    else:
+        if os.path.isfile(args.configFile):
+            print "Using configuration file: ", args.configFile
+            configParser = ConfigParser.ConfigParser()
+            configParser.read(args.configFile)
+
+            try:
+                mongoServer = configParser.get("Services", "MongoServer")
+                print "Using mongo server located on: ", mongoServer
+            except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
+                mongoServer = "localhost"
+                print "Mongo server cannot be extracted from configuration file. Using: ", mongoServer
+        else:
+            print "Error: Cannot find configuration file."
+            sys.exit()
 
     print "Connecting to mongo server:", mongoServer
     client = mongo_connect(mongoServer)
 
     if client is not None:
-        if "ConfigSpace" in client.database_names():
-            db = client["ConfigSpace"]
-        else:
-            print "ConfigSpace collection does not exists in database"
-            sys.exit()
+        db = client["ConfigSpace"]
     else:
         print "MongoClient not constructed correctly"
         sys.exit()
@@ -78,9 +79,9 @@ def main():
 
     # If initial deployment, invoke solver. If not, start solver loop.
     if initialDeployment:
-        invoke_solver(db, zmq_socket, True)
+        invoke_solver(db, zmq_socket, initialDeployment, lookAhead)
     else:
-        solver_loop(db, zmq_socket, mongoServer)
+        solver_loop(db, zmq_socket, mongoServer, lookAhead)
 
     # Close socket and terminate context.
     zmq_socket.close()

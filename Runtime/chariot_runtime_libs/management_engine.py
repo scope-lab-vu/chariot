@@ -1,6 +1,6 @@
 __author__ = "Subhav Pradhan"
 
-import sys, time
+import time
 import socket, zmq, json
 import copy, re
 from solver_backend import SolverBackend
@@ -8,7 +8,7 @@ from chariot_helpers import Serialize
 from new_configuration_solver_bound import NewConfigurationSolverBound
 from deployment_manager import update_start_action, update_stop_action
 
-def solver_loop (db, zmq_socket, mongoServer):
+def solver_loop (db, zmq_socket, mongoServer, lookAhead):
     print "Solver loop started"
 
     # Find own IP.
@@ -48,7 +48,7 @@ def solver_loop (db, zmq_socket, mongoServer):
                 else:
                     inComputation = True
                     sock.sendto(SOLVE_RESPONSE_OK, addr)
-                    find_solution(db, zmq_socket)
+                    find_solution(db, zmq_socket, lookAhead)
                     inComputation = False
             else:
                 if addr is not None:
@@ -58,13 +58,12 @@ def solver_loop (db, zmq_socket, mongoServer):
     except Exception, e:
         print e.message
     except:
-        #print "Unexpected error:", sys.exc_info()[0]
         if sock != None:
         #   sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
-def find_solution(db, zmq_socket):
-    if (LOOK_AHEAD):
+def find_solution(db, zmq_socket, lookAhead):
+    if (lookAhead):
         # If RE in look ahead mode, then check if the triggering reconfiguration event is a
         # failure or an update. If it is the latter, we cannot look ahead so invoke the solver.
         reColl = db["ReconfigurationEvents"]
@@ -135,6 +134,9 @@ def find_solution(db, zmq_socket):
 
 # Returns true if send succeeds, false otherwise.
 def send_action (db, action, zmq_socket):
+    # Default zeromq port to use.
+    ZMQ_PORT = 8000
+
     # Get address of node to send action to.
     addr, port = get_node_address(db, action["node"])
     zmq_addr = None
@@ -161,7 +163,7 @@ def send_action (db, action, zmq_socket):
 
 # This function gets current configuration and invokes the solver. No looking ahead.
 # This function returns list of deployment actions if solution found.
-def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
+def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
     startTime = time.time()
 
     backend = SolverBackend()
@@ -223,7 +225,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
             elapsedTime = time.time() - startTime
             print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
 
-            if not LOOK_AHEAD or lookAheadUpdate:
+            if not lookAhead or lookAheadUpdate:
                 reColl.update({"completed":False},
                               {"$set":{"completed":True}})
             
@@ -239,7 +241,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                     print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
 
                     # Perform steps needed for non-lookahead or lookahead but update scenario.
-                    if not LOOK_AHEAD or lookAheadUpdate:
+                    if not look_ahead or lookAheadUpdate:
                         reColl.update({"completed":False},
                                       {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
                                        "$set":{"actionCount":len(actions)}})
@@ -261,7 +263,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                             look_ahead(db)
 
                     # If lookahead and initial then send action and perform initial lookahead.
-                    if LOOK_AHEAD and initial:
+                    if lookAhead and initial:
                         print "Populating Nodes collection with information about processes and component instances"
                         populate_nodes(db, actions)
 
@@ -278,7 +280,7 @@ def invoke_solver(db, zmq_socket, initial, lookAheadUpdate = False):
                 print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
 
                 # No action so update reconfiguration event if non-lookahead or if lookahead and update scenario.
-                if not LOOK_AHEAD or lookAheadUpdate:
+                if not lookAhead or lookAheadUpdate:
                     reColl.update({"completed":False},
                                   {"$currentDate":{"solutionFoundTime": {"$type": "date"}, "reconfiguredTime": {"$type": "date"}},
                                    "$set":{"completed":True,

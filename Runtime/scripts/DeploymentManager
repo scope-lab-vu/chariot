@@ -16,7 +16,7 @@ def main():
     
     parserGroup.add_argument("-c", 
                              "--configFile", 
-                             help="CHARIOT configuration file to use")
+                             help="CHARIOT configuration file to use.")
     
     parserGroup.add_argument("-s", 
                              "--simulatedDMName", 
@@ -39,26 +39,27 @@ def main():
         nodeName = args.simulateDMName
         mongoServer = "localhost"
     else:
-        print "Non simulated usage so using configuration in: ", args.configFile
+        print "Non simulated usage so using configuration file: ", args.configFile
         if (os.path.isfile(args.configFile)):
             configParser = ConfigParser.ConfigParser()
             configParser.read(args.configFile)
             
-            nodeName = configParser.get("Base", "NodeName")
-            mongoServer = configParser.get("Services", "MongoServer")
+            try:
+                nodeName = configParser.get("Base", "NodeName")
+                print "Using node name: ", nodeName
+            except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
+                nodeName = socket.gethostname()
+                print "Node name cannot be extracted from configuration file. Using: ", nodeName
+
+            try:
+                mongoServer = configParser.get("Services", "MongoServer")
+                print "Using mongo server located on: ", mongoServer
+            except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
+                mongoServer = "localhost"
+                print "Mongo server cannot be extracted from configuration file. Using: ", mongoServer
         else:
             print "Error: Cannot find configuration file."
             sys.exit()
-
-    # If no node name given then use hostname.
-    if nodeName == "":
-        nodeName = socket.gethostname()
-        print "Node name not provided. Using node name:", nodeName
-
-    # If no mongoServer given then use default.
-    if (mongoServer is None):
-        mongoServer = "localhost"
-        print "No mongo server provided. Using mongo server: ", mongoServer
 
     client = None
     db = None
