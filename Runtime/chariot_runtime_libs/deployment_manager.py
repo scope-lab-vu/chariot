@@ -82,7 +82,14 @@ def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
     daColl.update({"action":"STOP", "complete":False, "process":actionProcess, "node": actionNode},
                   {"$set":{"completed":True}})
 
-def handle_action(db, actionDoc):
+def handle_action(db, actionDoc, simulateDMActions, nodeName):
+    # Using parameters to set appropriate global variables.
+    global NODE_NAME
+    global SIMULATE_DM_ACTIONS
+
+    NODE_NAME = nodeName
+    SIMULATE_DM_ACTIONS = simulateDMActions
+
     actionNode = actionDoc["node"]
     if actionNode == NODE_NAME:
         action = actionDoc["action"]
