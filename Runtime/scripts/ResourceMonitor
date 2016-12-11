@@ -55,6 +55,10 @@ def main():
         argParser.print_help()
         argParser.exit()
 
+    print "Using DeploymentManager PID: ", args.dmPID
+    print "Using NodeMembership PID: ", args.nmPID
+    print "Using output file: ", args.outputFile
+
     # If given output file does not exist, create one. 
     if (not os.path.isfile(args.outputFile)):
         f = open(args.outputFile, "w+")

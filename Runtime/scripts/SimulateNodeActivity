@@ -2,8 +2,8 @@
 
 __author__ = "Subhav Pradhan"
 
-import getopt
 import sys
+import argparse, ConfigParser
 from pymongo import MongoClient
 from chariot_runtime_libs import invoke_management_engine
 
@@ -89,64 +89,69 @@ def execute_action():
         # be the case for simulation.
         invoke_management_engine("localhost", "localhost", False)
 
-def print_usage():
-    print "USAGE:"
-    print "SimulateNodeActivity --nodeName <node name> --nodeTemplate <node template name> " \
-          "--port <unique port number for DM> --action <'start' | 'stop'>"
-
 def main():
     global NODE_NAME
     global NODE_TEMPLATE
     global NODE_PORT
     global START_ACTION
     global STOP_ACTION
-
+    
     NODE_NAME = None
     NODE_TEMPLATE = None
     NODE_PORT = None
     START_ACTION = False
     STOP_ACTION = False
+    
+    argParser = argparse.ArgumentParser()
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hntpa",
-                                   ["help", "nodeName=", "nodeTemplate=","port=", "action="])
-    except getopt.GetoptError:
-        print 'Cannot retrieve passed parameters.'
-        print_usage()
-        sys.exit()
+    argParser.add_argument("-n",
+                           "--nodeName",
+                           help="Name to the node being simulated.")
+    
+    argParser.add_argument("-t",
+                           "--nodeTemplate",
+                           help="Template of the node being simulated.")
 
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print_usage()
-            sys.exit()
-        elif opt in ("-n", "--nodeName"):
-            print "Node name:", arg
-            NODE_NAME = arg
-        elif opt in ("-t", "--nodeTemplate"):
-            print "Node template name:", arg
-            NODE_TEMPLATE = arg
-        elif opt in ("-p", "--port"):
-            print "Port number:", arg
-            NODE_PORT = arg
-        elif opt in ("-s", "--action"):
-            print "Action:", arg
-            if arg == "start":
-                START_ACTION = True
-            elif arg == "stop":
-                STOP_ACTION = True
-            else:
-                print_usage()
-                sys.exit()
+    argParser.add_argument("-p",
+                           "--nodePort",
+                           help="Port of the node being simulated. Simulated nodes in same physical machine so unique ports required.")
+    
+    argParser.add_argument("-a",
+                           "--action",
+                           help="Simulation action which can either be start or stop.")
 
-    if (NODE_NAME is None):
-        print "Node name not provided!"
-        print_usage()
-        sys.exit()
+    args = argParser.parse_args()
 
-    if (START_ACTION and (NODE_TEMPLATE is None or NODE_PORT is None)):
-        print "Node template and/or node port not provided!"
-        print_usage()
-        sys.exit()
+    if (args.action is None):
+        print "Simulation action must be provided."
+        argParser.print_help()
+        argParser.exit()
+
+    if (args.action != "start" and args.action != "stop"):
+        print "Simulation action must either be start or stop."
+        argParser.print_help()
+        argParser.exit()
+    
+    if (args.action == "start"):
+        START_ACTION = True
+        print "Simulating start action."
+        if (args.nodeName is None or args.nodeTemplate is None or args.nodePort is None):
+            print "Start action requires node name, node template, and port."
+            argParser.print_help()
+            argParser.exit()
+        else:
+            NODE_NAME = args.nodeName
+            NODE_TEMPLATE = args.nodeTemplate
+            NODE_PORT = args.nodePort
+            print "Using node name: ", NODE_NAME, " template: ", NODE_TEMPLATE, " port: ", NODE_PORT
+    else:
+        STOP_ACTION = True
+        print "Simulating stop action."
+        if (args.nodeName is None):
+            print "Stop action requires node name."
+        else:
+            NODE_NAME = args.nodeName
+            print "Using node name: ", NODE_NAME
 
     # Add action affects to the database.
     execute_action()
