@@ -18,10 +18,6 @@ def connection_state_listener(state):
         print "Connection to server has been suspended!"
         sys.exit()
 
-def print_usage():
-    print "USAGE:"
-    print "NodeMembership --interface <network interface name> --network <network name> --nodeTemplate <node template name> --monitoringServer <monitoring server address>"
-
 def main():
     argParser = argparse.ArgumentParser()
 
@@ -76,7 +72,7 @@ def main():
                 sys.exit()
             
             try:
-                monitoringServer = configParser.get("Base", "MonitoringServer")
+                monitoringServer = configParser.get("Services", "MonitoringServer")
                 print "Using monitoring server: ", monitoringServer
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
                 monitoringServer = "localhost"
