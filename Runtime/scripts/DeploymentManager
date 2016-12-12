@@ -35,7 +35,7 @@ def main():
     if (args.simulatedDMName is not None):
         print "Simulating Deployment Manager with name: ", args.simulatedDMName
         simulateDMActions = True
-        nodeName = args.simulateDMName
+        nodeName = args.simulatedDMName
         mongoServer = "localhost"
     else:
         if (os.path.isfile(args.configFile)):
@@ -77,7 +77,7 @@ def main():
     zmq_socket = zmq_context.socket(zmq.REP)
 
     # Get IP and port of host.
-    addr, port = get_node_address(db, node_name)
+    addr, port = get_node_address(db, nodeName)
 
     # Connect to given address(stored in database) or default port.
     if (addr is not None and port is not None):

@@ -4,8 +4,8 @@ import time
 import socket, zmq, json
 import copy, re
 from solver_backend import SolverBackend
-from chariot_helpers import Serialize
 from new_configuration_solver_bound import NewConfigurationSolverBound
+from chariot_helpers import Serialize, get_node_address
 from deployment_manager import update_start_action, update_stop_action
 
 def solver_loop (db, zmq_socket, mongoServer, lookAhead):
@@ -69,7 +69,7 @@ def find_solution(db, zmq_socket, lookAhead):
         reColl = db["ReconfigurationEvents"]
         findUpdateEvent = reColl.find_one({"completed":False, "kind":"UPDATE"})
         if findUpdateEvent is not None:
-            invoke_solver(db, zmq_socket, False, True)
+            invoke_solver(db, zmq_socket, False, lookAhead, True)
         else:
             # Current implementation only does look ahead for node failures, so look for nodes that
             # has failed, find corresponding solution in LookAhead collection, send solution
@@ -130,7 +130,7 @@ def find_solution(db, zmq_socket, lookAhead):
             # Failure handle attempt done. Look ahead again.
             look_ahead(db)
     else:
-        invoke_solver(db, zmq_socket, False)
+        invoke_solver(db, zmq_socket, False, lookAhead)
 
 # Returns true if send succeeds, false otherwise.
 def send_action (db, action, zmq_socket):
@@ -239,9 +239,8 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
 
                     elapsedTime = time.time() - startTime
                     print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
-
                     # Perform steps needed for non-lookahead or lookahead but update scenario.
-                    if not look_ahead or lookAheadUpdate:
+                    if not lookAhead or lookAheadUpdate:
                         reColl.update({"completed":False},
                                       {"$currentDate":{"solutionFoundTime": {"$type": "date"}},
                                        "$set":{"actionCount":len(actions)}})
@@ -329,7 +328,7 @@ def look_ahead(db):
         mark_node_failure(tmpDb, node)
 
         # Invoke solver and store solution.
-        recoveryActions = invoke_solver(tmpDb, None, False)
+        recoveryActions = invoke_solver(tmpDb, None, False, True)
 
         if (recoveryActions is not None):
             # Store solution in main (ConfigSpace) db.
@@ -374,21 +373,6 @@ def mark_node_failure(db, nodeName):
     # Pull all processes.
     result = nColl.update({"name":nodeName, "status":"FAULTY"},
                           {"$pull":{"processes":{"name":{"$ne":"null"}}}})
-
-def handle_action(db, actionDoc):
-    action = actionDoc["action"]
-    actionCompleted = actionDoc["completed"]
-    actionNode = actionDoc["node"]
-    actionProcess = actionDoc["process"]
-    actionStartScript = actionDoc["startScript"]
-    actionStopScript = actionDoc["stopScript"]
-
-    if action == "START" and not actionCompleted:
-        # Update database to reflect affect of above start action.
-        update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, 0)
-    elif action == "STOP" and not actionCompleted:
-        # Update database to reflect affect of above stop action.
-        update_stop_action(db, actionNode, actionProcess, actionStartScript, actionStopScript)
 
 def populate_nodes(db, actions):
     nColl = db["Nodes"]
