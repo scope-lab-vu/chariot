@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name="CHARIOTRuntimePackage",
+    name="CHARIOTRuntime",
     version="0.0.1",
     #data_files=[('/tmp', ['test.txt'])],
     packages=["chariot_runtime_libs"],
