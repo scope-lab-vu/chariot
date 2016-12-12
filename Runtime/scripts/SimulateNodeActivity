@@ -5,7 +5,7 @@ __author__ = "Subhav Pradhan"
 import sys
 import argparse, ConfigParser
 from pymongo import MongoClient
-from chariot_runtime_libs import invoke_management_engine
+from chariot_runtime_libs import Serialize, invoke_management_engine
 
 def execute_action():
     client = MongoClient("localhost")
@@ -64,8 +64,6 @@ def execute_action():
         # Store names of affected component instances.
         findResults = nColl.find({"name":NODE_NAME, "status":"FAULTY"})
         failedComponentInstances = list()
-
-        from SolverBackend import Serialize
 
         for findResult in findResults:
             node = Serialize(**findResult)

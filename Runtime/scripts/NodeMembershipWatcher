@@ -10,7 +10,7 @@ from kazoo.client import KazooClient, KazooState
 from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.protocol.states import EventType
 from pymongo import MongoClient
-from chariot_runtime_libs import invoke_management_engine
+from chariot_runtime_libs import Serialize, invoke_management_engine
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
@@ -106,8 +106,6 @@ def handle_failure(node):
     # Store names of affected component instances.
     findResults = nColl.find({"name": node, "status": "FAULTY"})
     failedComponentInstances = list()
-    
-    from SolverBackend import Serialize
     
     for findResult in findResults:
         failedNode = Serialize(**findResult)
