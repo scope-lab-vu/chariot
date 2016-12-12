@@ -1,0 +1,6 @@
+#!/bin/bash
+
+sudo rm -rf /tmp/mongodb_data
+sudo mkdir -p /tmp/mongodb_data
+sudo mongod --dbpath=/tmp/mongodb_data --logpath=/tmp/mongodb.log --fork
+sleep 1
