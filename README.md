@@ -12,6 +12,8 @@ CHARIOT is a holistic solution that facilitates design, development, and managem
 
 3. **Management layer (runtime)**: This is the bottom-most layer and comprises entities that facilitate autonomous resilience. In order to achieve autonomous resilience, CHARIOT implements a self-reconfiguration mechanism based on a closed *sense-plan-act* loop capable of (1) failure avoidance/masking using traditional redundancy mechanisms, (2) failure management to recover from failures, and (3) operations management to handle planned system updates. Entities in this layer can be differentiated into three categories. First category is the Monitoring Infrastructure, which comprises entities that help "sense" changes by detecting node ingress and egress. Current implementation of CHARIOT uses [ZooKeeper](https://zookeeper.apache.org/) to implement a dynamic monitoring infrastructure. Second category is the Management Engine, which "plans" for new solution when the system needs to reconfigure itself. CHARIOT uses [Z3 SMT Solver](https://github.com/Z3Prover/z3/) to implement the management engine. Third and final category is the Deployment Infrastructure, which comprises of distributed Deployment Managers (one per each node) that are responsible for "acting" on commands computed by the management engine. Each deployment manager is capable of managing local (node-specific) applications. Current implementation of CHARIOT using [ZeroMQ](http://zeromq.org/) as the middleware for communication between the management engine and deployment managers.
 
+For interested readers, [this](http://www.dre.vanderbilt.edu/~schmidt/PDF/Pradhan_IoT.pdf) draft paper describes CHARIOT in much more detail.
+
 # Installation Guide
 ### MongoDB
 1. Install MongoDB (tested with MongoDB version 3.2.11).
@@ -29,7 +31,7 @@ CHARIOT is a holistic solution that facilitates design, development, and managem
 3. To check if the installation was successful, please perform the following tasks:
   * Run a local MongoDB server instance.
   * Clone the [CHARIOT examples](https://github.com/visor-vu/chariot-examples) repository.
-  * Import any one of the available examples as existing project in your restarted Eclipse instance [File->Import...->General->Existing Projects into Workspace]. When you browse the source folder you will see that CHARIOT-DSML icons are used for files and keywords are highlighted.
+  * Import any one of the available examples as existing project in your restarted Eclipse instance [File->Import...->General->Existing Projects into Workspace]. When browsing the source folder you will see that CHARIOT-ML icons are used for files and keywords are highlighted.
   * Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
   * Check MongoDB server for a database named *ConfigSpace* which should contain all system description information required by CHARIOT runtime.
 
