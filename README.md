@@ -34,9 +34,9 @@ CHARIOT is a holistic solution that facilitates design, development, and managem
 1. Install [ZooKeeper](https://zookeeper.apache.org/releases.html). 
 
    *NOTE: This step is not required when running CHARIOT Runtime on simulation mode (Deployment managers receive actions from the management engine but do not start or stop application processes. Only runtime system representation is updated in the database).*
-2. Install CHARIOTRuntime package using pip (Current implementation of CHARIOTRuntime package uses Python 2.7.6).
+2. Install CHARIOTRuntime package using pip (Current implementation of CHARIOTRuntime uses Python 2.7.6).
 ```bash
-sudo apt-get install python-pip python-dev build-essential 
+sudo apt-get install python-pip
 pip install CHARIOTRuntime
 ```
 
