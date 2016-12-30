@@ -1,0 +1,86 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:         CHARIOT DeploymentManager service.
+# Required-Start:
+# Required-Stop:
+# Default-Start:
+# Default-Stop:
+# Description:      Provides CHARIOT deployment manager service, which is a
+#                   service responsible for receiving configuration commands
+#                   from the CHARIOT management engine and executing those
+#                   commands locally.
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+set -e
+
+PATH=$PATH:/usr/local/bin
+SERVICE_NAME="CHARIOT DeploymentManager"
+CONF_FILE="/etc/chariot/chariot.conf"
+LOG_DIR="/etc/chariot/logs/"
+LOG_FILE="/etc/chariot/logs/chariot-dm.log"
+PID_DIR="/etc/chariot/pids/"
+PID_FILE="/etc/chariot/pids/chariot-nm.pid"
+
+case "$1" in
+    start)
+        echo "Starting service $SERVICE_NAME ..."
+
+        mkdir -p $LOG_DIR
+        mkdir -p $PID_DIR
+
+        export PYTHONUNBUFFERED=1
+    
+        PID=`chariot-dm -c $CONF_FILE > $LOG_FILE 2>&1 & echo $!`
+    
+        if [ -z $PID ]; then
+            echo "Cannot start service."
+        else
+            echo $PID > $PID_FILE
+            echo "Started service successfully."
+        fi
+    ;;
+    status)
+        echo "Checking status of service $SERVICE_NAME ..."
+
+        if [ -f $PID_FILE ]; then
+            PID=`cat $PID_FILE`
+            if [ -z "`ps | grep ${PID} | grep -v grep`" ]; then
+                echo "Service not running. PID file exists."       
+            else
+                echo "Service running with PID $PID."              
+            fi                                                     
+        else
+            echo "Service not running. No PID file."               
+        fi                                                         
+    ;;
+    stop)
+        echo "Stopping service $SERVICE_NAME ..."                             
+        
+        if [ -f $PID_FILE ]; then
+            PID=`cat $PID_FILE`
+            if [ -z "`ps | grep ${PID} | grep -v grep`" ]; then
+                echo "Cannot stop service. Service not running."
+            else
+                kill -9 $PID
+                rm -f $PID_FILE
+                echo "Stopped service successfully."
+            fi
+        else
+            echo "Cannot stop service. No PID file."
+        fi
+    ;;
+    restart)
+        echo "Restarting service $SERVICE_NAME ..."
+        $0 stop
+        $0 start
+	;;
+  *)
+	echo "Usage: /etc/init.d/chariot-dm {start|stop|restart|status}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
