@@ -22,54 +22,73 @@ CONF_FILE="/etc/chariot/chariot.conf"
 LOG_DIR="/etc/chariot/logs/"
 LOG_FILE="/etc/chariot/logs/chariot-dm.log"
 PID_DIR="/etc/chariot/pids/"
-PID_FILE="/etc/chariot/pids/chariot-nm.pid"
+PID_FILE="/etc/chariot/pids/chariot-dm.pid"
+
+# Function to check if the service is running. Returns 0 if 
+# service not running. Else, returns PID of the service.
+check_if_running(){
+    if [ -f $PID_FILE ]; then
+        pid=`cat $PID_FILE`
+        if [ -z "`ps -aux | grep ${pid} | grep -v grep`" ]; then
+            # Service not running but PID file presents. So,
+            # return false, i.e., 0 and remove PID file.
+            echo 0
+            rm -f $PID_FILE
+        else
+            # Service running so return PID.
+            echo $pid
+        fi                                                   
+    else
+        # No PID file so return false, i.e., 1.
+        echo 0               
+    fi                                                     
+}
 
 case "$1" in
     start)
         echo "Starting service $SERVICE_NAME ..."
 
-        mkdir -p $LOG_DIR
-        mkdir -p $PID_DIR
+        pid=$(check_if_running)
 
-        export PYTHONUNBUFFERED=1
+        if [ "$pid" = "0" ]; then
+            mkdir -p $LOG_DIR
+            mkdir -p $PID_DIR
+
+            export PYTHONUNBUFFERED=1
     
-        PID=`chariot-dm -c $CONF_FILE > $LOG_FILE 2>&1 & echo $!`
+            pid=`chariot-dm -c $CONF_FILE > $LOG_FILE 2>&1 & echo $!`
     
-        if [ -z $PID ]; then
-            echo "Cannot start service."
+            if [ -z $pid ]; then
+                echo "Cannot start service."
+            else
+                echo $pid > $PID_FILE
+                echo "Started service successfully with PID: $pid"
+            fi
         else
-            echo $PID > $PID_FILE
-            echo "Started service successfully."
+            echo "Service already running with PID: $pid"
         fi
     ;;
     status)
         echo "Checking status of service $SERVICE_NAME ..."
+        
+        pid=$(check_if_running)
 
-        if [ -f $PID_FILE ]; then
-            PID=`cat $PID_FILE`
-            if [ -z "`ps | grep ${PID} | grep -v grep`" ]; then
-                echo "Service not running. PID file exists."       
-            else
-                echo "Service running with PID $PID."              
-            fi                                                     
+        if [ "$pid" = "0" ]; then
+            echo "Service not running."
         else
-            echo "Service not running. No PID file."               
-        fi                                                         
+            echo "Service running with PID: $pid"
+        fi
     ;;
     stop)
         echo "Stopping service $SERVICE_NAME ..."                             
-        
-        if [ -f $PID_FILE ]; then
-            PID=`cat $PID_FILE`
-            if [ -z "`ps | grep ${PID} | grep -v grep`" ]; then
-                echo "Cannot stop service. Service not running."
-            else
-                kill -9 $PID
-                rm -f $PID_FILE
-                echo "Stopped service successfully."
-            fi
+        pid=$(check_if_running)
+
+        if [ "$pid" = "0" ]; then
+            echo "Cannot stop service. Service not running."
         else
-            echo "Cannot stop service. No PID file."
+            kill -9 $pid
+            rm -f $PID_FILE
+            echo "Stopped service successfully."
         fi
     ;;
     restart)
