@@ -1,3 +1,4 @@
+from .logger import *
 from .chariot_helpers import *
 from .configuration_solver import *
 from .deployment_manager import *
