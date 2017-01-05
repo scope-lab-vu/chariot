@@ -5,9 +5,12 @@ __author__ = "Subhav Pradhan"
 import os, sys
 import argparse, ConfigParser
 import zmq, json
-from chariot_runtime_libs import mongo_connect, invoke_solver, solver_loop
+from chariot_runtime_libs import get_logger, mongo_connect, invoke_solver, solver_loop
 
 def main():
+    # Get python logger.
+    logger = get_logger("chariot-me")
+
     argParser = argparse.ArgumentParser()
 
     argParser.add_argument("-c",
@@ -32,39 +35,39 @@ def main():
 
     # Set initialDeployment and lookAhead flag based on arguments.
     if args.initialDeployment is not None:
-        print "Management Engine will compute initial deployment."
+        logger.info ("Management Engine will compute initial deployment.")
         initialDeployment = args.initialDeployment
     if args.lookAhead is not None:
-        print "Management Engine will run on look-ahead mode."
+        logger.info ("Management Engine will run on look-ahead mode.")
         lookAhead = args.lookAhead
 
     # Set mongoServer information based on configFile information.
     if args.configFile is None:
-        print "Configuration file not provided. Using default (localhost) mongo server."
+        logger.info ("Configuration file not provided. Using default (localhost) mongo server.")
         mongoServer = "localhost"
     else:
         if os.path.isfile(args.configFile):
-            print "Using configuration file: ", args.configFile
+            logger.info ("Using configuration file: " + args.configFile)
             configParser = ConfigParser.ConfigParser()
             configParser.read(args.configFile)
 
             try:
                 mongoServer = configParser.get("Services", "MongoServer")
-                print "Using mongo server located on: ", mongoServer
+                logger.info ("Using mongo server located on: " + mongoServer)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
                 mongoServer = "localhost"
-                print "Mongo server cannot be extracted from configuration file. Using: ", mongoServer
+                logger.info ("Mongo server cannot be extracted from configuration file. Using: " + mongoServer)
         else:
-            print "Error: Cannot find configuration file."
+            logger.error ("Cannot find configuration file.")
             sys.exit()
 
-    print "Connecting to mongo server:", mongoServer
+    logger.info ("Connecting to mongo server:" + mongoServer)
     client = mongo_connect(mongoServer)
 
     if client is not None:
         db = client["ConfigSpace"]
     else:
-        print "MongoClient not constructed correctly"
+        logger.info ("MongoClient not constructed correctly")
         sys.exit()
 
     # Creating ZeroMQ context and client socket.

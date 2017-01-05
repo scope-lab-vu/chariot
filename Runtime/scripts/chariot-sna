@@ -5,16 +5,15 @@ __author__ = "Subhav Pradhan"
 import sys
 import argparse, ConfigParser
 from pymongo import MongoClient
-from chariot_runtime_libs import Serialize, invoke_management_engine
+from chariot_runtime_libs import Serialize, invoke_management_engine, get_logger
 
 def execute_action():
     client = MongoClient("localhost")
     db = client["ConfigSpace"]
     nColl = db["Nodes"]
 
-
     if START_ACTION:
-        print "STARTING node:", NODE_NAME
+        logger.info ("STARTING node: " + NODE_NAME)
 
         # Create object to store in database.
         nodeToAdd = dict()
@@ -55,7 +54,7 @@ def execute_action():
             # be the case for simulation.
             invoke_management_engine("localhost", "localhost", True)
     elif STOP_ACTION:
-        print "STOPPING node:", NODE_NAME
+        logger.info ("STOPPING node: " + NODE_NAME)
 
         # Mark node faulty.
         nColl.update({"name":NODE_NAME, "status":"ACTIVE"},
@@ -121,38 +120,40 @@ def main():
     args = argParser.parse_args()
 
     if (args.action is None):
-        print "Simulation action must be provided."
+        logger.info ("Simulation action must be provided.")
         argParser.print_help()
         argParser.exit()
 
     if (args.action != "start" and args.action != "stop"):
-        print "Simulation action must either be start or stop."
+        logger.info ("Simulation action must either be start or stop.")
         argParser.print_help()
         argParser.exit()
     
     if (args.action == "start"):
         START_ACTION = True
-        print "Simulating start action."
+        logger.info ("Simulating start action.")
         if (args.nodeName is None or args.nodeTemplate is None or args.nodePort is None):
-            print "Start action requires node name, node template, and port."
+            logger.info ("Start action requires node name, node template, and port.")
             argParser.print_help()
             argParser.exit()
         else:
             NODE_NAME = args.nodeName
             NODE_TEMPLATE = args.nodeTemplate
             NODE_PORT = args.nodePort
-            print "Using node name: ", NODE_NAME, " template: ", NODE_TEMPLATE, " port: ", NODE_PORT
+            logger.info ("Using node name: " + NODE_NAME + " template: " + NODE_TEMPLATE + " port: " + NODE_PORT)
     else:
         STOP_ACTION = True
-        print "Simulating stop action."
+        logger.info ("Simulating stop action.")
         if (args.nodeName is None):
-            print "Stop action requires node name."
+            logger.info ("Stop action requires node name.")
         else:
             NODE_NAME = args.nodeName
-            print "Using node name: ", NODE_NAME
+            logger.info ("Using node name: " + NODE_NAME)
 
     # Add action affects to the database.
     execute_action()
 
 if __name__ == '__main__':
+    global logger
+    logger = get_logger("chariot-sna")
     main()

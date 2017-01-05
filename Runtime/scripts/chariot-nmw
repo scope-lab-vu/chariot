@@ -5,19 +5,18 @@ __author__="Subhav Pradhan, Shweta Khare"
 import os, sys, time
 import argparse, ConfigParser
 import json
-import logging
 from kazoo.client import KazooClient, KazooState
 from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.protocol.states import EventType
 from pymongo import MongoClient
-from chariot_runtime_libs import Serialize, invoke_management_engine
+from chariot_runtime_libs import Serialize, invoke_management_engine, get_logger
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
-        print "Connection to server lost!"
+        logger.error ("Connection to server lost!")
         sys.exit()
     elif state == KazooState.SUSPENDED:
-        print "Connection to server has been suspended!"
+        logger.error ("Connection to server has been suspended!")
         sys.exit()
 
 def membership_watch(children,event):
@@ -29,7 +28,7 @@ def membership_watch(children,event):
             for child in children:
                 if child not in CURRENT_MEMBERS:
                     CURRENT_MEMBERS.append(child)
-                    print "Node: ", child, " has joined!"
+                    logger.info ("Node: " + child + " has joined!")
                     
                     # Get node information from zookeeper.
                     # NOTE: This returns tuple. First element has data.
@@ -41,7 +40,7 @@ def membership_watch(children,event):
         else:
             for member in CURRENT_MEMBERS:
                 if member not in children:
-                    print "Node: ", member, " has failed!"
+                    logger.info ("Node: " + member + " has failed!")
                     CURRENT_MEMBERS.remove(member)
                     handle_failure(member)
                         
@@ -85,13 +84,13 @@ def handle_join(nodeInfo):
             systemInitialization = False
     
     if not systemInitialization:
-        print "New node added after system initialization. Inovking ManagementEngine to handle update."
+        logger.info ("New node added after system initialization. Inovking ManagementEngine to handle update.")
         invoke_management_engine(MONGO_SERVER, MANAGEMENT_ENGINE, True)
     else:
-        print "New node added during system initialization."
+        logger.info ("New node added during system initialization.")
 
 def handle_failure(node):
-    print "Handeling failure of node: ", node
+    logger.info ("Handeling failure of node: " + node)
     
     mongoClient = MongoClient(MONGO_SERVER)
     db = mongoClient["ConfigSpace"]
@@ -144,38 +143,35 @@ def main():
     args = argParser.parse_args()
 
     if args.configFile is None:
-        print "Configuration file not provided."
+        logger.info ("Configuration file not provided.")
         argParser.print_help()
         argParser.exit()
     else:
         if (os.path.isfile(args.configFile)):
-            print "Using configuration file: ", args.configFile
+            logger.info ("Using configuration file: " + args.configFile)
             configParser = ConfigParser.ConfigParser()
             configParser.read(args.configFile)
             
             try:
                 monitoringServer = configParser.get("Services", "MonitoringServer")
-                print "Using monitoring server: ", monitoringServer
+                logger.info ("Using monitoring server: " + monitoringServer)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
                 monitoringServer = "localhost"
-                print "Monitoring server cannot be extracted from configuration file. Using: ", monitoringServer
+                logger.info ("Monitoring server cannot be extracted from configuration file. Using: " + monitoringServer)
             
             try:
                 MONGO_SERVER = configParser.get("Services", "MongoServer")
-                print "Using mongo server: ", MONGO_SERVER
+                logger.info ("Using mongo server: " + MONGO_SERVER)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
                 MONGO_SERVER = "localhost"
-                print "Mongo server cannot be extracted from configuration file. Using: ", MONGO_SERVER
+                logger.info ("Mongo server cannot be extracted from configuration file. Using: " + MONGO_SERVER)
     
             try:
                 MANAGEMENT_ENGINE = configParser.get("Services", "ManagementEngine")
-                print "Using management engine: ", MANAGEMENT_ENGINE
+                logger.info ("Using management engine: " + MANAGEMENT_ENGINE)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
                 MANAGEMENT_ENGINE = "localhost"
-                print "Management Engine cannot be extracted from configuration file. Using: ", MANAGEMENT_ENGINE
-
-    # Setting default logging required to use Kazoo.
-    logging.basicConfig()
+                logger.info ("Management Engine cannot be extracted from configuration file. Using: " + MANAGEMENT_ENGINE)
     
     CURRENT_MEMBERS = list()
     
@@ -210,4 +206,6 @@ def main():
         time.sleep(5)
 
 if __name__=='__main__':
+    global logger
+    logger = get_logger("chariot-nmw")
     main()

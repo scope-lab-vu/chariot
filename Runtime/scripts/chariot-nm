@@ -6,16 +6,16 @@ import os, sys, time
 import argparse, ConfigParser
 import netifaces, socket
 import json
-import logging
 from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import NodeExistsError
+from chariot_runtime_libs import get_logger
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
-        print "Connection to server lost!"
+        logger.error ("Connection to server lost!")
         sys.exit()
     elif state == KazooState.SUSPENDED:
-        print "Connection to server has been suspended!"
+        logger.error ("Connection to server has been suspended!")
         sys.exit()
 
 def main():
@@ -34,57 +34,54 @@ def main():
     monitoringServer = None
 
     if args.configFile is None:
-        print "Configuration file not provided."
+        logger.info ("Configuration file not provided.")
         argParser.print_help()
         argParser.exit()
     else:
         if (os.path.isfile(args.configFile)):
-            print "Using configuration file: ", args.configFile
+            logger.info ("Using configuration file: " + args.configFile)
             configParser = ConfigParser.ConfigParser()
             configParser.read(args.configFile)
    
             try:
                 nodeName = configParser.get("Base", "NodeName")
-                print "Using node name: ", nodeName
+                logger.info ("Using node name: " + nodeName)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
                 nodeName = socket.gethostname()
-                print "Node name cannot be extracted from configuration file. Using: ", nodeName
+                logger.info ("Node name cannot be extracted from configuration file. Using: " + nodeName)
             
             try:
                 nodeTemplate = configParser.get("Base", "NodeTemplate")
-                print "Using node template: ", nodeTemplate
+                logger.info ("Using node template: " + nodeTemplate)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
-                print "Error: Node template cannot be extracted from configuration file."
+                logger.error ("Node template cannot be extracted from configuration file.")
                 sys.exit()
 
             try:
                 interface = configParser.get("Base", "Interface")
-                print "Using interface: ", interface
+                logger.info ("Using interface: " + interface)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
-                print "Error: Interface cannot be extracted from configuration file."
+                logger.error ("Interface cannot be extracted from configuration file.")
                 sys.exit()
             
             try:
                 network = configParser.get("Base", "Network")
-                print "Using network: ", network
+                logger.info ("Using network: " + network)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
-                print "Error: Network cannot be extracted from configuration file."
+                logger.error ("Network cannot be extracted from configuration file.")
                 sys.exit()
             
             try:
                 monitoringServer = configParser.get("Services", "MonitoringServer")
-                print "Using monitoring server: ", monitoringServer
+                logger.info ("Using monitoring server: " + monitoringServer)
             except ConfigParser.NoOptionError, ConfigParser.NoSectionError:
                 monitoringServer = "localhost"
-                print "Monitoring server cannot be extracted from configuration file. Using: ", monitoringServer
+                logger.info ("Monitoring server cannot be extracted from configuration file. Using: " + monitoringServer)
     
     # Get IP address associated with given interface name.
     addrs = netifaces.ifaddresses(interface)
     afinet = addrs[netifaces.AF_INET]
     ipaddress = afinet[0]['addr']
-
-    # Setting default logging required to use Kazoo.
-    logging.basicConfig()
     
     # Connect to ZooKeeper server residing at a known IP.
     # Set session timeout to 5 seconds; so a failure will
@@ -114,9 +111,9 @@ def main():
     node_info_json = json.dumps(node_info)
     
     try:
-        zkClient.create("/group-membership/"+name, node_info_json, ephemeral=True)
+        zkClient.create("/group-membership/"+ nodeName, node_info_json, ephemeral=True)
     except NodeExistsError:
-        print "ERROR: Node with name: ", name, " already exists!"
+        logger.error ("Node with name: " + nodeName + " already exists!")
         sys.exit()
 
     # Endless loop to ensure client is alive in order
@@ -125,4 +122,6 @@ def main():
         time.sleep(5)
 
 if __name__=='__main__':
+    global logger
+    logger = get_logger("chariot-nm")
     main()
