@@ -61,7 +61,7 @@ def main():
             logger.error ("Cannot find configuration file.")
             sys.exit()
 
-    logger.info ("Connecting to mongo server:" + mongoServer)
+    logger.info ("Connecting to mongo server: " + mongoServer)
     client = mongo_connect(mongoServer)
 
     if client is not None:
