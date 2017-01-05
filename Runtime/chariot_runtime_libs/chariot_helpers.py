@@ -2,6 +2,7 @@ __author__ = "Subhav Pradhan"
 
 import pymongo
 import socket
+import sys 
 
 # Basic serialize class to convert a mongo document into a dictionary.
 class Serialize:
@@ -32,14 +33,18 @@ def get_node_address(db, node):
 # Helper for mongo connection.
 def mongo_connect(serverName):
     try:
-        client = pymongo.MongoClient(serverName)
+        client = pymongo.MongoClient(serverName, serverSelectionTimeoutMS = 5000) # Setting connection timeout to 5 secs.
+        client.server_info() # Check if connection established.
     except pymongo.errors.ConnectionFailure, e:
         print "Could not connect to MongoDB server: %s" % e
-        raise
+        sys.exit()
     except pymongo.errors.ConfigurationError, e:
         print "Could not connect to MongoDB server: %s" % e
-        raise
-    print "Connected to MongoDB server"
+        sys.exit()
+    except pymongo.errors.ServerSelectionTimeoutError, e:
+        print "Cloud not connect to MongoDB server: %s" % e
+        sys.exit()
+    print "Connected to MongoDB server: ", serverName
     return client
 
 def invoke_management_engine(mongoServer, managementEngine, isUpdate):
