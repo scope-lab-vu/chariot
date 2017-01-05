@@ -2,13 +2,15 @@ __author__ = "Subhav Pradhan"
 
 import pymongo
 import socket
-import sys 
+import sys
+from logger import get_logger
+
+logger = get_logger("chariot_helpers")
 
 # Basic serialize class to convert a mongo document into a dictionary.
 class Serialize:
     def __init__(self, **entries):
         self.__dict__.update(entries)
-
 
 # Get node IP and port as a pair.
 def get_node_address(db, node):
@@ -33,18 +35,18 @@ def get_node_address(db, node):
 # Helper for mongo connection.
 def mongo_connect(serverName):
     try:
-        client = pymongo.MongoClient(serverName, serverSelectionTimeoutMS = 5000) # Setting connection timeout to 5 secs.
-        client.server_info() # Check if connection established.
+        client = pymongo.MongoClient(serverName, serverSelectionTimeoutMS = 5000)
+        client.server_info()
     except pymongo.errors.ConnectionFailure, e:
-        print "Could not connect to MongoDB server: %s" % e
+        logger.error ("Could not connect to MongoDB server: %s" % e)
         sys.exit()
     except pymongo.errors.ConfigurationError, e:
-        print "Could not connect to MongoDB server: %s" % e
+        logger.error ("Could not connect to MongoDB server: %s" % e)
         sys.exit()
     except pymongo.errors.ServerSelectionTimeoutError, e:
-        print "Cloud not connect to MongoDB server: %s" % e
+        logger.error ("Could not connect to MongoDB server: %s" % e)
         sys.exit()
-    print "Connected to MongoDB server: ", serverName
+    logger.info ("Connected to MongoDB server: " + serverName)
     return client
 
 def invoke_management_engine(mongoServer, managementEngine, isUpdate):
@@ -74,7 +76,7 @@ def invoke_management_engine(mongoServer, managementEngine, isUpdate):
                                 "actionCount":0}},
                        upsert = True)
 
-    print "Invoking solver!"
+    logger.info ("Invoking solver!")
 
     managementEnginePort = 7000
 
@@ -96,22 +98,22 @@ def invoke_management_engine(mongoServer, managementEngine, isUpdate):
                          socket.SOCK_DGRAM) # UDP
     sock.bind((myIP, myPort))
 
-    print "Pinging management engine for status"
+    logger.info ("Pinging management engine for status")
 
     # First, ping server and see if its is ready or busy.
     sock.sendto(PING, (managementEngine, managementEnginePort))
 
-    print "Waiting for response..."
+    logger.info ("Waiting for response...")
     data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
 
-    print "Response message:", data
+    logger.info ("Response message: " + data)
 
     # If ready, ask solver to solve.
     if data == PING_RESPONSE_READY:
-        print "Requesting for solution"
+        logger.info ("Requesting for solution")
         sock.sendto(SOLVE, (managementEngine, managementEnginePort))
 
-    print "Waiting for response..."
+    logger.info ("Waiting for response...")
     data, addr = sock.recvfrom(1024)
 
-    print "Response message:", data
+    logger.info ("Response message:" + data)

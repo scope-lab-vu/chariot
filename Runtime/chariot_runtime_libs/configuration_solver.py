@@ -2,6 +2,9 @@ __author__ = "Subhav Pradhan, Tihamer Levendovszky"
 # Base class file for all solvers. General encoding.
 
 from z3 import *
+from logger import get_logger
+
+logger = get_logger("configuration_solver")
 
 class ConfigurationSolver(object):
 
@@ -341,8 +344,8 @@ class ConfigurationSolver(object):
               for i in range(self.NO_OF_COMPONENTS) ]
             print_matrix(r)
         else:
-            print "Failed to solve"
-            print s
+            logger.error ("Failed to solve")
+            logger.info (s)
 
     def get_models(self):
         s= self.solver
@@ -380,7 +383,6 @@ class ConfigurationSolver(object):
         r = [ [ model.evaluate(self.c2n[i][j]) for j in range(self.NO_OF_NODES) ]
                     for i in range(self.NO_OF_COMPONENTS) ]
         print_matrix(r)
-        print"\n"
 
     def get_maximal_model(self):
         s= self.solver
@@ -418,8 +420,6 @@ class ConfigurationSolver(object):
 
         sumOfAll = sumOfComps + sumOfNodes
         s.add(sumOfAll == summa)
-
-        #print sumOfAll
 
 
         maxvalue = 0

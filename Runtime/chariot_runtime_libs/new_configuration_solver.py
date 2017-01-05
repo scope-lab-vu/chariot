@@ -1,8 +1,11 @@
 __author__ = "Tihamer Levendovszky, Subhav Pradhan"
 # Base class for solvers computing new configuration
 
-from configuration_solver import ConfigurationSolver
 from z3 import *
+from configuration_solver import ConfigurationSolver
+from logger import get_logger
+
+logger = get_logger("new_configuration_solver")
 
 class NewConfigurationSolver(ConfigurationSolver):
 
@@ -46,15 +49,12 @@ class NewConfigurationSolver(ConfigurationSolver):
     # Prints the differences between the initial and the new configuration
     # For logging and debugging
     def print_difference(self, componentsToShutDown, componentsToStart):
-        print
-        print "Printing differences:"
+        logger.info ("Printing differences:")
         for component in componentsToStart:
-            print "START Component %s on Node %s." % (self.componentNames[component[0]],self.nodeNames[component[1]])
+            logger.info ("START Component %s on Node %s." % (self.componentNames[component[0]], self.nodeNames[component[1]]))
 
         for component in componentsToShutDown:
-            print "SHUTDOWN Component %s on Node %s." % (self.componentNames[component[0]],self.nodeNames[component[1]])
-        print
-
+            logger.info ("SHUTDOWN Component %s on Node %s." % (self.componentNames[component[0]], self.nodeNames[component[1]]))
 
     # 1. Computes the new configuration
     # 2. Retrieves the difference between the initial and the new configuration along with the distance between the
@@ -68,7 +68,7 @@ class NewConfigurationSolver(ConfigurationSolver):
         if model is None: # No solution
             return [None, None, None, None]
 
-        print "New configuration was found. Distance from previous config: %d"%dist
+        logger.info ("New configuration was found. Distance from previous config: %d" % dist)
         for i in range(self.NO_OF_COMPONENTS):
             for j in range(self.NO_OF_NODES):
                 element = model[self.c2n[i][j]].as_long()
@@ -85,9 +85,8 @@ class NewConfigurationSolver(ConfigurationSolver):
     def get_next_configuration(self, initial):
         s= self.solver
         s.push() # Save solver state
-        print "Stats: ", s.statistics()
-        #print s.assertions()
-        print "Number of assertions: ", len(s.assertions())
+        logger.info ("Stats: " + s.statistics())
+        logger.info ("Number of assertions: " + len(s.assertions()))
 
         # Here, c2n is a list of Z3 int variables that will be assigned values by the solver.
         # c2n_old is a CxN matrix of integers that represents CURRENT (will be 0's during initial deployment)
@@ -130,7 +129,7 @@ class NewConfigurationSolver(ConfigurationSolver):
                 if last_model is None:
                     return [None, None]
                 else:
-                    print "Number of least dist iteration: ", count
+                    logger.info ("Number of least dist iteration: " + count)
                     return [last_model[absNorm].as_long(), last_model]
 
             elif r == unknown:
@@ -160,8 +159,8 @@ class NewConfigurationSolver(ConfigurationSolver):
         # Check if satisfiable.
         r = s.check()
         if (r == sat):
-            print "** CURRENT IS VALID. NO RECONF REQUIRED."
-            print s.model()
+            logger.info ("** CURRENT IS VALID. NO RECONF REQUIRED.")
+            logger.info (s.model())
             return True
         else:
             return False

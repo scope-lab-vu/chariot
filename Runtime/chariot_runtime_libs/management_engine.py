@@ -7,9 +7,12 @@ from solver_backend import SolverBackend
 from new_configuration_solver_bound import NewConfigurationSolverBound
 from chariot_helpers import Serialize, get_node_address
 from deployment_manager import update_start_action, update_stop_action
+from logger import get_logger
+
+logger = get_logger("management_engine")
 
 def solver_loop (db, zmq_socket, mongoServer, lookAhead):
-    print "Solver loop started"
+    logger.info ("Solver loop started")
 
     # Find own IP.
     # NOTE: If mongoServer is running on localhost, we assume local deployment
@@ -35,14 +38,14 @@ def solver_loop (db, zmq_socket, mongoServer, lookAhead):
         sock.bind((myIP, myPort))
         inComputation = False
         while True:
-            print "Waiting for request..."
+            logger.info ("Waiting for request...")
             data, addr = sock.recvfrom(1024)    # buffer size is 1024 bytes
 
             if data == PING:
-                print "Solver received a ping message"
+                logger.info ("Solver received a ping message")
                 sock.sendto(PING_RESPONSE_READY, addr)
             elif data == SOLVE:
-                print "Solver received solve request"
+                logger.info ("Solver received solve request")
                 if inComputation:
                     sock.sendto(PING_RESPONSE_BUSY, addr)
                 else:
@@ -56,7 +59,7 @@ def solver_loop (db, zmq_socket, mongoServer, lookAhead):
                 inComputation = False
 
     except Exception, e:
-        print e.message
+        logger.info (e.message)
     except:
         if sock != None:
         #   sock.shutdown(socket.SHUT_RDWR)
@@ -85,12 +88,12 @@ def find_solution(db, zmq_socket, lookAhead):
             daColl = db["DeploymentActions"]
             deploymentActions = list()
             for node in faultyNodes:
-                print "Searching pre-computed solution for failure of node:", node
+                logger.info ("Searching pre-computed solution for failure of node:" + node)
                 laResult = laColl.find_one({"failedEntity":node})
 
                 # If solution found, store time, get deployment actions and send them out.
                 if laResult is not None:
-                    print "Pre-computed solution found."
+                    logger.info ("Pre-computed solution found.")
 
                     # Check number of recovery actions to set actionCount.
                     recoveryActions = laResult["recoveryActions"]
@@ -108,7 +111,7 @@ def find_solution(db, zmq_socket, lookAhead):
                                       {"$currentDate":{"solutionFoundTime":{"$type":"date"}},
                                        "$set": {"actionCount":numOfActions}})
 
-                        print "Populating Nodes collection with information about processes and component instances"
+                        logger.info ("Populating Nodes collection with information about processes and component instances")
                         populate_nodes(db, recoveryActions)
 
                         # Making a copy as db insert below will modify by adding _id.
@@ -125,7 +128,7 @@ def find_solution(db, zmq_socket, lookAhead):
                             if send_action(db, ra, zmq_socket) is False:
                                 return
                 else:
-                    print "Pre-computed solution not found!"
+                    logger.info ("Pre-computed solution not found!")
 
             # Failure handle attempt done. Look ahead again.
             look_ahead(db)
@@ -145,10 +148,10 @@ def send_action (db, action, zmq_socket):
     elif (addr is not None and port is None):
         zmq_addr = "tcp://%s:%d"%(str(addr), ZMQ_PORT)
     elif (addr is None and port is None):
-        print "Error: Cannot retrieve address of target node to send action to."
+        logger.error ("Cannot retrieve address of target node to send action to.")
         return False
 
-    print "Sending action to DeploymentManager in node: ", str(action["node"])
+    logger.info ("Sending action to DeploymentManager in node: " + str(action["node"]))
 
     try:
         zmq_socket.connect(zmq_addr)
@@ -156,8 +159,8 @@ def send_action (db, action, zmq_socket):
         response = zmq_socket.recv()
         zmq_socket.disconnect(zmq_addr)
     except zmq.error.Again as e:
-        print "Caught exception: ", e
-        print "Error: Cannot reach DeploymentManager in node: ", str(action["node"])
+        logger.info ("Caught exception: %s" % e)
+        logger.error ("Cannot reach DeploymentManager in node: " + str(action["node"]))
         return False
     return True
 
@@ -168,16 +171,16 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
 
     backend = SolverBackend()
 
-    print "Loading ConfigSpace."
+    logger.info ("Loading ConfigSpace.")
     backend.load_state(db)
-    print "Successfully loaded ConfigSpace and computed all component instances that needs to be deployed."
+    logger.info ("Successfully loaded ConfigSpace and computed all component instances that needs to be deployed.")
 
-    print "Populating ConfigSpace with new component instances that needs to be deployed."
+    logger.info ("Populating ConfigSpace with new component instances that needs to be deployed.")
     backend.dump_component_instances(db)
-    print "Successfully populated ConfigSpace with component instances."
+    logger.info ("Successfully populated ConfigSpace with component instances.")
 
     elapsedTime = time.time() - startTime
-    print "** Problem setup time (Phase 1 - Instance Computation Phase): ", elapsedTime
+    logger.info ("** Problem setup time (Phase 1 - Instance Computation Phase): " + elapsedTime)
 
     startTime = time.time()
 
@@ -192,7 +195,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
     backend.add_dependency_constraints(solver)
 
     dependencyAdditionElapsedTime = time.time() - dependencyAdditionTime
-    print "** Dependency constraint addition time: ", dependencyAdditionElapsedTime
+    logger.info ("** Dependency constraint addition time: " + dependencyAdditionElapsedTime)
 
     # Add failure constraints.
     backend.add_failure_constraints(solver)
@@ -204,9 +207,9 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
     #solver.check_valid()
 
     elapsedTime = time.time() - startTime
-    print "** Problem setup time (Phase 2 - Constraint Encoding Phase) : ", elapsedTime
+    logger.info ("** Problem setup time (Phase 2 - Constraint Encoding Phase) : " + elapsedTime)
 
-    print "Computing new deployment."
+    logger.info ("Computing new deployment.")
 
     startTime = time.time() 
 
@@ -220,10 +223,10 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
         [componentsToShutDown, componentsToStart, model, dist] = result
         reColl = db["ReconfigurationEvents"]
         if (dist == None):
-            print "No deployment found!"
+            logger.info ("No deployment found!")
 
             elapsedTime = time.time() - startTime
-            print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
+            logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
 
             if not lookAhead or lookAheadUpdate:
                 reColl.update({"completed":False},
@@ -232,13 +235,13 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
             return None
         else:
             if dist !=0:
-                print "Deployment computation done"
+                logger.info ("Deployment computation done")
                 if (model is not None):
-                    print "Computing new deployment actions and populating DeploymentActions collection."
+                    logger.info ("Computing new deployment actions and populating DeploymentActions collection.")
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
 
                     elapsedTime = time.time() - startTime
-                    print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
+                    logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
                     # Perform steps needed for non-lookahead or lookahead but update scenario.
                     if not lookAhead or lookAheadUpdate:
                         reColl.update({"completed":False},
@@ -248,7 +251,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
                         # Print actions (difference).
                         solver.print_difference(componentsToShutDown, componentsToStart)
 
-                        print "Populating Nodes collection with information about processes and component instances"
+                        logger.info ("Populating Nodes collection with information about processes and component instances")
                         populate_nodes(db, actions)
 
                         # Send actions using zeromq if not lookahead.
@@ -258,25 +261,25 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
 
                         # If lookahead update scenario then perform update lookahead.
                         if lookAheadUpdate:
-                            print "Update lookahead mechanism"
+                            logger.info ("Update lookahead mechanism")
                             look_ahead(db)
 
                     # If lookahead and initial then send action and perform initial lookahead.
                     if lookAhead and initial:
-                        print "Populating Nodes collection with information about processes and component instances"
+                        logger.info ("Populating Nodes collection with information about processes and component instances")
                         populate_nodes(db, actions)
 
                         for action in actions:
                             if send_action(db, action, zmq_socket) is False:
                                 return
 
-                        print "Initial lookahead mechanism"
+                        logger.info ("Initial lookahead mechanism")
                         look_ahead(db)
             elif dist == 0:
-                print "Same deployment as before. No need for any changes."
+                logger.info ("Same deployment as before. No need for any changes.")
 
                 elapsedTime = time.time() - startTime
-                print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
+                logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
 
                 # No action so update reconfiguration event if non-lookahead or if lookahead and update scenario.
                 if not lookAhead or lookAheadUpdate:
@@ -293,10 +296,10 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
                 # no solution is found. This is the former. For the latter, we return None (see dist == None check above).
                 return list()
     else:
-        print "New deployment could not be computed."
+        logger.info ("New deployment could not be computed.")
 
         elapsedTime = time.time() - startTime
-        print "** Solver time (Phase 3 - Solution Computation Phase): ", elapsedTime
+        logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
 
     return actions
 
@@ -315,7 +318,7 @@ def look_ahead(db):
         aliveNodes.append(nodeName)
 
     for node in aliveNodes:
-        print "**Looking ahead for failure of node: ", node
+        logger.info ("**Looking ahead for failure of node: " + node)
         # Copy database.
         client = db.client
         client.admin.command('copydb',
@@ -344,7 +347,7 @@ def look_ahead(db):
         client.drop_database("LookAhead_"+node)
 
     elapsedTime = time.time() - startTime
-    print "** TIME TAKEN TO LOOK AHEAD: ", elapsedTime
+    logger.info ("** TIME TAKEN TO LOOK AHEAD: " + elapsedTime)
 
 def mark_node_failure(db, nodeName):
     nColl = db["Nodes"]
@@ -407,7 +410,7 @@ def populate_nodes(db, actions):
             nColl.update({"name":action["node"], "status":"ACTIVE"},
                          {"$push":{"processes":processDocument}})
         else:
-            print "Component instance with name:", componentInstanceName, "not found!"
+            logger.info ("Component instance with name: " + componentInstanceName + " not found!")
 
 def compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown):
     actions = list()

@@ -5,6 +5,9 @@ import datetime
 import copy
 from operator import attrgetter
 from chariot_helpers import Serialize
+from logger import get_logger
+
+logger = get_logger("solver_backend")
 
 class GoalDescription:
     name = None
@@ -59,7 +62,7 @@ class GoalDescription:
     # entry is a tuple <component instance name, list of names of component instances it depends on>.
     def compute_component_instance_dependencies(self):
         if len(self.componentInstanceDependencies) > 0:
-            print "Recomputing component instance dependencies"
+            logger.info ("Recomputing component instance dependencies")
             self.componentInstanceDependencies.clear()  # Emptying component instances list.
 
         for compInst in self.componentInstances:
@@ -141,7 +144,7 @@ class GoalDescription:
     # This function computes functionality instances and stores them in functionalityInstances list.
     def compute_functionality_instances(self, nodes, nodeTemplates):
         if len(self.functionalityInstances) > 0:
-            print "Recomputing functionality instances"
+            logger.info ("Recomputing functionality instances")
             del self.functionalityInstances[:]  # Emptying functionality instances list.
 
         for objective in self.objectives:
@@ -155,7 +158,7 @@ class GoalDescription:
     # This function computes component instances and stores in componentInstances list.
     def compute_component_instances(self, componentTypes):
         if len(self.componentInstances) > 0:
-            print "Recomputing component instances"
+            logger.info ("Recomputing component instances")
             del self.componentInstances[:]  # Emptying component instances list.
 
         for functionalityInstance in self.functionalityInstances:
@@ -761,8 +764,6 @@ class SolverBackend:
                     srcCompIndex = self.componentInstName2Index[dependencySource]
                     destCompIndex = self.componentInstName2Index[dependency[0]]
                     solver.solver.add(solver.Communicates(srcCompIndex, destCompIndex))
-                    #print "** Added communicates constraint for source component: ", self.componentInstances[srcCompIndex].name, \
-                    #      " and destination component: ", self.componentInstances[destCompIndex].name
 
     # This function adds node, process, and component failures as constraints to the given solver.
     def add_failure_constraints(self, solver):
@@ -834,7 +835,7 @@ class SolverBackend:
                             break
 
                 if prevDeployed:
-                    print "** Previously deployed so using atleast"
+                    logger.info ("** Previously deployed so using atleast")
                     # This atleast group has been previously deployed so using atleast constraint.
                     objectiveIndex = self.objectiveName2Index[constraint[4]]
                     constraintToAdd = solver.ForceAtleast(objectiveIndex, compIndexes, constraint[1])
@@ -842,13 +843,12 @@ class SolverBackend:
                     #print "** No previous deployedment so using maximum"
                     # This atleast group has not been deployed before so using maximum optimization.
                     #solver.Maximize(compIndexes)
-                    print "** No previous deployment so assigning must deploy"
+                    logger.info ("** No previous deployment so assigning must deploy")
                     objectiveIndex = self.objectiveName2Index[constraint[4]]
                     constraintToAdd = solver.ForceExactly(objectiveIndex, compIndexes, constraint[2])
                     
                     
             if constraintToAdd is not None:
-                #print "****", constraint[0], ": ", constraintToAdd
                 solver.solver.add(constraintToAdd)
 
     # This function returns a list of pair (component index, node index) to represent failed components.
@@ -1250,7 +1250,7 @@ class SolverBackend:
     # This function fills the c2n matrix with appropriate information. If any deployment instruction
     # given then those will be reflected with 1 in the matrix, if not then the matrix will have 0s.
     def load_component_to_node_assignment(self, db):
-        print "Loading component_to_node assignment from db"
+        logger.info ("Loading component_to_node assignment from db")
 
         # Initialize c2n matrix with 0s.
         self.c2n = [[0 for x in range(len(self.nodes))]
@@ -1292,7 +1292,7 @@ class SolverBackend:
 
         for ct in collection.find():
             componentType = Serialize(**ct)
-            print "Adding Component Type with name:", componentType.name
+            logger.info ("Adding Component Type with name: " + componentType.name)
             componentTypeToAdd = ComponentType()
             componentTypeToAdd.name = componentType.name
             componentTypeToAdd.providedFunctionality = componentType.providedFunctionality
@@ -1329,7 +1329,7 @@ class SolverBackend:
             nodeCategory = Serialize(**nc)
             for nt in nodeCategory.nodeTemplates:
                 nodeTemplate = Serialize(**nt)
-                print "Adding NodeTemplate with name:", nodeTemplate.name
+                logger.info ("Adding NodeTemplate with name: " + nodeTemplate.name)
                 nodeTemplateToAdd = NodeTemplate()
                 nodeTemplateToAdd.name = nodeTemplate.name
                 nodeTemplateToAdd.nodeCategory = nodeCategory.name
@@ -1363,7 +1363,7 @@ class SolverBackend:
 
         for n in collection.find():
             node = Serialize(**n)
-            print "Adding Node with name:", node.name
+            logger.info ("Adding Node with name: " + node.name)
             nodeToAdd = Node()
             nodeToAdd.name = node.name
             nodeToAdd.nodeTemplate = node.nodeTemplate
@@ -1373,7 +1373,7 @@ class SolverBackend:
             if len(node.processes) > 0:
                 for p in node.processes:
                     process = Serialize(**p)
-                    print "Adding Process with name:", process.name
+                    logger.info ("Adding Process with name: " + process.name)
                     processToAdd = Process()
                     processToAdd.name = process.name
                     processToAdd.pid = process.pid
@@ -1383,7 +1383,7 @@ class SolverBackend:
                     if len(process.components) > 0:
                         for c in process.components:
                             componentInstance = Serialize(**c)
-                            print "Adding Component with name:", componentInstance.name
+                            logger.info ("Adding Component with name: " + componentInstance.name)
                             componentInstanceToAdd = ComponentInstance()
                             componentInstanceToAdd.name = componentInstance.name
                             componentInstanceToAdd.status = componentInstance.status
@@ -1405,7 +1405,7 @@ class SolverBackend:
 
         for gd in collection.find():
             goalDescription = Serialize(**gd)
-            print "Adding GoalDescription with name:", goalDescription.name
+            logger.info ("Adding GoalDescription with name: " + goalDescription.name)
             goalDescriptionToAdd = GoalDescription()
             goalDescriptionToAdd.name = goalDescription.name
 
@@ -1482,31 +1482,21 @@ class SolverBackend:
             # Add goal description to collection.
             self.goalDescriptions.append(goalDescriptionToAdd)
 
-            # print
-            #
-            # print "=====OBJECTIVES====="
-            # for i in self.objectives:
-            #       print i.name
-            #
-            # print
-            #
-            # print "=====FUNCTIONALITY INSTANCES====="
-            # for i in self.functionalityInstances:
-            #      print i.name, "(", i.functionalityName, ",", i.objectiveName, ")"
-            #
-            # print
-            #
-            # print "=====FUNCTIONALITY CONSTRANTS====="
-            # for i in self.functionalityConstraints:
-            #     print i
-            #
-            # print
-            #
-            # print "=====COMPONENT INSTANCES====="
-            # for i in self.componentInstances:
-            #     print i.name, "(", i.type, ",", i.functionalityInstanceName, ")"
-            #
-            # print
+            logger.debug ("=====OBJECTIVES=====")
+            for i in self.objectives:
+                logger.debug (i.name)
+            
+            logger.debug ("=====FUNCTIONALITY INSTANCES=====")
+            for i in self.functionalityInstances:
+                logger.debug (i.name + "(" + i.functionalityName + "," + i.objectiveName + ")")
+            
+            logger.debug ("=====FUNCTIONALITY CONSTRANTS=====")
+            for i in self.functionalityConstraints:
+                logger.debug (i)
+            
+            logger.debug ("=====COMPONENT INSTANCES=====")
+            for i in self.componentInstances:
+                logger.debug (i.name + "(" + i.type + "," + i.functionalityInstanceName + ")")
 
     # This function loads existing component instances from MongoDB.
     def load_component_instances(self, db):
@@ -1531,8 +1521,7 @@ class SolverBackend:
                 if(self.check_node_status(componentInstance.alwaysDeployOnNode) == "ACTIVE"):
                     self.add_component_instance(componentInstanceToAdd, False)
                 else:
-                    print "Skipping node specific ComponentInstance with name:", componentInstance.name, "as its assigned node:", \
-                        componentInstance.alwaysDeployOnNode, "is not ACTIVE"
+                    logger.info ("Skipping node specific ComponentInstance with name: " + componentInstance.name + " as its assigned node: " + componentInstance.alwaysDeployOnNode + " is not ACTIVE")
             else:
                 self.add_component_instance(componentInstanceToAdd, False)
 

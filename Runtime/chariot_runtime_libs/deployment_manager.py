@@ -4,6 +4,9 @@ import os, signal, subprocess
 import re
 from random import randint
 from chariot_helpers import Serialize
+from logger import get_logger
+
+logger = get_logger("deployment_manager")
 
 def execute_start_action(actionProcess, actionStartScript):
     retval = None
@@ -14,9 +17,9 @@ def execute_start_action(actionProcess, actionStartScript):
     cmd = actionStartScript.split(" ")
     cmd[1] = env_str + "/" + cmd[1]
 
-    print "Creating process:", actionProcess, "with START command:", cmd
+    logger.info ("Creating process: " + actionProcess + " with START command: " + cmd)
     proc = subprocess.Popen(cmd)
-    print "Command executed, PID:", proc.pid
+    logger.info ("Command executed, PID: " + proc.pid)
     retval = proc.pid
 
     return retval
@@ -36,10 +39,10 @@ def execute_stop_action(db, actionNode, actionProcess, actionStopScript):
 
         # If PID found, kill the process.
         if pid is not None:
-            print "Killing process:", actionProcess, "with STOP command: kill -9", pid
+            logger.info ("Killing process: " + actionProcess + " with STOP command: kill -9 " + pid)
             os.kill(pid, signal.SIGKILL)
         else:
-            print "PID not found in the database. STOP cannot be performed."
+            logger.info ("PID not found in the database. STOP cannot be performed.")
 
 def update_start_action(db, actionNode, actionProcess, startScript, stopScript, pid):
     component = re.sub("process_", "", actionProcess)
@@ -67,7 +70,7 @@ def update_start_action(db, actionNode, actionProcess, startScript, stopScript, 
         daColl.update({"action":"START", "completed":False, "process":actionProcess, "node": actionNode},
                       {"$set":{"completed":True}})
     else:
-        print "Process: ", actionProcess, " with status TO_BE_DEPLOYED, not found in node: ", actionNode
+        logger.info ("Process: " + actionProcess + " with status TO_BE_DEPLOYED, not found in node: " + actionNode)
 
 def update_stop_action(db, actionNode, actionProcess, startScript, stopScript):
     component = re.sub("process_", "", actionProcess)
@@ -100,7 +103,7 @@ def handle_action(db, actionDoc, simulateDMActions, nodeName):
         actionStopScript = actionDoc["stopScript"]
 
         if action == "START" and not actionCompleted:
-            print "STARTING process:", actionProcess, "on node:", actionNode
+            logger.info ("STARTING process: " + actionProcess + " on node: " + actionNode)
             if not SIMULATE_DM_ACTIONS:
                 pid = execute_start_action(actionProcess, actionStartScript)
             else:
@@ -120,7 +123,7 @@ def handle_action(db, actionDoc, simulateDMActions, nodeName):
             # Update database to reflect affect of above start action.
             update_start_action(db, actionNode, actionProcess, actionStartScript, actionStopScript, pid)
         elif action == "STOP" and not actionCompleted:
-            print "STOPPING process:", actionProcess, "on node:", actionNode
+            logger.info ("STOPPING process: " + actionProcess + " on node: " + actionNode)
             if not SIMULATE_DM_ACTIONS:
                 execute_stop_action(db, actionNode, actionProcess, actionStopScript)
 
