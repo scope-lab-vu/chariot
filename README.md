@@ -43,7 +43,7 @@ For interested readers, [this](http://www.dre.vanderbilt.edu/~schmidt/PDF/Pradha
 2. Install CHARIOTRuntime package using pip (Current implementation of CHARIOTRuntime uses Python 2.7.6).
    ```bash
    sudo apt-get install python-pip
-   sudo pip install CHARIOTRuntime
+   sudo pip install chariot-runtime
    ```
 
 # Examples
@@ -69,16 +69,16 @@ Examples are available at https://github.com/visor-vu/chariot-examples
 
 8. Open nine different terminals to simulate the nine different nodes started in *step 3*.
 
-9. Start individual deployment managers on each terminal using the DeploymentManager command installed as part of the CHARIOTRuntime package. 
+9. Start individual deployment managers on each terminal using the *chariot-dm* command installed as part of the chariot-runtime package. 
 
    The command shown below will start a deployment manager specific to node with name *pmu_z1_1*.
    ```bash
-   DeploymentManager -n pmu_z1_1
+   chariot-dm -s pmu_z1_1
    ```
 
 10. Open a new terminal and run the management engine for initial deployment.
    ```bash
-   ManagementEngine -i
+   chariot-me -i
    ```
    This will result in computation of new deployment/configuration commands which will then be sent to corresponding deployment managers.
    
@@ -86,7 +86,7 @@ Examples are available at https://github.com/visor-vu/chariot-examples
 
 12. At this point initial deployment is complete and now we can test autonomous resilience by injecting a node failure. To do this, first start the management engine without initial deployment flag.
    ```bash
-   ManagementEngine
+   chariot-me
    ```
    Now inject node failure use the *SimulatedNodeActivity* command as shown below (for *node ied_z1_1*).
    ```bash
