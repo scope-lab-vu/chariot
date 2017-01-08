@@ -6,7 +6,7 @@ CHARIOT is a holistic solution that facilitates design, development, and managem
 
 1. **Design layer**: This is the top-most layer and comprises a novel DSML (Domain Specific Modeling Language) for extensible CPS.This DSML is called CHARIOT-ML and it is built using the [Xtext framework](http://www.eclipse.org/Xtext/). CHARIOT-ML consists of (1) language grammars that are metamodels using which users can design/model CPS, and (2) interpreters that traverses user models to retrieve design-time system description. Applications are modeled as software components that provide functionalities. Systems are modeled as composition of one or more functionalities.
 
-<img src="https://github.com/visor-vu/chariot/blob/master/LayeredOverview.png" width="45%" height="45%"/>
+   <img src="https://github.com/visor-vu/chariot/blob/master/LayeredOverview.png" width="45%" height="45%"/>
 
 2. **Data layer**: This is the middle layer. It comprises a well-defined data model that codifies the format in which system information (design-time system descriptions and runtime system representation) must be stored. CHARIOT currently uses [MongoDB](https://www.mongodb.com/) to store system information. This layer helps decouple the design layer (top) from the management layer (bottom) -- a design layer can comprise any modeling tool that generates system description that conforms to the data model; a management layer can be implemented in various ways and using varying technologies as long as its entities consume and produce data that conforms to the data model.
 
