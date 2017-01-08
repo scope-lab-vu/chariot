@@ -130,6 +130,7 @@ Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT No
   * Use update-rc.d to ensure an instance of ZooKeeper server and CHARIOT Node Membership Watcher is launched at boot
   
     ```bash
+    cd /etc/init.d
     sudo update-rc.d zookeeper defaults 90
     sudo update-rc.d chariot-nmw defaults 99
     ```
@@ -148,6 +149,7 @@ Compute nodes are nodes that hosts different applications. Since CHARIOT runtime
 
 4. Use update-rc.d to ensure an instance of CHARIOT Deployment Manager and CHARIOT Node Membership is launched at boot
   ```bash
+  cd /etc/init.d
   sudo update-rc.d chariot-dm defaults 99
   sudo update-rc.d chariot-nm defaults 99
   ```
