@@ -56,7 +56,7 @@ Examples are available at https://github.com/visor-vu/chariot-examples
 
 3. From inside SmartPowerGrid/scripts folder run the *SimulateNodeStartup* script. This will result in simulation of nine different nodes being started. 
    
-   *NOTE: A closer inspection will show you that this script relies on the SimulateNodeActivity command installed as part of the CHARIOTRuntime package. Please take a look at the names being assigned to each node.*
+   *NOTE: A closer inspection will show you that this script relies on the chariot-sna command installed as part of the chariot-runtime package. Please take a look at the names being assigned to each node.*
    
 4. At this point you are advised to check your local MongoDB server for the presence of *ConfigSpace* database, *Nodes* collection, and nine node-specific documents inside the *Nodes* collection.
 
@@ -88,8 +88,8 @@ Examples are available at https://github.com/visor-vu/chariot-examples
    ```bash
    chariot-me
    ```
-   Now inject node failure use the *SimulatedNodeActivity* command as shown below (for *node ied_z1_1*).
+   Now inject node failure use the *chariot-sna* command as shown below (for *node ied_z1_1*).
    ```bash
-   SimulateNodeActivity -n ied_z1_1 -a stop
+   chariot-sna -n ied_z1_1 -a stop
    ```
    This will trigger the CHARIOTRuntime's self-reconfiguration mechanism. You can verify this by checking the ManagementEngine's output.
