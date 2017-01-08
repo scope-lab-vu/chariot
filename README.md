@@ -29,3 +29,90 @@ CHARIOT consists of different entities that can be classified into three layers:
   * Third and final category is the Deployment Infrastructure, which comprises of distributed Deployment Managers (one per each node) that are responsible for "acting" on commands computed by the management engine. Each deployment manager is capable of managing local (node-specific) applications. Current implementation of CHARIOT using [ZeroMQ](http://zeromq.org/) as the middleware for communication between the management engine and deployment managers.
 
 For interested readers, [this](http://www.dre.vanderbilt.edu/~schmidt/PDF/Pradhan_IoT.pdf) draft paper describes CHARIOT in much more detail.
+
+## Installation Guide
+### MongoDB
+1. Install MongoDB (tested with MongoDB version 3.2.11).
+
+2. Install a MongoDB GUI (not required but makes it easier to check database contents). We use [Robomongo] (https://robomongo.org/download).
+
+### CHARIOT-ML
+1. Install Eclipse (tested with Eclipse [Mars 2](http://www.eclipse.org/downloads/packages/release/Mars/2)).
+
+2. Install CHARIOT-DSML as an Eclipse plugin using the following update site:   
+   http://scope.isis.vanderbilt.edu/chariot/eclipse/repository
+   
+   To install a new plugin in Eclipse you should go to [Help -> Install New Software...] and use above update site. Once this installation is complete you will be asked to restart Eclipse.
+   
+3. To check if the installation was successful, please perform the following tasks:
+  * Run a local MongoDB server instance.
+  * Clone the [CHARIOT examples](https://github.com/visor-vu/chariot-examples) repository.
+  * Import any one of the available examples as existing project in your restarted Eclipse instance [File->Import...->General->Existing Projects into Workspace]. When browsing the source folder you will see that CHARIOT-ML icons are used for files and keywords are highlighted.
+  * Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
+  * Check MongoDB server for a database named *ConfigSpace* which should contain all system description information required by CHARIOT runtime.
+
+### CHARIOT Runtime
+1. Install [ZooKeeper](https://zookeeper.apache.org/releases.html). 
+
+   *NOTE: This step is not required when running CHARIOT Runtime on simulation mode (Deployment managers receive actions from the management engine but do not start or stop application processes. Only runtime system representation is updated in the database).*
+   
+2. Install chariot-runtime package using pip (Current implementation of chariot-runtime uses Python 2.7.6).
+   ```bash
+   sudo apt-get install python-pip
+   sudo pip install chariot-runtime
+   ```
+
+## Running the SmartPowerGrid example in Simulation Mode
+Examples are available at https://github.com/visor-vu/chariot-examples. Follow the steps listed below to run the [SmartPowerGrid](https://github.com/visor-vu/chariot-examples/tree/master/SmartPowerGrid) example in simulation mode.
+
+1. Clone the [CHARIOT examples](https://github.com/visor-vu/chariot-examples) repository.
+
+2. Run a local MongoDB server instance.
+
+3. From inside SmartPowerGrid/scripts folder run the *SimulateNodeStartup* script. This will result in simulation of nine different nodes being started. 
+   
+   *NOTE: A closer inspection will show you that this script relies on the chariot-sna command installed as part of the chariot-runtime package. Please take a look at the names being assigned to each node.*
+   
+4. At this point you are advised to check your local MongoDB server for the presence of *ConfigSpace* database, *Nodes* collection, and nine node-specific documents inside the *Nodes* collection.
+
+5. Open Eclipse and import the SmartPowerGrid example as existing project 
+   [File->Import...->General->Existing Projects into Workspace].
+   
+6. Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
+
+7. At this point you are advised to again check your local MongoDB server for the presence of *ComponentTypes*, *GoalDescriptions*, and *NodeCategories* collections with documents representing the system description of the SmartParkingGrid example.
+
+8. Open nine different terminals to simulate the nine different nodes started in *step 3*.
+
+9. Start individual deployment managers on each terminal using the *chariot-dm* command installed as part of the chariot-runtime package. 
+
+   The command shown below will start a deployment manager specific to node with name *pmu_z1_1*.
+   ```bash
+   chariot-dm -s pmu_z1_1
+   ```
+
+10. Open a new terminal and run the management engine for initial deployment.
+   ```bash
+   chariot-me -i
+   ```
+   This will result in computation of new deployment/configuration commands which will then be sent to corresponding deployment managers.
+   
+11. Check deployment manager terminals to verify that simulated actions were invoked.
+
+12. At this point initial deployment is complete and now we can test autonomous resilience by injecting a node failure. To do this, first start the management engine without initial deployment flag.
+   ```bash
+   chariot-me
+   ```
+   Now inject node failure use the *chariot-sna* command as shown below (for *node ied_z1_1*).
+   ```bash
+   chariot-sna -n ied_z1_1 -a stop
+   ```
+   This will trigger the chariot-runtime's self-reconfiguration mechanism. You can verify this by checking the ManagementEngine's output.
+   
+## Running the SmartParkingBasic example in Non-simulation Mode
+Follow the steps listed below to run the [SmartParkingBasic](https://github.com/visor-vu/chariot-examples/tree/master/SmartParkingBasic) example in non-simulation (i.e., distribtued) mode.
+
+### Starting the server nodes
+Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, and the CHARIOT Management Engine) should be separate from the compute nodes (i.e, nodes that hosts the CHARIOT Deployment Managers and different applications).
+
+1. Start a node, install MongoDB (see [this](#mongodb))
