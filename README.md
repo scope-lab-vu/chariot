@@ -108,8 +108,8 @@ Examples are available at https://github.com/visor-vu/chariot-examples. Follow t
 ## Running the SmartParkingBasic example in Non-simulation Mode
 Follow the steps listed below to run the [SmartParkingBasic](https://github.com/visor-vu/chariot-examples/tree/master/SmartParkingBasic) example in non-simulation (i.e., distribtued) mode.
 
-### Starting the server nodes
-Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT Node Membership Watcher, and CHARIOT Management Engine) should be separate from the compute nodes (i.e, nodes that hosts CHARIOT Deployment Managers and different applications).
+### Starting the Server Nodes
+Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT Node Membership Watcher, and CHARIOT Management Engine) should be separate from the compute nodes (i.e, nodes that hosts different applications).
 
 1. Start a node to host a MongoDB server
   * Update hostname (/etc/hostname) to something meaningful (e.g. mongo-server)
@@ -134,3 +134,24 @@ Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT No
   * Restart the node, which will result in execution of an instance each of ZooKeeper server and CHARIOT Node Membership Watcher
   
   *NOTE: A CHARIOT Node Membership Watcher does not need to run on the same node as a ZooKeeper server. We do so for simplicity.*
+
+### Starting the Compute Nodes
+Compute nodes are nodes that hosts different applications. Since CHARIOT runtime uses its deployment infrastructure to perform application management, each compute node hosts an instance of the CHARIOT Deployment Manager. Futhermore, each compute node also hosts an instance of the CHARIOT Node Membership, which in essence is a ZooKeeper client and is part of the CHARIOT monitoring infrastructure. Follow the steps listed below for each compute node:
+
+1. Start the node and update hostname (/etc/hostname) to something meaningful (e.g. node-1 .. node-5)
+
+2. Update hosts file (/etc/hosts) to add information about mongo-server and monitoring-server
+
+3. Install CHARIOT runtime (see [this](#chariot-runtime)) and update configuration file located in /etc/chariot/chariot.conf
+
+4. Use update-rc.d to ensure an instance of CHARIOT Deployment Manager and CHARIOT Node Membership is launched at boot
+  ```bash
+  sudo update-rc.d chariot-dm defaults 99
+  sudo update-rc.d chariot-nm defaults 99
+  ```
+
+5. Restart the node, which will result in execution of an instance of CHARIOT Deployment Manager and CHARIOT Node Membership
+
+Once above set of steps are completed for every compute node, check the MongoDB server for the presence of *ConfigSpace* database and *Nodes* collection. This collection should have a document each for every compute node.
+
+### Generating the System Description and Performing Initial Deployment
