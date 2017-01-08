@@ -8,7 +8,7 @@ before_install:
 - hash -r
 jdk:
 - oraclejdk8
-script: mvn -v && pushd DSML/src/xtext/edu.vanderbilt.isis.chariot.mvn && mvn clean install && popd && pushd pushd DSML/src/xtext/ && tar -zcvf edu.vanderbilt.isis.chariot.updatesite.tar.gz edu.vanderbilt.isis.chariot.updatesite/ && popd
+script: mvn -v && pushd DSML/src/xtext/edu.vanderbilt.isis.chariot.mvn && mvn clean install && popd && pushd DSML/src/xtext/ && tar -zcvf edu.vanderbilt.isis.chariot.updatesite.tar.gz edu.vanderbilt.isis.chariot.updatesite/ && popd
 notifications:
   email: false
 deploy:
