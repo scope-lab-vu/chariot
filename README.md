@@ -39,13 +39,15 @@ For interested readers, [this](http://www.dre.vanderbilt.edu/~schmidt/PDF/Pradha
 ### CHARIOT-ML
 1. Install Eclipse (tested with Eclipse [Mars 2](http://www.eclipse.org/downloads/packages/release/Mars/2)).
 
-2. Install CHARIOT-DSML as an Eclipse plugin using the following update site:   
+2. Install CHARIOT-ML as an Eclipse plugin using the following update site:   
    http://scope.isis.vanderbilt.edu/chariot/eclipse/repository
    
    To install a new plugin in Eclipse you should go to [Help -> Install New Software...] and use above update site. Once this installation is complete you will be asked to restart Eclipse.
    
-3. To check if the installation was successful, please perform the following tasks:
-  * Run a local MongoDB server instance.
+3. Install MongoDB and run an instance of the MongoDB server. This server can be local or remote. If remote, set *MONGO_ADDRESS* and *MONGO_PORT* environment variables accordingly.
+   
+4. To check if the installation was successful, please perform the following tasks:
+  * Ensure that you have a running MongoDB server instance.
   * Clone the [CHARIOT examples](https://github.com/visor-vu/chariot-examples) repository.
   * Import any one of the available examples as existing project in your restarted Eclipse instance [File->Import...->General->Existing Projects into Workspace]. When browsing the source folder you will see that CHARIOT-ML icons are used for files and keywords are highlighted.
   * Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
