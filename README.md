@@ -40,7 +40,7 @@ For interested readers, [this](http://www.dre.vanderbilt.edu/~schmidt/PDF/Pradha
 
    *NOTE: This step is not required when running CHARIOT Runtime on simulation mode (Deployment managers receive actions from the management engine but do not start or stop application processes. Only runtime system representation is updated in the database).*
    
-2. Install CHARIOTRuntime package using pip (Current implementation of CHARIOTRuntime uses Python 2.7.6).
+2. Install chariot-runtime package using pip (Current implementation of chariot-runtime uses Python 2.7.6).
    ```bash
    sudo apt-get install python-pip
    sudo pip install chariot-runtime
@@ -92,4 +92,4 @@ Examples are available at https://github.com/visor-vu/chariot-examples
    ```bash
    chariot-sna -n ied_z1_1 -a stop
    ```
-   This will trigger the CHARIOTRuntime's self-reconfiguration mechanism. You can verify this by checking the ManagementEngine's output.
+   This will trigger the chariot-runtime's self-reconfiguration mechanism. You can verify this by checking the ManagementEngine's output.
