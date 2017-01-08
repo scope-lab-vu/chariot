@@ -52,11 +52,7 @@ For interested readers, [this](http://www.dre.vanderbilt.edu/~schmidt/PDF/Pradha
   * Check MongoDB server for a database named *ConfigSpace* which should contain all system description information required by CHARIOT runtime.
 
 ### CHARIOT Runtime
-1. Install [ZooKeeper](https://zookeeper.apache.org/releases.html). 
-
-   *NOTE: This step is not required when running CHARIOT Runtime on simulation mode (Deployment managers receive actions from the management engine but do not start or stop application processes. Only runtime system representation is updated in the database).*
-   
-2. Install chariot-runtime package using pip (Current implementation of chariot-runtime uses Python 2.7.6).
+Install chariot-runtime package using pip (Current implementation of chariot-runtime uses Python 2.7.6).
    ```bash
    sudo apt-get install python-pip
    sudo pip install chariot-runtime
@@ -113,6 +109,28 @@ Examples are available at https://github.com/visor-vu/chariot-examples. Follow t
 Follow the steps listed below to run the [SmartParkingBasic](https://github.com/visor-vu/chariot-examples/tree/master/SmartParkingBasic) example in non-simulation (i.e., distribtued) mode.
 
 ### Starting the server nodes
-Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, and the CHARIOT Management Engine) should be separate from the compute nodes (i.e, nodes that hosts the CHARIOT Deployment Managers and different applications).
+Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT Node Membership Watcher, and CHARIOT Management Engine) should be separate from the compute nodes (i.e, nodes that hosts CHARIOT Deployment Managers and different applications).
 
-1. Start a node, install MongoDB (see [this](#mongodb))
+1. Start a node to host a MongoDB server
+  * Update hostname (/etc/hostname) to something meaningful (e.g. mongo-server)
+  * Install MongoDB (see [this](#mongodb))
+  * Run an instance of the MongoDB server
+  
+2. Start a node to host a CHARIOT Membership Engine
+  * Update hostname (/etc/hostname) to something meaningful (e.g. management-engine)
+  * Install CHARIOT runtime (see [this](#chariot-runtime))
+
+3. Start a node to host a ZooKeeper server and a CHARIOT Node Membership Watcher
+  * Update hostname (/etc/hostname) to something meaningful (e.g. monitoring-server)
+  * Update hosts file (/etc/hosts) to add information about mongo-server and management-engine nodes
+  * Install [ZooKeeper](https://zookeeper.apache.org/releases.html)
+  * Install CHARIOT runtime (see [this](#chariot-runtime)) and update configuration file located in /etc/chariot/chariot.conf
+  * Use update-rc.d to ensure an instance of ZooKeeper server and CHARIOT Node Membership Watcher is launched at boot
+  
+    ```bash
+    sudo update-rc.d zookeeper defaults 90
+    sudo update-rc.d chariot-nmw defaults 99
+    ```
+  * Restart the node, which will result in execution of an instance each of ZooKeeper server and CHARIOT Node Membership Watcher
+  
+  *NOTE: A CHARIOT Node Membership Watcher does not need to run on the same node as a ZooKeeper server. We do so for simplicity.*
