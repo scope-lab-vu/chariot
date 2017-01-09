@@ -72,20 +72,20 @@ Examples are available at https://github.com/visor-vu/chariot-examples. Follow t
 
 1. Clone the [CHARIOT examples](https://github.com/visor-vu/chariot-examples) repository.
 
-2. Run a local MongoDB server instance.
+2. Run a MongoDB server instance.
 
 3. From inside SmartPowerGrid/scripts folder run the *SimulateNodeStartup* script. This will result in simulation of nine different nodes being started. 
    
    *NOTE: A closer inspection will show you that this script relies on the chariot-sna command installed as part of the chariot-runtime package. Please take a look at the names being assigned to each node.*
    
-4. At this point you are advised to check your local MongoDB server for the presence of *ConfigSpace* database, *Nodes* collection, and nine node-specific documents inside the *Nodes* collection.
+4. At this point you are advised to check your MongoDB server for the presence of *ConfigSpace* database, *Nodes* collection, and nine node-specific documents inside the *Nodes* collection.
 
 5. Open Eclipse and import the SmartPowerGrid example as existing project 
    [File->Import...->General->Existing Projects into Workspace].
    
 6. Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
 
-7. At this point you are advised to again check your local MongoDB server for the presence of *ComponentTypes*, *GoalDescriptions*, and *NodeCategories* collections with documents representing the system description of the SmartParkingGrid example.
+7. At this point you are advised to again check your MongoDB server for the presence of *ComponentTypes*, *GoalDescriptions*, and *NodeCategories* collections with documents representing the system description of the SmartParkingGrid example.
 
 8. Open nine different terminals to simulate the nine different nodes started in *step 3*.
 
@@ -127,16 +127,16 @@ Follow the steps listed below to run the [SmartParkingBasic](https://github.com/
 Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT Node Membership Watcher, and CHARIOT Management Engine) should be separate from the compute nodes (i.e, nodes that hosts different applications).
 
 1. Start a node to host a MongoDB server
-  * Update hostname (/etc/hostname) to something meaningful (e.g. mongo-server)
+  * [optional] Update hostname (/etc/hostname) to something meaningful (e.g. mongo-server)
   * Install MongoDB (see [this](#mongodb))
   * Run an instance of the MongoDB server
   
-2. Start a node to host a CHARIOT Membership Engine
-  * Update hostname (/etc/hostname) to something meaningful (e.g. management-engine)
+2. Start a node to host a CHARIOT Management Engine
+  * [optional] Update hostname (/etc/hostname) to something meaningful (e.g. management-engine)
   * Install CHARIOT runtime (see [this](#chariot-runtime))
 
 3. Start a node to host a ZooKeeper server and a CHARIOT Node Membership Watcher
-  * Update hostname (/etc/hostname) to something meaningful (e.g. monitoring-server)
+  * [optional] Update hostname (/etc/hostname) to something meaningful (e.g. monitoring-server)
   * Update hosts file (/etc/hosts) to add information about mongo-server and management-engine nodes
   * Install [ZooKeeper](https://zookeeper.apache.org/releases.html)
   * Install CHARIOT runtime (see [this](#chariot-runtime)) and update configuration file located in /etc/chariot/chariot.conf
@@ -154,7 +154,7 @@ Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT No
 ### Starting the Compute Nodes
 Compute nodes are nodes that hosts different applications. Since CHARIOT runtime uses its deployment infrastructure to perform application management, each compute node hosts an instance of the CHARIOT Deployment Manager. Futhermore, each compute node also hosts an instance of the CHARIOT Node Membership, which in essence is a ZooKeeper client and is part of the CHARIOT monitoring infrastructure. Follow the steps listed below for each compute node:
 
-1. Start the node and update hostname (/etc/hostname) to something meaningful (e.g. node-1 .. node-5)
+1. [optional] Start the node and update hostname (/etc/hostname) to something meaningful (e.g. node-1 .. node-5)
 
 2. Update hosts file (/etc/hosts) to add information about mongo-server and monitoring-server
 
@@ -172,3 +172,39 @@ Compute nodes are nodes that hosts different applications. Since CHARIOT runtime
 Once above set of steps are completed for every compute node, check the MongoDB server for the presence of *ConfigSpace* database and *Nodes* collection. This collection should have a document each for every compute node.
 
 ### Generating the System Description and Performing Initial Deployment
+Now that server nodes and compute nodes have been setup successfully, we must generate the required system description of the SmartParkingBasic example using CHARIOT-ML and then perform the initial deployment of the SmartParkingBasic system.
+
+1. In any of the existing server nodes or a completely new node, install CHARIOT-ML (see [here](#chariot-ml)).
+
+2. Open Eclipse and import the SmartParkingBasic example as existing project 
+   [File->Import...->General->Existing Projects into Workspace].
+   
+3. Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
+
+4. At this point you are advised to again check your MongoDB server for the presence of *ComponentTypes*, *GoalDescriptions*, and *NodeCategories* collections with documents representing the system description of the SmartParkingGrid example.
+
+5. Switch to the *management-engine* node (start in step 2 of [this](#starting-the-server-nodes) section) and run the management engine for initial deployment.
+   ```bash
+   chariot-me -i
+   ```
+   This will result in computation of new deployment/configuration commands which will then be sent to corresponding deployment managers.
+   
+6. Check deployment manager logs (located at /etc/chariot/logs of remote compute nodes) to verify that deployement actions were taken. At this point initial deployment of the SmartParkingBasic system is complete.
+
+### Testing Node Failure (egress)
+Now that the initial deployment is successfully performed, we can test node egress (node failure) by stopping one of the five compute nodes.
+
+1. Start the management-engine without initial deployment flag.
+   ```bash
+   chariot-me
+   ```
+2. Stop one of the five compute nodes. This should result in following sequence of actions:
+  * The CHARIOT Node Membership Watcher running on the *monitoring-server* node will detect the node failure, update the database, and invoke the CHARIOT Management Engine.
+  * The CHARIOT Management Engine will compute a new solution, if required (keep adding failures to ensure reconfiguration event). Based on the new solution, deployment actions are sent to respective CHARIOT Deployment Managers.
+  * The CHARIOT Deployment Managers will perform received deployment actions.
+  
+### Testing Node Addition (ingress)
+To test node ingress (addition of a node), just follow steps listed [here](#starting-the-compute-nodes) for the new node. This should result in following sequence of actions:
+* The CHARIOT Node Membership Watcher running on the *monitoring-server* node will detect the node addition, update the database, and invoke the CHARIOT Management Engine.
+* The CHARIOT Management Engine will compute a new solution, if required. Based on the new solution, deployment actions are sent to respective CHARIOT Deployment Managers.
+* The CHARIOT Deployment Managers will perform received deployment actions.
