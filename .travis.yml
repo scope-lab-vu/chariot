@@ -18,4 +18,4 @@ deploy:
   file: 'DSML/src/xtext/edu.vanderbilt.isis.chariot.updatesite.tar.gz'
   skip_cleanup: true
   on:
-    repo: visor-vu/chariot
+   tags: true
