@@ -59,6 +59,13 @@ Install chariot-runtime package using pip (Current implementation of chariot-run
    sudo apt-get install python-pip
    sudo pip install chariot-runtime
    ```
+Following are the commands installed as part of chariot-runtime:
+* **chariot-dm**: This command starts the CHARIOT Deployment Manager
+* **chariot-me**: This command starts the CHARIOT Management Engine
+* **chariot-nm**: This command starts the CHARIOT Node Membership (this is a ZooKeeper client)
+* **chariot-nmw**: This command starts the CHARIOT Node Membership Watcher (this is also a ZooKeeper client but it uses the watcher recipe)
+* **chariot-rm**: This command starts the CHARIOT Resource Monitor to monitor resources (CPU, memory, network bandwidth) consumed by a CHARIOT Deployment Manager and CHARIOT Node Membership (current implementation requires PIDs of NM and DM to be passed via command line arguments)
+* **chariot-sna**: This command should be used when running examples in simulation to simulate node activities (start and stop)
 
 ## Running the SmartPowerGrid example in Simulation Mode
 Examples are available at https://github.com/visor-vu/chariot-examples. Follow the steps listed below to run the [SmartPowerGrid](https://github.com/visor-vu/chariot-examples/tree/master/SmartPowerGrid) example in simulation mode.
@@ -97,7 +104,7 @@ Examples are available at https://github.com/visor-vu/chariot-examples. Follow t
    
 11. Check deployment manager terminals to verify that simulated actions were invoked.
 
-12. At this point initial deployment is complete and now we can test autonomous resilience by injecting a node failure. To do this, first start the management engine without initial deployment flag.
+12. At this point initial deployment is complete and now we can test autonomous resilience by injecting a node egress (failure). To do this, first start the management engine without initial deployment flag.
    ```bash
    chariot-me
    ```
@@ -106,6 +113,12 @@ Examples are available at https://github.com/visor-vu/chariot-examples. Follow t
    chariot-sna -n ied_z1_1 -a stop
    ```
    This will trigger the chariot-runtime's self-reconfiguration mechanism. You can verify this by checking the ManagementEngine's output.
+   
+13. Above step tested CHARIOT's failure management capability. CHARIOT is also capable of operations management (i.e., managing planned system updates); in order to test this we can simulate a hardware update scenario by performing node ingress (adding a node). In this example if we add a PMU node to any of the three protection zones using their default templates, a corresponding PMU component instance will be added due to per-node replication (see [here]() for detail about this replication constraint).
+  ```bash
+  chariot-sna -n pmu_z1_2 -t default_pmu_z1 -p 7010 -a start
+  ```
+  Above command will trigger the chariot-runtime's self-reconfiguration mechanism. You can verify this by checking the ManagementEngine's output.
    
 ## Running the SmartParkingBasic example in Non-simulation Mode
 Follow the steps listed below to run the [SmartParkingBasic](https://github.com/visor-vu/chariot-examples/tree/master/SmartParkingBasic) example in non-simulation (i.e., distribtued) mode.
