@@ -1,17 +1,22 @@
 language: java
-
 before_install:
-  - wget http://apache.claz.org/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
-  - tar zxvf apache-maven-3.3.9-bin.tar.gz
-  - chmod +x apache-maven-3.3.9/bin/mvn
-  - export M2_HOME=$PWD/apache-maven-3.3.9
-  - export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
-  - hash -r
-
+- wget http://apache.claz.org/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+- tar zxvf apache-maven-3.3.9-bin.tar.gz
+- chmod +x apache-maven-3.3.9/bin/mvn
+- export M2_HOME=$PWD/apache-maven-3.3.9
+- export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
+- hash -r
 jdk:
-  - oraclejdk8
-
-script: mvn -v && cd DSML/src/xtext/edu.vanderbilt.isis.chariot.mvn && mvn clean install
-
+- oraclejdk8
+script: mvn -v && pushd DSML/src/xtext/edu.vanderbilt.isis.chariot.mvn && mvn clean install && popd && pushd DSML/src/xtext/ && tar -zcvf edu.vanderbilt.isis.chariot.updatesite.tar.gz edu.vanderbilt.isis.chariot.updatesite/ && popd
 notifications:
   email: false
+deploy:
+  provider: releases
+  overwrite: true
+  api_key:
+    secure: evYWvxZZoH5e9mfQXNg2HxjHa9ZE8k+iZHazZjtfrwA1mzdsH4FHchsIx3kVt7I9doAgrJC/4I6q6yByNR62x1oPRQV6Ekiou5PNoeM4SQ9hvT5hagCY7zXejChO3BPq9rsimzBqPUocQy6DnoMsBvCaYP0cy9nrj7vtiIkkkurDieLv/pI573kqW9P/gKrYsT7lxmHddWHLanH1BH32Xt6B9E+sckd1r73gPQDEhaWqxIFL+QgnJ6SiXw3PED2qx+FY2e9tuDCyDDB2XlkE+LYNTtQ3Hwl18dGnAS1PC5bUpL+HGm5qWgjnXZCBN955h7EkojavivxVRP9CPcLXdYJyUxqW+8snD4Qt8ec0AFxbz5ZSk5MCzwvZVx96a2cVcjnHApFkghS8keLiDAAOKwcWAhQtlEdWV6m3rwW8IAISEzP4yKA7PGm4p+a1lI4FnJGls62A6oNyiPLKiFzRAVC5TvtILiDz1W5Wmc02V6G/o99GLgBI7zVJDInppQTiGghn0sm8I3kAYvigo7c9unqi0M+FWWQzeJA13sdQ0A+MrnOY5dU6rbF61c8Ca5BDpiJ9B9mPFYv/BgTBWRjpnm+Rqlo7W3Hrty9X/briJATkqMAJeBKcFvU8fHQzJCGLeM6/PXu2ri4dzTzUKxf16nOUFFGEf0nykBwdLjHXo4w=
+  file: 'DSML/src/xtext/edu.vanderbilt.isis.chariot.updatesite.tar.gz'
+  skip_cleanup: true
+  on:
+   tags: true
