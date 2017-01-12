@@ -39,8 +39,8 @@ Workflow {
     	registerGenModelFile = "platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel"
     	registerGeneratedEPackage = "edu.vanderbilt.isis.chariot.datatypes.DatatypesPackage"
     	registerGenModelFile = "platform:/resource/edu.vanderbilt.isis.chariot.datatypes/model/generated/Datatypes.genmodel"
-    	registerGeneratedEPackage = "org.xtext.mongobeans.mongoBeans.MongoBeansPackage"
-    	registerGenModelFile = "platform:/resource/org.xtext.mongobeans/model/generated/MongoBeans.genmodel"
+    	//registerGeneratedEPackage = "org.xtext.mongobeans.mongoBeans.MongoBeansPackage"
+    	//registerGenModelFile = "platform:/resource/org.xtext.mongobeans/model/generated/MongoBeans.genmodel"
     }
     
    /*component = DirectoryCleaner {
