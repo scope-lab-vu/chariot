@@ -17,7 +17,7 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.xtext.xbase,
  org.eclipse.xtext.generator;resolution:=optional,
  org.eclipse.xtend.standalone,
- org.eclipse.orbit.mongodb;bundle-version="2.6.3",
+ org.eclipse.orbit.mongodb,
  org.xtext.mongobeans.lib;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.apache.log4j
