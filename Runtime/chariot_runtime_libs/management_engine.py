@@ -180,7 +180,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
     logger.info ("Successfully populated ConfigSpace with component instances.")
 
     elapsedTime = time.time() - startTime
-    logger.info ("** Problem setup time (Phase 1 - Instance Computation Phase): " + elapsedTime)
+    logger.info ("** Problem setup time (Phase 1 - Instance Computation Phase): " + str(elapsedTime))
 
     startTime = time.time()
 
@@ -195,7 +195,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
     backend.add_dependency_constraints(solver)
 
     dependencyAdditionElapsedTime = time.time() - dependencyAdditionTime
-    logger.info ("** Dependency constraint addition time: " + dependencyAdditionElapsedTime)
+    logger.info ("** Dependency constraint addition time: " + str(dependencyAdditionElapsedTime))
 
     # Add failure constraints.
     backend.add_failure_constraints(solver)
@@ -207,7 +207,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
     #solver.check_valid()
 
     elapsedTime = time.time() - startTime
-    logger.info ("** Problem setup time (Phase 2 - Constraint Encoding Phase) : " + elapsedTime)
+    logger.info ("** Problem setup time (Phase 2 - Constraint Encoding Phase) : " + str(elapsedTime))
 
     logger.info ("Computing new deployment.")
 
@@ -226,7 +226,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
             logger.info ("No deployment found!")
 
             elapsedTime = time.time() - startTime
-            logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
+            logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + str(elapsedTime))
 
             if not lookAhead or lookAheadUpdate:
                 reColl.update({"completed":False},
@@ -241,7 +241,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
                     actions = compute_deployment_actions(db, backend, solver, componentsToStart, componentsToShutDown)
 
                     elapsedTime = time.time() - startTime
-                    logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
+                    logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + str(elapsedTime))
                     # Perform steps needed for non-lookahead or lookahead but update scenario.
                     if not lookAhead or lookAheadUpdate:
                         reColl.update({"completed":False},
@@ -279,7 +279,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
                 logger.info ("Same deployment as before. No need for any changes.")
 
                 elapsedTime = time.time() - startTime
-                logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
+                logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + str(elapsedTime))
 
                 # No action so update reconfiguration event if non-lookahead or if lookahead and update scenario.
                 if not lookAhead or lookAheadUpdate:
@@ -299,7 +299,7 @@ def invoke_solver(db, zmq_socket, initial, lookAhead, lookAheadUpdate = False):
         logger.info ("New deployment could not be computed.")
 
         elapsedTime = time.time() - startTime
-        logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + elapsedTime)
+        logger.info ("** Solver time (Phase 3 - Solution Computation Phase): " + str(elapsedTime))
 
     return actions
 
@@ -347,7 +347,7 @@ def look_ahead(db):
         client.drop_database("LookAhead_"+node)
 
     elapsedTime = time.time() - startTime
-    logger.info ("** TIME TAKEN TO LOOK AHEAD: " + elapsedTime)
+    logger.info ("** TIME TAKEN TO LOOK AHEAD: " + str(elapsedTime))
 
 def mark_node_failure(db, nodeName):
     nColl = db["Nodes"]

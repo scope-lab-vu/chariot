@@ -85,8 +85,8 @@ class NewConfigurationSolver(ConfigurationSolver):
     def get_next_configuration(self, initial):
         s= self.solver
         s.push() # Save solver state
-        logger.info ("Stats: " + s.statistics())
-        logger.info ("Number of assertions: " + len(s.assertions()))
+        logger.info ("Stats: " + str(s.statistics()))
+        logger.info ("Number of assertions: " + str(len(s.assertions())))
 
         # Here, c2n is a list of Z3 int variables that will be assigned values by the solver.
         # c2n_old is a CxN matrix of integers that represents CURRENT (will be 0's during initial deployment)
@@ -129,7 +129,7 @@ class NewConfigurationSolver(ConfigurationSolver):
                 if last_model is None:
                     return [None, None]
                 else:
-                    logger.info ("Number of least dist iteration: " + count)
+                    logger.info ("Number of least dist iteration: " + str(count))
                     return [last_model[absNorm].as_long(), last_model]
 
             elif r == unknown:
