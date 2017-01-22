@@ -133,6 +133,7 @@ Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT No
   
 2. Start a node to host a CHARIOT Management Engine
   * [optional] Update hostname (/etc/hostname) to something meaningful (e.g. management-engine)
+  * Update hosts file (/etc/hosts) to add information about mongo-server node
   * Install CHARIOT runtime (see [this](#chariot-runtime))
 
 3. Start a node to host a ZooKeeper server and a CHARIOT Node Membership Watcher
