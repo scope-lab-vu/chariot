@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="chariot-runtime",
-    version="0.0.3",
+    version="0.0.5",
     author="visor-vu",
     author_email="visorvu@gmail.com",
     description="CHARIOT Runtime Package (Beta)",

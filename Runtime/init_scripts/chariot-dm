@@ -2,7 +2,7 @@
 
 ### BEGIN INIT INFO
 # Provides:         CHARIOT DeploymentManager service.
-# Required-Start:
+# Required-Start:   chariot-nm
 # Required-Stop:
 # Default-Start:
 # Default-Stop:
