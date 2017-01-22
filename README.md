@@ -140,12 +140,16 @@ Server nodes (i.e., nodes that host MongoDB server, ZooKeeper server, CHARIOT No
   * [optional] Update hostname (/etc/hostname) to something meaningful (e.g. monitoring-server)
   * Update hosts file (/etc/hosts) to add information about mongo-server and management-engine nodes
   * Install [ZooKeeper](https://zookeeper.apache.org/releases.html)
+  
+    ```bash
+    sudo apt-get install zookeeper
+    sudo apt-get install zookeeperd
+    ```
   * Install CHARIOT runtime (see [this](#chariot-runtime)) and update configuration file located in /etc/chariot/chariot.conf
-  * Use update-rc.d to ensure an instance of ZooKeeper server and CHARIOT Node Membership Watcher is launched at boot
+  * Use update-rc.d to ensure an instance of CHARIOT Node Membership Watcher is launched at boot
   
     ```bash
     cd /etc/init.d
-    sudo update-rc.d zookeeper defaults 90
     sudo update-rc.d chariot-nmw defaults 99
     ```
   * Restart the node, which will result in execution of an instance each of ZooKeeper server and CHARIOT Node Membership Watcher
