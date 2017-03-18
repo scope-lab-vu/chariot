@@ -5,7 +5,7 @@ __author__ = "Subhav Pradhan"
 import os, sys
 import argparse, ConfigParser
 import socket, zmq, json
-from chariot_runtime_libs import get_logger, get_node_address, mongo_connect, handle_action
+from libs import get_logger, get_node_address, mongo_connect, handle_action
 
 def main():
     # Get python logger.

@@ -23,10 +23,10 @@ sudo systemctl enable mongodb
 
 wget https://download.robomongo.org/1.0.0-rc1/linux/robomongo-1.0.0-rc1-linux-x86_64-496f5c2.tar.gz
 
-tar -xvf robomongo-1.0.0-rc1-linux-x86_64-496f5c2.tar.gz 
+tar -xvf robomongo-1.0.0-rc1-linux-x86_64-496f5c2.tar.gz -C ~/
 
 rm robomongo-1.0.0-rc1-linux-x86_64-496f5c2.tar.gz
 
-git clone https://github.com/visor-vu/chariot-examples.git
+git clone https://github.com/visor-vu/chariot-examples.git ~/chariot-examples
 
-sudo pip2 install chariot-runtime
+#sudo pip2 install chariot-runtime

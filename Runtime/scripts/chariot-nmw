@@ -9,7 +9,7 @@ from kazoo.client import KazooClient, KazooState
 from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.protocol.states import EventType
 from pymongo import MongoClient
-from chariot_runtime_libs import Serialize, invoke_management_engine, get_logger
+from libs import Serialize, invoke_management_engine, get_logger
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
