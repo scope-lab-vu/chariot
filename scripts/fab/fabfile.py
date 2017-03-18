@@ -3,6 +3,7 @@
 from fabric.api import *
 import time
 import socket
+from fabric.contrib.files import exists
 env.hosts = ['bbb-eb18.local']
 
 env.password = 'riapspwd'
@@ -10,7 +11,8 @@ env.user = 'riaps'
 env.sudo_password = 'riapspwd'
 
 env.roledefs = {
-  'three' : ['bbb-1f82.local', 'bbb-53b9.local', 'bbb-d5b5'],
+  'four' : ['bbb-1f82.local', 'bbb-53b9.local', 'bbb-d5b5.local', 'bbb-ff98.local'],
+  'three' : ['bbb-1f82.local', 'bbb-53b9.local', 'bbb-d5b5.local'],
   'two' : ['bbb-1f82.local', 'bbb-53b9.local'],
   'one' : ['bbb-1f82.local'],
   'mana' : ['192.168.0.108'],
@@ -22,6 +24,12 @@ role = 'one'
 def find_nodes():
   local("sudo arp-scan --interface=enp0s8 --localnet")
   local("sudo arp-scan --interface=enp0s3 --localnet")
+
+@roles('four')
+def updateChariot():
+  if not exists('~/chariot'):
+    run('mkdir chariot')
+  put('~/chariot', '~/')
 
 @roles('mana')
 def setupMana():

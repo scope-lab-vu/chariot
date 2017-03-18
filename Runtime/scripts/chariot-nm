@@ -8,7 +8,8 @@ import netifaces, socket
 import json
 from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import NodeExistsError
-from chariot_runtime_libs import get_logger
+
+from libs import get_logger
 
 def connection_state_listener(state):
     if state == KazooState.LOST:
