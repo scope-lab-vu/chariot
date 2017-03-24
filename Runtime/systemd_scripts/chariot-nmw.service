@@ -1,0 +1,12 @@
+[Unit]
+Description=Provides CHARIOT node membership watcher service, which is a ZooKeeper client that uses the children watcher recipe.
+
+[Service]
+#EnvironmentFile=-/etc/chariot/chariot.conf
+ExecStart=/usr/local/bin/chariot-nmw -c /etc/chariot/chariot.conf
+KillMode=control-group
+Restart=on-failure
+RestartSec=100ms
+
+[Install]
+WantedBy=multi-user.target

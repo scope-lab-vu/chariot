@@ -34,6 +34,27 @@ role = 'one'
 def find_nodes():
   local("sudo arp-scan --interface=enp0s8 --localnet")
   local("sudo arp-scan --interface=enp0s3 --localnet")
+  
+@hosts('bbb-d5b5.local')
+def setupNodes():
+    """ installs pip2, and  copies and installs version of chariot from local ~/chariot"""
+    sudo("apt install python-pip -y")
+    if not exists('~/chariot'):
+        run('mkdir chariot')
+    put('~/chariot', '~/')
+    # Install edge CHARIOT runtime
+    sudo("cd ~/chariot/Runtime && sudo pip2 install --upgrade .")
+    # among other things the above installs chariot-dm, chariot-nm, and chariot-nmw at /etc/init.d, they need to be made executable
+    #sudo("chmod +x /etc/init.d/chariot*")
+    #This makes chariot-nm start on boot
+    #run("cd /etc/init.d && sudo update-rc.d chariot-nm defaults 99")
+    sudo("systemctl enable chariot-nm.service")
+    #sudo("systemctl start chariot-nm.service")
+    #check to make sure it was actually set up and started. 
+    #run("systemctl status chariot-nm.service")
+    #run("service chariot-nm status")
+    #sudo("reboot")
+    
 
 @roles('four')
 def updateChariot():
@@ -64,11 +85,11 @@ def setupMonitor():
   sudo("apt install zookeeper -y")
   sudo("apt install zookeeperd -y")
   # Install edge CHARIOT runtime
-  sudo("cd ~/chariot/Runtime && sudo pip2 install --upgrade .")
+  #sudo("cd ~/chariot/Runtime && sudo pip2 install --upgrade .")
   # update configuration file located in /etc/chariot/chariot.conf
   updateChariotConf()  
   # Use update-rc.d to launch Node Membership Watcher at boot
-  run ("cd /etc/init.d && sudo update-rc.d chariot-nmw defaults 99")
+  #run ("cd /etc/init.d && sudo update-rc.d chariot-nmw defaults 99")
   # Restart the node, zookeep and node membership watcher will start. 
   #sudo("reboot")
 
@@ -80,7 +101,7 @@ def setupCompute():
   sudo('echo "' + mongoServer + ' MongoServer" >> /etc/hosts')
   sudo('echo "' + monitoringServer + ' MonitoringServer" >> /etc/hosts')
   # Install edge CHARIOT runtime
-  sudo("cd ~/chariot/Runtime && sudo pip2 install .")
+  #sudo("cd ~/chariot/Runtime && sudo pip2 install .")
   # sudo("cd ~/chariot/Runtime && sudo pip2 install --upgrade .")
   # update configuration file located in /etc/chariot/chariot.conf
   updateChariotConf()  

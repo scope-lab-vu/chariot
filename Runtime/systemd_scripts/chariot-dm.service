@@ -1,0 +1,14 @@
+[Unit]
+Description=Provides CHARIOT deployment manager service, which is a service responsible for receiving configuration commands from the CHARIOT management engine and executing those commands locally.
+Requires=chariot-nm.service
+After=chariot-nm.service
+
+[Service]
+#EnvironmentFile=-/etc/chariot/chariot.conf
+ExecStart=/usr/local/bin/chariot-dm -c /etc/chariot/chariot.conf
+KillMode=control-group
+Restart=on-failure
+RestartSec=100ms
+
+[Install]
+WantedBy=multi-user.target
