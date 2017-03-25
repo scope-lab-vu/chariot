@@ -18,6 +18,8 @@ def connection_state_listener(state):
     elif state == KazooState.SUSPENDED:
         logger.error ("Connection to server has been suspended!")
         sys.exit()
+    elif state == KazooState.CONNECTED:
+        logger.info("Connected to server")
 
 def membership_watch(children,event):
     global CURRENT_MEMBERS

@@ -5,6 +5,7 @@ import time
 import socket
 import re
 from fabric.contrib.files import exists
+from fabric.decorators import parallel
 env.hosts = ['bbb-eb18.local']
 
 env.password = 'riapspwd'
@@ -13,7 +14,7 @@ env.sudo_password = 'riapspwd'
 
 mongoServer = '192.168.0.108'
 managementEngine = '192.168.0.108'
-monitoringServer = 'bbb-1f82.local'
+monitoringServer = 'bbb-1f82'
 re_MongoServer = re.compile('MongoServer: localhost')
 re_MonitoringServer = re.compile('MonitoringServer: localhost')
 re_ManagementEngine = re.compile('ManagementEngine: localhost')
@@ -26,8 +27,8 @@ env.roledefs = {
   'two' : ['bbb-1f82.local', 'bbb-53b9.local'],
   'one' : ['bbb-1f82.local'],
   'mana' : [managementEngine],
-  'monti': [monitoringServer],
-  'compute' : ['192.168.0.108', 'bbb-1f82.local', 'bbb-53b9.local', 'bbb-d5b5.local', 'bbb-ff98.local'],
+  'monti': [monitoringServer+'.local'],
+  'compute' : ['bbb-53b9.local', 'bbb-d5b5.local', 'bbb-ff98.local'],
   'egress' : ['bbb-ff98.local'], }
 role = 'one'
 
@@ -35,7 +36,8 @@ def find_nodes():
   local("sudo arp-scan --interface=enp0s8 --localnet")
   local("sudo arp-scan --interface=enp0s3 --localnet")
   
-@hosts('bbb-d5b5.local')
+@roles('four')
+@parallel
 def setupNodes():
     """ installs pip2, and  copies and installs version of chariot from local ~/chariot"""
     sudo("apt install python-pip -y")
@@ -48,7 +50,7 @@ def setupNodes():
     #sudo("chmod +x /etc/init.d/chariot*")
     #This makes chariot-nm start on boot
     #run("cd /etc/init.d && sudo update-rc.d chariot-nm defaults 99")
-    sudo("systemctl enable chariot-nm.service")
+    #sudo("systemctl enable chariot-nm.service")
     #sudo("systemctl start chariot-nm.service")
     #check to make sure it was actually set up and started. 
     #run("systemctl status chariot-nm.service")
@@ -90,13 +92,16 @@ def setupMonitor():
   updateChariotConf()  
   # Use update-rc.d to launch Node Membership Watcher at boot
   #run ("cd /etc/init.d && sudo update-rc.d chariot-nmw defaults 99")
+  sudo("systemctl enable chariot-nmw")
   # Restart the node, zookeep and node membership watcher will start. 
-  #sudo("reboot")
 
 @roles('compute')
+@parallel
 def setupCompute():
   """Setup CHARIOT compute nodes"""
   # Update /etc/hosts with mongo-server and monitoring-server
+  if exists('/etc/hosts_bak'):
+        sudo('mv /etc/hosts_bak /etc/hosts')
   sudo('cp /etc/hosts /etc/hosts_bak')  # in case I screw up
   sudo('echo "' + mongoServer + ' MongoServer" >> /etc/hosts')
   sudo('echo "' + monitoringServer + ' MonitoringServer" >> /etc/hosts')
@@ -105,10 +110,12 @@ def setupCompute():
   # sudo("cd ~/chariot/Runtime && sudo pip2 install --upgrade .")
   # update configuration file located in /etc/chariot/chariot.conf
   updateChariotConf()  
-  run("cd /etc/init.d && sudo update-rc.d chariot-nm defaults 99")
-  run("cd /etc/init.d && sudo update-rc.d chariot-dm defaults 99")
+  sudo("systemctl enable chariot-nm")
+  sudo("systemctl enable chariot-dm")
+  #run("cd /etc/init.d && sudo update-rc.d chariot-nm defaults 99")
+  #run("cd /etc/init.d && sudo update-rc.d chariot-dm defaults 99")
   print("\n after reboot check the MongoDB server for the presence of ConfigSpace database and Nodes collection. This collection should have a document each for every compute node.")
-  sudo("reboot")
+  #sudo("reboot")
   
 def setupAlias():
     
@@ -146,6 +153,8 @@ def updateChariotConf():
     sudo("sed -i 's/MongoServer: localhost/MongoServer: " + mongoServer + "/g' /etc/chariot/chariot.conf")
     sudo("sed -i 's/MonitoringServer: localhost/MonitoringServer: " + monitoringServer + "/g' /etc/chariot/chariot.conf")
     sudo("sed -i 's/ManagementEngine: localhost/ManagementEngine: " + managementEngine + "/g' /etc/chariot/chariot.conf")
+    hostName = run("hostname")
+    sudo("sed -i 's/default_name/" + hostName + "/g' /etc/chariot/chariot.conf")
     
     #sed -i 's/original/new/g' file.txt
           
