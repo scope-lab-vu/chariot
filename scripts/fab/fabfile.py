@@ -111,7 +111,8 @@ def setupCompute():
   # update configuration file located in /etc/chariot/chariot.conf
   updateChariotConf()  
   sudo("systemctl enable chariot-nm")
-  sudo("systemctl enable chariot-dm")
+  sudo("systemctl disable chariot-dm")
+  
   #run("cd /etc/init.d && sudo update-rc.d chariot-nm defaults 99")
   #run("cd /etc/init.d && sudo update-rc.d chariot-dm defaults 99")
   print("\n after reboot check the MongoDB server for the presence of ConfigSpace database and Nodes collection. This collection should have a document each for every compute node.")
