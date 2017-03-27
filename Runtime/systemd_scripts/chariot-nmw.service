@@ -1,5 +1,7 @@
 [Unit]
 Description=Provides CHARIOT node membership watcher service, which is a ZooKeeper client that uses the children watcher recipe.
+After=zookeeper.service
+Requires=zookeeper.service
 
 [Service]
 #EnvironmentFile=-/etc/chariot/chariot.conf

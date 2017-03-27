@@ -35,6 +35,7 @@ def get_node_address(db, node):
 # Helper for mongo connection.
 def mongo_connect(serverName):
     try:
+        logger.info("serverName is: %s" %serverName)
         client = pymongo.MongoClient(serverName, serverSelectionTimeoutMS = 5000)
         client.server_info()
     except pymongo.errors.ConnectionFailure, e:

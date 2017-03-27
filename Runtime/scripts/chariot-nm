@@ -18,6 +18,8 @@ def connection_state_listener(state):
     elif state == KazooState.SUSPENDED:
         logger.error ("Connection to server has been suspended!")
         sys.exit()
+    elif state == KazooState.CONNECTED:
+        logger.info("Connected to server")
 
 def main():
     argParser = argparse.ArgumentParser()
@@ -87,7 +89,7 @@ def main():
     except KeyError, e:
     	logger.error("KeyError " + str(e))
     	logger.error("addrs: %s", addrs)
-    	logger.error("interface: %s", interface))
+    	logger.error("interface: %s", interface)
     
     
     # Connect to ZooKeeper server residing at a known IP.
