@@ -7,6 +7,21 @@ from logger import get_logger
 
 logger = get_logger("chariot_helpers")
 
+from pymongo.errors import AutoReconnect
+
+def autoreconnect_retry(fn, retries=3):
+    def db_op_wrapper(*args, **kwargs):
+        tries = 0
+
+        while tries < retries:
+            try:
+                return fn(*args, **kwargs)
+
+            except AutoReconnect:
+                tries += 1
+
+        raise Exception("No luck even after %d retries" % retries)
+
 # Basic serialize class to convert a mongo document into a dictionary.
 class Serialize:
     def __init__(self, **entries):
@@ -33,6 +48,7 @@ def get_node_address(db, node):
         return None, None
 
 # Helper for mongo connection.
+#@autoreconnect_retry
 def mongo_connect(serverName):
     try:
         logger.info("serverName is: %s" %serverName)
@@ -40,13 +56,13 @@ def mongo_connect(serverName):
         client.server_info()
     except pymongo.errors.ConnectionFailure, e:
         logger.error ("Could not connect to MongoDB server: %s" % e)
-        sys.exit()
+        sys.exit(1)
     except pymongo.errors.ConfigurationError, e:
         logger.error ("Could not connect to MongoDB server: %s" % e)
-        sys.exit()
+        sys.exit(1)
     except pymongo.errors.ServerSelectionTimeoutError, e:
         logger.error ("Could not connect to MongoDB server: %s" % e)
-        sys.exit()
+        sys.exit(1)
     logger.info ("Connected to MongoDB server: " + serverName)
     return client
 

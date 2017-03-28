@@ -80,6 +80,7 @@ def main():
     zmq_socket = zmq_context.socket(zmq.REP)
 
     # Get IP and port of host.
+    logger.info("nodeName: %s" %nodeName)
     addr, port = get_node_address(db, nodeName)
 
     # Connect to given address(stored in database) or default port.

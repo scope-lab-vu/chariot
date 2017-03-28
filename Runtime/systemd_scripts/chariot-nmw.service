@@ -8,7 +8,7 @@ Requires=zookeeper.service
 ExecStart=/usr/local/bin/chariot-nmw -c /etc/chariot/chariot.conf
 KillMode=control-group
 Restart=on-failure
-RestartSec=100ms
+RestartSec=5100ms
 
 [Install]
 WantedBy=multi-user.target

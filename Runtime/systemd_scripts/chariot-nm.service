@@ -6,7 +6,7 @@ Description=Provides CHARIOT node membership service, which is a ZooKeeper clien
 ExecStart=/usr/local/bin/chariot-nm -c /etc/chariot/chariot.conf
 KillMode=control-group
 Restart=on-failure
-RestartSec=100ms
+RestartSec=5100ms
 
 [Install]
 WantedBy=multi-user.target
