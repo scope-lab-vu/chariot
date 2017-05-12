@@ -12,14 +12,18 @@ def execute_start_action(actionProcess, actionStartScript):
     retval = None
 
     env_str = os.getenv('APP_HOME','/home/vagrant/chariot_apps/')
+    logger.info("APP_HOME: " + env_str)
     actionStartScript = str(actionStartScript)
+    logger.info("actionStartScript: " + actionStartScript)
 
     cmd = actionStartScript.split(" ")
+    logger.info("cmd: " + str(cmd))
     cmd[1] = env_str + "/" + cmd[1]
+    logger.info("cmd[1]: " + cmd[1])
 
-    logger.info ("Creating process: " + actionProcess + " with START command: " + cmd)
-    proc = subprocess.Popen(cmd)
-    logger.info ("Command executed, PID: " + proc.pid)
+    logger.info ("Creating process: " + actionProcess + " with START command: " + cmd[1])
+    proc = subprocess.Popen(cmd[1])
+    logger.info ("Command executed, PID: " + str(proc.pid))
     retval = proc.pid
 
     return retval

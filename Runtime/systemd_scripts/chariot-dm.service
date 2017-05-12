@@ -5,6 +5,7 @@ Requires=chariot-nm.service
 
 [Service]
 #EnvironmentFile=-/etc/chariot/chariot.conf
+Environment=APP_HOME=/home/riaps/riaps_apps
 ExecStart=/usr/local/bin/chariot-dm -c /etc/chariot/chariot.conf
 KillMode=control-group
 Restart=on-failure

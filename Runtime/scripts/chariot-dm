@@ -95,6 +95,8 @@ def main():
     while True:
         # Receive action, which is a JSON document.
         logger.info ("Waiting for deployment action")
+        env_str = os.getenv('APP_HOME','/home/vagrant/chariot_apps/')
+        logger.info("APP_HOME: " + env_str)
         action = zmq_socket.recv()
         zmq_socket.send("Received")
         action_json = json.loads(action)
