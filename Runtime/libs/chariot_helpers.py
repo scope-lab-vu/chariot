@@ -104,26 +104,30 @@ def invoke_management_engine(mongoServer, managementEngine, isUpdate):
         myIP = socket.gethostbyname(socket.gethostname())
 
     myPort = 8888
+    logger.info("myIp:" + str(myIP))
 
-    PING = "PING"
-    PING_RESPONSE_READY = "READY"
-    PING_RESPONSE_BUSY = "BUSY"
-    SOLVE = "SOLVE"
-    SOLVE_RESPONSE_OK = "OK"
+    PING = 'PING'
+    PING_RESPONSE_READY = 'READY'
+    PING_RESPONSE_BUSY = 'BUSY'
+    SOLVE = 'SOLVE'
+    SOLVE_RESPONSE_OK = 'OK'
 
     sock = socket.socket(socket.AF_INET,    # Internet
                          socket.SOCK_DGRAM) # UDP
-    sock.bind((myIP, myPort))
 
     logger.info ("Pinging management engine for status")
-
-    # First, ping server and see if its is ready or busy.
-    sock.sendto(PING, (managementEngine, managementEnginePort))
-
-    logger.info ("Waiting for response...")
-    data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-
-    logger.info ("Response message: " + data)
+    
+    bytes_sent = 0
+    try:
+        # First, ping server and see if its is ready or busy.
+        logger.info("managementEngine: " + managementEngine)
+        logger.info("managementEnginePort: " + str(managementEnginePort))
+        bytes_sent = sock.sendto(PING, (managementEngine, managementEnginePort))
+        logger.info ("Waiting for response...")
+        data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+        logger.info ("Response message: " + data)
+    finally:
+        logger.info ("bytes_sent: " + str(bytes_sent))
 
     # If ready, ask solver to solve.
     if data == PING_RESPONSE_READY:

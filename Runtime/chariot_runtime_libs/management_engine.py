@@ -25,7 +25,7 @@ def solver_loop (db, zmq_socket, mongoServer, lookAhead):
 
     myPort = 7000
     
-    logger.info("MyIP: " + myIP)
+    logger.info("MyIP(can be defined in /etc/hosts): " + myIP)
     logger.info("myPort: " + str(myPort))
 
     PING = "PING"
