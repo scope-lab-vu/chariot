@@ -24,6 +24,9 @@ def solver_loop (db, zmq_socket, mongoServer, lookAhead):
         myIP = socket.gethostbyname(socket.gethostname())
 
     myPort = 7000
+    
+    logger.info("MyIP: " + myIP)
+    logger.info("myPort: " + str(myPort))
 
     PING = "PING"
     PING_RESPONSE_READY = "READY"
@@ -37,10 +40,11 @@ def solver_loop (db, zmq_socket, mongoServer, lookAhead):
                              socket.SOCK_DGRAM) # UDP
         sock.bind((myIP, myPort))
         inComputation = False
+        
         while True:
-            logger.info ("Waiting for request...")
+            logger.info ("Waiting for a request...")
             data, addr = sock.recvfrom(1024)    # buffer size is 1024 bytes
-
+            logger.info ("Got some data")
             if data == PING:
                 logger.info ("Solver received a ping message")
                 sock.sendto(PING_RESPONSE_READY, addr)

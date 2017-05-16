@@ -6,15 +6,15 @@ import socket
 import re
 from fabric.contrib.files import exists
 from fabric.decorators import parallel
-env.hosts = ['bbb-eb18.local']
+env.hosts = ['bbb-1f82.local']
 
 env.password = 'riapspwd'
 env.user = 'riaps'
 env.sudo_password = 'riapspwd'
 
 APPS_HOME = '/home/riaps/riaps_apps'
-mongoServer = '192.168.0.108'
-managementEngine = '192.168.0.108'
+mongoServer = '192.168.0.111'
+managementEngine = '192.168.0.111'
 monitoringServer = '192.168.0.103' #'bbb-1f82.local'
 re_MongoServer = re.compile('MongoServer: localhost')
 re_MonitoringServer = re.compile('MonitoringServer: localhost')
@@ -50,7 +50,7 @@ def setupNodes():
     #sudo("apt install python-pip -y")
     if not exists('~/chariot'):
         run('mkdir chariot')
-    put('~/chariot', '~/')
+    put('~/Desktop/chariot', '~/')
     # Install edge CHARIOT runtime
     sudo("cd ~/chariot/Runtime && sudo pip2 install --upgrade .")
     #Install mongo client for testing UNCOMMENT FOR NEW INSTALL
@@ -68,20 +68,21 @@ def testMongoCommand():
         sudo('mv /etc/mongod.conf_bak /etc/mongod.conf')
     sudo('cp /etc/mongod.conf /etc/mongod.conf_bak')  # in case I screw up
     #Allow LAN connections
-    local("sudo sed -i 's/127.0.0.1/127.0.0.1,192.168.0.108/g' /etc/mongod.conf")
+    local("sudo sed -i 's/127.0.0.1/127.0.0.1,192.168.0.111/g' /etc/mongod.conf")
     #Trying to allow remote connections. Didn't get it working. 
     #local("sudo sed -i 's/bindIp/#bindIp/g' /etc/mongod.conf")
     #local(r"sudo sed -i 's/#security:/security:\n authorization: '\''enabled'\''/g' /etc/mongod.conf")
     local("sudo systemctl restart mongod.service")
 
-@roles('mana')
+#@roles('mana')
 def setupManagementEngine():
     """ Installs the server chariot runtime, and specifies location of mongoDB server"""
     # update /etc/hosts
-    if exists('/etc/hosts_bak'):
-        sudo('mv /etc/hosts_bak /etc/hosts')
-    sudo('cp /etc/hosts /etc/hosts_bak')  # in case I screw up
-    sudo('echo "' + mongoServer + ' MongoServer" >> /etc/hosts')
+    if not exists('/etc/hosts_bak'):
+        local('sudo cp /etc/hosts /etc/hosts_bak')
+    local('sudo cp /etc/hosts_bak /etc/hosts')  # in case I screw up
+    #local('echo "' + mongoServer + ' MongoServer" >> /etc/hosts')
+    local('echo "' + mongoServer + ' MongoServer" | sudo tee --append /etc/hosts')
     # Change from local if z3 server is being run remotely. 
     local('sudo -H pip2 install --upgrade chariot-runtime')
     
