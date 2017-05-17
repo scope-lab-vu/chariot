@@ -1,0 +1,16 @@
+package TransEn
+import TransEn.* //Pulls in the datatypes.dt
+
+app TransEn{
+	message tick: MSG; //message <name>:datatype
+	component GenGridlabD{
+		timer clock 5000 ms; 
+		pub ticker : tick;
+	}
+	
+	actor GenPriceControl{
+		{
+			grid : GenGridlabD;
+		}
+	}
+}

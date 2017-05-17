@@ -1,0 +1,5 @@
+package TransEn
+struct MSG
+{ 
+	msg: String
+}
