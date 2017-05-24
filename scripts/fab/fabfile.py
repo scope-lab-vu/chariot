@@ -13,8 +13,8 @@ env.user = 'riaps'
 env.sudo_password = 'riapspwd'
 
 APPS_HOME = '/home/riaps/riaps_apps'
-mongoServer = '192.168.0.111'
-managementEngine = '192.168.0.111'
+mongoServer = '192.168.0.108'
+managementEngine = '192.168.0.108'
 monitoringServer = '192.168.0.103' #'bbb-1f82.local'
 re_MongoServer = re.compile('MongoServer: localhost')
 re_MonitoringServer = re.compile('MonitoringServer: localhost')
@@ -50,7 +50,7 @@ def setupNodes():
     #sudo("apt install python-pip -y")
     if not exists('~/chariot'):
         run('mkdir chariot')
-    put('~/Desktop/chariot', '~/')
+    put('~/chariot', '~/')
     # Install edge CHARIOT runtime
     sudo("cd ~/chariot/Runtime && sudo pip2 install --upgrade .")
     #Install mongo client for testing UNCOMMENT FOR NEW INSTALL
