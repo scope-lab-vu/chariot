@@ -14,6 +14,15 @@ CHARIOT is a holistic solution that facilitates design, development, and managem
 * Different hardware resources (nodes that can be equipped with various devices) can ingress of egress a cluster dynamically at runtime; as such, at any given time there is a set of available harware resources with links between them (this is the hardware graph)
 * The management problem being solved by CHARIOT is that of mapping the software graph onto the hardware graph while satisfying different system constraints
 
+### Vision: Managing extensible CPS at Scale
+Cyber-Physical Systems (CPS) have traditionally been designed as closed systems for specific domains. This design philosophy was necessitated by the stringent requirements on system correctness, reliability, security and privacy. However, with increasing push towards open architectures and the emphasis on integration of CPS with Internet of Things (IoT), cloud computing, and online data analytics, as evidenced by the increasing interest in Smart City cyber-physical applications, the trend in CPS design and deployment is transitioning towards a more open and dynamic approach. This results in extensible CPS that are not built as a single function system, but rather as loosely connected, networked platforms comprising subsystems pertaining to different domains. These heterogeneous cyber-physical platforms simultaneously host multi-domain cyber-physical applications and their behavior cannot be encoded a priori, but it evolves over time depending on the hosted applications.
+
+The figure below presents a target system architecture for CHARIOT. Edge nodes are resource constrained nodes that are equipped with various sensors and/ or actuators, and deployed in the physical environment. Management and monitoring infrastructures can be run on these nodes as long running platform services. Applications make use of available resources for sensing, actuating, and non-resource intensive computations. Different middleware solutions can be used by these applications to communicate with each other.
+
+<img src="https://github.com/visor-vu/chariot/blob/master/TargetArchitecture.png" width="75%" height="60%"/>
+
+All computation cannot be run on edge nodes; edge nodes should run small computations that require real-time response. As such extensible CPS requires us to view CPS challenges from a collaborative perspective, where it is critical to utilize advancement in other computing paradigm such as cloud computing to realize a complex computing paradigm. Resource intensive computations that are not associated with real-time requirement can be deployed on a cloud. This yields a multi-layer architecture whereby application properties and requirements determine associated computation proximity and where they can be deployed.
+
 ## Architectural Overview
 CHARIOT consists of different entities that can be classified into three layers:
 
