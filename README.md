@@ -19,7 +19,9 @@ Cyber-Physical Systems (CPS) have traditionally been designed as closed systems 
 
 The figure below presents a target system architecture for CHARIOT. Edge nodes are resource constrained nodes that are equipped with various sensors and/ or actuators, and deployed in the physical environment. Management and monitoring infrastructures can be run on these nodes as long running platform services. Applications make use of available resources for sensing, actuating, and non-resource intensive computations. Different middleware solutions can be used by these applications to communicate with each other.
 
-<img src="https://github.com/visor-vu/chariot/blob/master/Figures/TargetArchitecture.png" width="75%" height="60%"/>
+<p align="center">
+  <img src="https://github.com/visor-vu/chariot/blob/master/Figures/TargetArchitecture.png" width="75%" height="60%"/>
+</p>
 
 All computation cannot be run on edge nodes; edge nodes should run small computations that require real-time response. As such extensible CPS requires us to view CPS challenges from a collaborative perspective, where it is critical to utilize advancement in other computing paradigm such as cloud computing to realize a complex computing paradigm. Resource intensive computations that are not associated with real-time requirement can be deployed on a cloud. This yields a multi-layer architecture whereby application properties and requirements determine associated computation proximity and where they can be deployed.
 
@@ -30,7 +32,9 @@ CHARIOT consists of different entities that can be classified into three layers:
 
 2. **Data layer**: This is the middle layer. It comprises a well-defined data model that codifies the format in which system information (design-time system descriptions and runtime system representation) must be stored. CHARIOT currently uses [MongoDB](https://www.mongodb.com/) to store system information. This layer helps decouple the design layer (top) from the management layer (bottom).
 
+<p align="center">
   <img src="https://github.com/visor-vu/chariot/blob/master/Figures/LayeredOverview.png" width="45%" height="45%"/>
+</p>
 
 3. **Management layer (runtime)**: This is the bottom-most layer and is responsible for management of the runtime system. This layer comprises entities that facilitate autonomous resilience via a self-reconfiguration mechanism based on a closed *sense-plan-act* loop capable of (1) failure avoidance/masking using traditional redundancy mechanisms, (2) failure management to recover from failures, and (3) operations management to handle planned system updates. Entities in this layer can be differentiated into three categories. 
   * First category is the Monitoring Infrastructure, which comprises entities that help "sense" changes by detecting node ingress and egress. Current implementation of CHARIOT uses [ZooKeeper](https://zookeeper.apache.org/) to implement a dynamic monitoring infrastructure. 
