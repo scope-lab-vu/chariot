@@ -31,12 +31,18 @@ Domain-specific modeling language: CHARIOT-ML (Modeling Language) is a Domain-Sp
 Generic component model: CHARIOT implements a novel component model that, unlike any existing component models, is middleware agnostic. At its very core, this component model relies on the design principle that a software component should have a clean separation-of-concerns between its computation and communication logic. This component model is part of both design-time (modeling application components) and runtime (execution of application components) aspect of CHARIOT.
 Autonomous resilience loop: Runtime aspect of CHARIOT also includes different entities that constitutes an autonomous resilience loop. The management infrastructure is responsible for managing a platform, whereas, the monitoring infrastructure is responsible for monitoring resources of the platform for failures and anomalies. Finally, the resilience infrastructure is responsible for determining how to resolve failures and anomalies detected by the aforementioned monitoring infrastructure. As shown in the figure below, these entities form a closed sense-plan-act loop to make sure system required functionalities provided by different applications are maintained for as long as possible.
 
-<img src="https://github.com/visor-vu/chariot/blob/CPSWeekTutorial/Overview.png" width="75%" height="60%"/>
+<p align="center">
+  <img src="https://github.com/visor-vu/chariot/blob/CPSWeekTutorial/Figures/Overview.png" width="55%" height="40%"/>
+</p>
+<p align="center" class="image-caption">CHARIOT overview comprising design-time and runtime entities.</p>
 
 ### CHARIOT-ML
 CHARIOT-ML is a textual DSL developed using [Xtext](https://eclipse.org/Xtext/). Figure below presents different first class modeling concepts in CHARIOT-ML, their interdependencies (left side of the figure), and different entities modeled using those concepts (right side of the figure).Brief description of different modeling concepts is also provided below.
 
-*fig here*
+<p align="center">
+  <img src="https://github.com/visor-vu/chariot/blob/CPSWeekTutorial/Figures/MLConcepts.png" width="65%" height="50%"/>
+</p>
+<p align="center" class="image-caption">Modeling concepts and their inter-dependencies in CHARIOT-ML (left side), and entities modeled for a system (right side).</p>
 
 * Data types: Most basic modeling construct. It facilitates modeling of data types used for interaction as well as computation. CHARIOT-ML supports data types that are common across popular programming languages and middleware solutions. This is what allows interoperability as interaction and computation modeled in CHARIOT-ML can be used with different programming languages and middleware solutions.
 * Functionalities: These are logical concepts used to model functions with inputs and outputs using data types. Functionalities are provided by components and they can be composed to form objectives.
@@ -49,7 +55,11 @@ CHARIOT-ML is a textual DSL developed using [Xtext](https://eclipse.org/Xtext/).
 ### CHARIOT Component Model
 CHARIOT applications (apps) are in essence software components. Each component has a set of ports, workflows, tasklets, and state variables (not shown in figure below). Ports allow components to interact with each other. Workflows have associated triggers and other specific properties, which determines when and how different computation logic should be executed. Each workflow comprises one or more tasklets. A tasklet is the smallest unit of computation. Tasklets of a workflow can have data dependencies. This architecture allows tremendous flexibility to model a component's computation allowing cleanly separated computation blocks (workflow or tasklet) that can possibly be executed independently.
 
-*fig here*
+<p align="center">
+  <img src="https://github.com/visor-vu/chariot/blob/CPSWeekTutorial/Figures/ComponentModel.png" width="75%" height="65%"/>
+</p>
+<p align="center" class="image-caption">CHARIOT Component Model.</p>
+
 As mentioned before, CHARIOT components have a clean separation-of-concern between their computation and communication logic. This is an important and conscious design choice for two reasons. First, it allows components to be in control of execution of their computation logic. CHARIOT components are reactive in nature, each external event (message on a port, timer events, component life-cycle event) results in the analysis of associated trigger, eventually leading to tasklets being executed. In this way, we allow components to control execution of their computation logic resulting in architecture with predictable and analyzable computation logic, which is important for real-time systems. Using this approach we are moving away from traditional middleware and component models that are designed in such a way that any external event results in inversion of control, where execution of a related callback (computation logic) happens in the middleware's thread of control or the middleware span's a new thread to execute the callback and thus incur frequent context switching. These approaches result in unpredictable computation logic. Also, using a thread pool rather than a single threaded component results in better support for parallelization as tasklets without dependency, irrespective of their workflow, can run in parallel.
 
 Second, communication logic is only responsible for exchanging messages. It does not need to worry about handling received data. Each component port has an associated buffer and the communication logic is responsible of managing this buffer. If a component needs to send a message using certain port, that message is placed on the port's buffer. Once the message is placed on the appropriate port buffer, the communication logic, via different transports, is responsible for picking up the message from the buffer and sending it. If a port receives information then the communication logic is responsible for receiving messages and storing them in the port's buffer for computation logic to use. As such, a component could possibly use different middleware solutions (supported by CHARIOT) by simply using different transports without having to change any of the component business/ computation logic. This is our approach to supporting heterogeneity. Current implementation of CHARIOT supports two middleware -- LCM and RTI DDS.
@@ -59,7 +69,10 @@ CHARIOT runtime comprises entities that are part of a closed loop that follows s
 
 CHARIOT uses MongoDB as our choice of distributed database to store (a) configuration space, (b) initial configuration point, and (c) current configuration point. A configuration space represents the state of an entire platform. It includes information about different resources available, well known faults, system goals, objectives and corresponding functionalities that help achieve different system goals, components that provide aforementioned functionalities, and possible different ways in which these components can be deployed and configured. A configuration space can expand or shrink depending on addition or removal of related entities. As shown in figure below, a configuration space can contain multiple configuration points. A configuration point represents a valid configuration which includes information about a specific deployment scenario given a set of component instances and physical nodes on which these component instances can be deployed. A change in the state of a platform is represented by transition from one configuration point to another in the same configuration space. An initial configuration point represents the initial state, whereas the current configuration point represents the current state of a platform. Configuration points and their transition are critical for our self-reconfiguration mechanism.
 
-*fig here*
+<p align="center">
+  <img src="https://github.com/visor-vu/chariot/blob/CPSWeekTutorial/Figures/ResilienceLoop.png" width="80%" height="55%"/>
+</p>
+<p align="center" class="image-caption">CHARIOT Runtime Resilience Loop with deployment and reconfiguration action sequences. Figure also shows configuration space and points demonstrating an example of two component (C<sub>A</sub> , and C<sub>B</sub>) application. C<sub>A</sub> - F and C<sub>B</sub> - F represent individual component failures.</p>
 
 The resilience infrastructure in current implementation of CHARIOT relies on one RE. This is a single point of failure, however, we intend to fix this by implementing federated REs in future. As shown in the figure above, once a system is modeled using CHARIOT-ML and required artifacts (configuration space) are generated and stored in the database, a RE can be used to compute initial configuration point for deployment of applications, as well as, subsequent configuration points for runtime reconfiguration. The latter is the basis of supporting autonomous resilience as it allows the system to reconfigure by migrating/ transitioning from a faulty configuration point to a new configuration point computed by a RE. Upon computation of a target configuration point, the RE computes set of actions required to reach that target configuration point and then stores these actions in the database. At its core, our implementation of the RE is based on Satisfiability Modulo Theories (SMT).
 
@@ -67,11 +80,16 @@ Distributed AMs constitute our management infrastructure. Each node hosts a sing
 
 Finally, the monitoring infrastructures consists of distributed NMs, where each node hosts a single NM. A NM is responsible for detecting node failures (this is the only form of failure handled currently by CHARIOT) by monitoring status of other nodes that are part of a platform. NMs use heartbeat based protocol to detect failures of existing nodes as well as addition of new nodes. Communication between different NMs happens through the distributed database. Each NM "publishes" its heartbeat periodically by writing to a specific collection in the database, similarly, each NM monitors other's heartbeat periodically via the database. Although failure of a node is detected by NMs on all other nodes of a platform, only the leader NM is responsible for initiating reconfiguration mechanism. Since we are using distributed database (MongoDB with replica set), we rely on its notion of leader (primary replica) to determine leader node, and therefore, leader NM.
 
-*video here*
+### DEMO Video
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/yjb-6YYzLEg/0.jpg)](https://youtu.be/yjb-6YYzLEg "CHARIOT Autonomous Resilience DEMO")
 
 ### Vision: Managing extensible CPS at Scale
 The figure below presents a target system architecture for CHARIOT. Edge nodes, as described above, are resource constrained nodes that are equipped with various sensors and/ or actuators, and deployed in the physical environment. Management and monitoring infrastructures can be run on these nodes as long running platform services. Applications make use of available resources for sensing, actuating, and non-resource intensive computations. Different middleware solutions can be used by these applications to communicate with each other.
 
-*fig here*
+<p align="center">
+  <img src="https://github.com/visor-vu/chariot/blob/CPSWeekTutorial/Figures/TargetArchitecture.png" width="80%" height="60%"/>
+</p>
+<p align="center" class="image-caption">CHARIOT Target System Architecture</p>
 
 All computation cannot be run on edge nodes. Edge nodes should run small computations that require real-time response. A key point to understand here is that extensible CPS can host heterogeneous applications and these applications cannot always be deployed on edge nodes that are embedded and resource constrained. As such extensible CPS requires us to view CPS challenges from a collaborative perspective, where it is critical to utilize advancement in other computing paradigm such as cloud computing to realize a complex computing paradigm. Resource intensive computations that are not associated with real-time requirement can be deployed on a cloud. This yields a multi-layer architecture whereby application properties and requirements determine associated computation proximity and where they can be deployed.
