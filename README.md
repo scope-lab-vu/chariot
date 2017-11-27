@@ -89,26 +89,36 @@ Examples are available at https://github.com/visor-vu/chariot-examples. Follow t
 
 2. Run a MongoDB server instance.
 
-3. From inside SmartPowerGrid/scripts folder run the *SimulateNodeStartup* script. This will result in simulation of nine different nodes being started. 
+3. Check robomongo for ConfigSpace database and drop if it exists. 
+
+4. From inside SmartPowerGrid/scripts folder run the *SimulateNodeStartup* script. This will result in simulation of nine different nodes being started. 
    
    *NOTE: A closer inspection will show you that this script relies on the chariot-sna command installed as part of the chariot-runtime package. Please take a look at the names being assigned to each node.*
    
-4. At this point you are advised to check your MongoDB server for the presence of *ConfigSpace* database, *Nodes* collection, and nine node-specific documents inside the *Nodes* collection.
+5. Your MongoDB server for the will contain the *ConfigSpace* database, *Nodes* collection, and nine node-specific documents inside the *Nodes* collection.
 
 5. Open Eclipse and import the SmartPowerGrid example as existing project 
    [File->Import...->General->Existing Projects into Workspace].
    
 6. Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
 
-7. At this point you are advised to again check your MongoDB server for the presence of *ComponentTypes*, *GoalDescriptions*, and *NodeCategories* collections with documents representing the system description of the SmartParkingGrid example.
+7. The MongoDB server will now contain *ComponentTypes*, *GoalDescriptions*, and *NodeCategories* collections with documents representing the system description of the SmartParkingGrid example.
 
 8. Open nine different terminals to simulate the nine different nodes started in *step 3*.
 
 9. Start individual deployment managers on each terminal using the *chariot-dm* command installed as part of the chariot-runtime package. 
 
-   The command shown below will start a deployment manager specific to node with name *pmu_z1_1*.
+   Run one of these in each terminal to start the deployment manager specific to the named node. 
    ```bash
-   chariot-dm -s pmu_z1_1
+   chariot-dm -s pmu_z1_1 
+   chariot-dm -s pmu_z2_1
+   chariot-dm -s pmu_z3_1
+   chariot-dm -s breaker_z1_1
+   chariot-dm -s breaker_z2_1
+   chariot-dm -s breaker_z3_1
+   chariot-dm -s ied_z1_1
+   chariot-dm -s ied_z2_1
+   chariot-dm -s ied_z3_1
    ```
 
 10. Open a new terminal and run the management engine for initial deployment.
