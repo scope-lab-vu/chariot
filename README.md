@@ -32,31 +32,47 @@ For interested readers, [this](http://www.dre.vanderbilt.edu/~schmidt/PDF/Pradha
 
 ## Installation Guide
 ### MongoDB
-1. Install MongoDB (tested with MongoDB version 3.2.11).
+1. Install MongoDB (tested with MongoDB version 3.2.11). https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
 2. Install a MongoDB GUI (not required but makes it easier to check database contents). We use [Robomongo] (https://robomongo.org/download).
+    1. download
+    2. ```$ tar xvf robo3t-1.1.1-linux-x86_64-c93c6b0.tar.gz ```
+    3. move to useful location. Desktop for example. bin folder contains launcher. 
 
 ### CHARIOT-ML
-1. Install Eclipse (tested with Eclipse [Mars 2](http://www.eclipse.org/downloads/packages/release/Mars/2)).
+1. Install JAVA 
+    1. ```$ sudo apt update```
+    2. ```$ sudo apt install default-jre```
+
+1. Install Eclipse (tested with Eclipse [Oxygen](https://www.eclipse.org/downloads/download.php?file=/oomph/epp/oxygen/R/eclipse-inst-linux64.tar.gz).
 
 2. Install CHARIOT-ML as an Eclipse plugin using the following update site:   
-   http://scope.isis.vanderbilt.edu/chariot/eclipse/repository
-   
-   To install a new plugin in Eclipse you should go to [Help -> Install New Software...] and use above update site. Once this installation is complete you will be asked to restart Eclipse.
-   
+    1. in Eclipse you should go to [Help -> Install New Software...]
+    2. in 'Work with:' field enter : http://scope.isis.vanderbilt.edu/chariot/eclipse/repository
+    3. Select 'CHARIOT Language'
+    
 4. To check if the installation was successful, please perform the following tasks:
-  * Ensure that you have a running MongoDB server instance. This server can be local or remote. If remote, set *MONGO_ADDRESS* and *MONGO_PORT* environment variables accordingly. You might also have to restart your eclipse instance once these environment variables are set. 
+  * Ensure that you have a running MongoDB server instance. This server can be local or remote. 
+      * If remote: 
+          * ``` export MONGO_ADDRESS=<ip address of mongo> ```
+          * ``` export MONGO_PORT=<port of mongo> ```
+          * restart your eclipse instance once these environment variables are set. 
   * Clone the [CHARIOT examples](https://github.com/visor-vu/chariot-examples) repository.
-  * Import any one of the available examples as existing project in your restarted Eclipse instance [File->Import...->General->Existing Projects into Workspace]. When browsing the source folder you will see that CHARIOT-ML icons are used for files and keywords are highlighted.
+  * Import any one of the available examples as existing project in your restarted Eclipse instance
+      * [File->Import...->General->Existing Projects into Workspace]
+      * When browsing the source folder you will see that CHARIOT-ML icons are used for files and keywords are highlighted.
   * Run the CHARIOT-ML interpreters by cleaning the project [Project -> Clean...].
   * Check MongoDB server for a database named *ConfigSpace* which should contain all system description information required by CHARIOT runtime.
 
 ### CHARIOT Runtime
-Install chariot-runtime package using pip (Current implementation of chariot-runtime uses Python 2.7.6).
+Install python and pip
    ```bash
    sudo apt-get install python-dev
    sudo apt-get install python-pip
-   sudo pip install chariot-runtime
+   ```
+Install chariot-runtime package using pip (Current implementation of chariot-runtime uses Python 2.7.6).
+   ```bash
+   sudo pip2 install chariot-runtime
    ```
 Following are the commands installed as part of chariot-runtime:
 * **chariot-dm**: This command starts the CHARIOT Deployment Manager
